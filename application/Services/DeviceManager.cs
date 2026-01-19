@@ -4,6 +4,7 @@ using domain.Devices.Canboard;
 using domain.Devices.dingoPdm;
 using domain.Devices.dingoPdmMax;
 using domain.Devices.Generic;
+using domain.Devices.Keypad;
 using domain.Interfaces;
 using domain.Models;
 using Microsoft.Extensions.Logging;
@@ -58,6 +59,7 @@ public class DeviceManager(ILogger<DeviceManager> logger, ILoggerFactory loggerF
             "pdmmax" => new PdmMaxDevice(name, baseId),
             "canboard" => new CanboardDevice(name, baseId),
             "dbcdevice" => new DbcDevice(name, baseId),
+            "keypad" => new KeypadDevice(name, baseId),
             _ => throw new ArgumentException($"Unknown device type: {deviceType}")
         };
         
@@ -209,6 +211,9 @@ public class DeviceManager(ILogger<DeviceManager> logger, ILoggerFactory loggerF
             case DbcDevice dbcDevice:
                 dbcDevice.SetLogger(loggerFactory.CreateLogger<DbcDevice>());
                 dbcDevice.UpdateIdRange();
+                break;
+            case KeypadDevice keypadDevice:
+                keypadDevice.SetLogger(loggerFactory.CreateLogger<KeypadDevice>());
                 break;
         }
     }
