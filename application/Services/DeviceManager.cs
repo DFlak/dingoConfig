@@ -16,6 +16,8 @@ public class DeviceManager(ILogger<DeviceManager> logger, ILoggerFactory loggerF
     private ConcurrentDictionary<(int BaseId, int Prefix, int Index), DeviceCanFrame> _requestQueue = new();
     private Action<CanFrame>? _transmitCallback;
     private readonly Dictionary<Guid, DeviceUiState> _deviceUiState = new();
+    
+    private readonly Dictionary<Guid, System.Timers.Timer> _cyclicTimers = new();
 
     public int QueueCount => _requestQueue.Count;
 
@@ -66,6 +68,8 @@ public class DeviceManager(ILogger<DeviceManager> logger, ILoggerFactory loggerF
         logger.LogInformation("Device added: {DeviceType} '{Name}' (ID: {BaseId}, Guid: {Guid})",
             deviceType, name, baseId, device.Guid);
 
+        SetCyclicTimer(device);
+        
         OnDeviceAdded(new DeviceEventArgs(device));
     }
 
@@ -125,6 +129,8 @@ public class DeviceManager(ILogger<DeviceManager> logger, ILoggerFactory loggerF
     /// </summary>
     public void RemoveDevice(Guid deviceId)
     {
+        RemoveCyclicTimer(deviceId);
+        
         if (_devices.Remove(deviceId, out var device))
         {
             logger.LogInformation("Device removed: {Name} (Guid: {Guid})", device.Name, deviceId);
@@ -145,6 +151,7 @@ public class DeviceManager(ILogger<DeviceManager> logger, ILoggerFactory loggerF
 
             _devices[device.Guid] = device;
             GetDeviceUiState(device.Guid).NeedsRead = true;
+            SetCyclicTimer(device);
             OnDeviceAdded(new DeviceEventArgs(device));
         }
         logger.LogInformation("Added {Count} devices", devices.Count);
@@ -155,6 +162,7 @@ public class DeviceManager(ILogger<DeviceManager> logger, ILoggerFactory loggerF
     /// </summary>
     public void ClearDevices()
     {
+        RemoveAllCyclicTimers();
         _devices.Clear();
         _requestQueue.Clear();
         logger.LogInformation("All devices cleared");
@@ -202,6 +210,49 @@ public class DeviceManager(ILogger<DeviceManager> logger, ILoggerFactory loggerF
                 dbcDevice.SetLogger(loggerFactory.CreateLogger<DbcDevice>());
                 dbcDevice.UpdateIdRange();
                 break;
+        }
+    }
+
+    private void SetCyclicTimer(IDevice device)
+    {
+        //Cyclic timers not used or configured
+        if ((device.CyclicGap <= TimeSpan.FromMilliseconds(0)) ||
+            (device.CyclicPause <= TimeSpan.FromMilliseconds(0))) return;
+        
+        var timer = new System.Timers.Timer(device.CyclicGap);
+        timer.Elapsed += (_, _) => SendCyclicMessages(device);
+        timer.AutoReset = true;
+        timer.Start();
+
+        _cyclicTimers[device.Guid] = timer;
+    }
+
+    private void RemoveAllCyclicTimers()
+    {
+        foreach (var timer in _cyclicTimers)
+        {
+            timer.Value.Stop();
+            timer.Value.Dispose();
+        }
+        
+        _cyclicTimers.Clear();
+    }
+
+    private void RemoveCyclicTimer(Guid deviceId)
+    {
+        _cyclicTimers[deviceId].Stop();
+        _cyclicTimers.Remove(deviceId);
+    }
+
+    private void SendCyclicMessages(IDevice device)
+    {
+        var msgs = device.GetCyclicMsgs();
+        if (msgs.Count == 0) return;
+        
+        foreach (var msg in msgs)
+        {
+            QueueMessage(msg, sendOnly:true);
+            Thread.Sleep(device.CyclicPause);
         }
     }
 

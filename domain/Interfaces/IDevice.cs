@@ -10,6 +10,8 @@ public interface IDevice
     string Name { get; set; }
     int BaseId {get; set; }
     bool Connected {get;}
+    TimeSpan CyclicGap {get;}
+    TimeSpan CyclicPause {get;}
     public void UpdateIsConnected();
     void Read(int id, byte[] data, ref ConcurrentDictionary<(int BaseId, int Prefix, int Index), DeviceCanFrame> queue);
     bool InIdRange(int id);
@@ -19,4 +21,10 @@ public interface IDevice
     /// </summary>
     /// <returns>Enumerable of tuples containing message ID and signal</returns>
     IEnumerable<(int MessageId, DbcSignal Signal)> GetStatusSignals();
+    
+    /// <summary>
+    /// Get all cyclic transmit messages
+    /// </summary>
+    /// <returns>List of messages to transmit</returns>
+    List<DeviceCanFrame> GetCyclicMsgs();
 }

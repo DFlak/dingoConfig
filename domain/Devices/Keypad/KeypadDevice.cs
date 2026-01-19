@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using System.Text.Json.Serialization;
 using domain.Interfaces;
 using domain.Models;
 
@@ -11,6 +12,8 @@ public class KeypadDevice : IDevice
     public string Name { get; set; }
     public int BaseId { get; set; }
     public bool Connected { get; }
+    [JsonIgnore] public TimeSpan CyclicGap { get; } =  TimeSpan.FromSeconds(1);
+    [JsonIgnore] public TimeSpan CyclicPause { get; } = TimeSpan.FromMilliseconds(1);
     public void UpdateIsConnected()
     {
         throw new NotImplementedException();
@@ -29,5 +32,10 @@ public class KeypadDevice : IDevice
     public IEnumerable<(int MessageId, DbcSignal Signal)> GetStatusSignals()
     {
         throw new NotImplementedException();
+    }
+    
+    public List<DeviceCanFrame> GetCyclicMsgs()
+    {
+        return [];
     }
 }

@@ -48,6 +48,8 @@ public class PdmDevice : IDeviceConfigurable
     [JsonIgnore] public bool SleepEnabled { get; set; }
     [JsonIgnore] public bool CanFiltersEnabled { get; set; }
     [JsonIgnore] public CanBitRate BitRate { get; set; }
+    [JsonIgnore] public TimeSpan CyclicGap { get; } =  TimeSpan.FromSeconds(0);
+    [JsonIgnore] public TimeSpan CyclicPause { get; } = TimeSpan.FromMilliseconds(0);
     
     [JsonPropertyName("inputs")] public List<Input> Inputs { get; init; } = [];
     [JsonPropertyName("outputs")] public List<Output> Outputs { get; init; } = [];
@@ -1064,6 +1066,11 @@ public class PdmDevice : IDeviceConfigurable
             ),
             MsgDescription = "Bootloader"
         };
+    }
+    
+    public List<DeviceCanFrame> GetCyclicMsgs()
+    {
+        return [];
     }
     
     public void UpdateName(string newName) =>  Name = newName;

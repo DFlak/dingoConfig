@@ -21,6 +21,8 @@ public class CanboardDevice : IDevice
     [JsonPropertyName("name")] public string Name { get; set; }
     [JsonPropertyName("baseId")] public int BaseId { get; set; }
     [JsonIgnore] private DateTime LastRxTime { get; set; }
+    [JsonIgnore] public TimeSpan CyclicGap { get; } =  TimeSpan.FromSeconds(0);
+    [JsonIgnore] public TimeSpan CyclicPause { get; } = TimeSpan.FromMilliseconds(0);
 
     [JsonIgnore]
     public bool Connected
@@ -220,5 +222,10 @@ public class CanboardDevice : IDevice
                 yield return (messageId, signalCopy);
             }
         }
+    }
+
+    public List<DeviceCanFrame> GetCyclicMsgs()
+    {
+        return [];
     }
 }
