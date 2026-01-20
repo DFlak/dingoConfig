@@ -1,0 +1,97 @@
+@using domain.Devices.Keypad
+@using domain.Devices.Keypad.Enums
+
+<MudGrid>
+    @if (Device.NumButtons > 0)
+    {
+        <MudItem xs="12">
+            <MudText Typo="Typo.h6">Buttons</MudText>
+            <MudTable Items="@Device.Buttons" Dense="true" Hover="true">
+                <HeaderContent>
+                    <MudTh>Number</MudTh>
+                    <MudTh>Name</MudTh>
+                    <MudTh>State</MudTh>
+                    @if (Device.Brand == KeypadBrand.BlinkMarine)
+                    {
+                        <MudTh>LED Color</MudTh>
+                    }
+                </HeaderContent>
+                <RowTemplate>
+                    @if (context is domain.Devices.Keypad.BlinkMarine.Button blinkBtn)
+                    {
+                        <MudTd>@blinkBtn.Number</MudTd>
+                        <MudTd>@blinkBtn.Name</MudTd>
+                        <MudTd>
+                            <MudChip T="string" Color="@(blinkBtn.State ? Color.Success : Color.Default)" Size="Size.Small">
+                                @(blinkBtn.State ? "Pressed" : "Released")
+                            </MudChip>
+                        </MudTd>
+                        <MudTd>
+                            <div style="width: 30px; height: 30px; background-color: rgb(@blinkBtn.RedValue, @blinkBtn.GreenValue, @blinkBtn.BlueValue); border: 1px solid #ccc;"></div>
+                        </MudTd>
+                    }
+                    else if (context is domain.Devices.Keypad.Grayhill.Button grayhillBtn)
+                    {
+                        <MudTd>@grayhillBtn.Number</MudTd>
+                        <MudTd>@grayhillBtn.Name</MudTd>
+                        <MudTd>
+                            <MudChip T="string" Color="@(grayhillBtn.State ? Color.Success : Color.Default)" Size="Size.Small">
+                                @(grayhillBtn.State ? "Pressed" : "Released")
+                            </MudChip>
+                        </MudTd>
+                    }
+                </RowTemplate>
+            </MudTable>
+        </MudItem>
+    }
+
+    @if (Device.NumDials > 0)
+    {
+        <MudItem xs="12" Class="mt-4">
+            <MudText Typo="Typo.h6">Dials</MudText>
+            <MudTable Items="@Dials" Dense="true" Hover="true">
+                <HeaderContent>
+                    <MudTh>Number</MudTh>
+                    <MudTh>Name</MudTh>
+                    <MudTh>Position</MudTh>
+                    <MudTh>Delta</MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd>@context.Number</MudTd>
+                    <MudTd>@context.Name</MudTd>
+                    <MudTd>@context.Position</MudTd>
+                    <MudTd>@context.Delta</MudTd>
+                </RowTemplate>
+            </MudTable>
+        </MudItem>
+    }
+
+    @if (Device.NumAnalogInputs > 0)
+    {
+        <MudItem xs="12" Class="mt-4">
+            <MudText Typo="Typo.h6">Analog Inputs</MudText>
+            <MudTable Items="@AnalogInputs" Dense="true" Hover="true">
+                <HeaderContent>
+                    <MudTh>Number</MudTh>
+                    <MudTh>Name</MudTh>
+                    <MudTh>Voltage (mV)</MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd>@context.Number</MudTd>
+                    <MudTd>@context.Name</MudTd>
+                    <MudTd>@context.Voltage.ToString("F2")</MudTd>
+                </RowTemplate>
+            </MudTable>
+        </MudItem>
+    }
+</MudGrid>
+
+@code {
+    [Parameter] public KeypadDevice Device { get; set; } = default!;
+
+    private IEnumerable<domain.Devices.Keypad.BlinkMarine.Dial> Dials =>
+        Device.Dials.Cast<domain.Devices.Keypad.BlinkMarine.Dial>();
+
+    private IEnumerable<domain.Devices.Keypad.BlinkMarine.AnalogInput> AnalogInputs =>
+        Device.AnalogInputs.Cast<domain.Devices.Keypad.BlinkMarine.AnalogInput>();
+}

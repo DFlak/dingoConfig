@@ -4,6 +4,8 @@
 @using domain.Devices.dingoPdmMax
 @using domain.Devices.Canboard
 @using domain.Devices.Generic
+@using domain.Devices.Keypad.BlinkMarine
+@using domain.Devices.Keypad.Grayhill
 @using application.Services
 @inject DeviceManager DeviceManager
 @inject ICommsAdapterManager AdapterManager
@@ -39,6 +41,18 @@
                 <BaseDeviceView TDevice="DbcDevice"
                                 Device="statusDevice"
                                 AdapterConnected="@AdapterManager.IsConnected"/>
+                break;
+
+            case BlinkMarineKeypadDevice blinkKeypad:
+                <BaseDeviceView TDevice="BlinkMarineKeypadDevice"
+                               Device="blinkKeypad"
+                               AdapterConnected="@AdapterManager.IsConnected" />
+                break;
+
+            case GrayhillKeypadDevice grayhillKeypad:
+                <BaseDeviceView TDevice="GrayhillKeypadDevice"
+                               Device="grayhillKeypad"
+                               AdapterConnected="@AdapterManager.IsConnected" />
                 break;
 
             default:

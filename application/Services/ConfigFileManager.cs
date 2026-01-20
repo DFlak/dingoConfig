@@ -4,6 +4,8 @@ using domain.Devices.Canboard;
 using domain.Devices.dingoPdm;
 using domain.Devices.dingoPdmMax;
 using domain.Devices.Generic;
+using domain.Devices.Keypad.BlinkMarine;
+using domain.Devices.Keypad.Grayhill;
 using domain.Interfaces;
 using Microsoft.Extensions.Logging;
 
@@ -95,7 +97,9 @@ public class ConfigFileManager(ILogger<ConfigFileManager> logger)
                 PdmDevices = devices.Where(d => d.GetType() == typeof(PdmDevice)).Cast<PdmDevice>().ToList(),
                 PdmMaxDevices = devices.Where(d => d.GetType() == typeof(PdmMaxDevice)).Cast<PdmMaxDevice>().ToList(),
                 CanboardDevices = devices.Where(d => d.GetType() == typeof(CanboardDevice)).Cast<CanboardDevice>().ToList(),
-                DbcDevices = devices.Where(d => d.GetType() == typeof(DbcDevice)).Cast<DbcDevice>().ToList()
+                DbcDevices = devices.Where(d => d.GetType() == typeof(DbcDevice)).Cast<DbcDevice>().ToList(),
+                BlinkMarineKeypads = devices.OfType<BlinkMarineKeypadDevice>().ToList(),
+                GrayhillKeypads = devices.OfType<GrayhillKeypadDevice>().ToList()
             };
 
             var jsonString = JsonSerializer.Serialize(config, _options);
@@ -142,6 +146,8 @@ public class ConfigFileManager(ILogger<ConfigFileManager> logger)
             allDevices.AddRange(config.PdmMaxDevices);
             allDevices.AddRange(config.CanboardDevices);
             allDevices.AddRange(config.DbcDevices);
+            allDevices.AddRange(config.BlinkMarineKeypads);
+            allDevices.AddRange(config.GrayhillKeypads);
 
             logger.LogInformation($"Loaded {allDevices.Count} devices from {fileName}");
             return allDevices;

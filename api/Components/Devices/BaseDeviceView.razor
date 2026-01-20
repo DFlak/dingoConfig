@@ -1,12 +1,15 @@
 @using api.Components.Devices.CANBoard
 @using api.Components.Devices.dingoPdm
 @using api.Components.Devices.Generic
+@using api.Components.Devices.Keypad
 @using application.Services
 @using api.Services
 @using domain.Devices.Canboard
 @using domain.Devices.dingoPdm
 @using domain.Devices.dingoPdmMax
 @using domain.Devices.Generic
+@using domain.Devices.Keypad.BlinkMarine
+@using domain.Devices.Keypad.Grayhill
 @using domain.Interfaces
 @inject DeviceManager DeviceManager
 @inject NotificationService Notification
@@ -94,7 +97,15 @@
         case DbcDevice statusDevice:
             <DbcDeviceTabs TDevice="DbcDevice" Device="statusDevice"/>
             break;
-            
+
+        case BlinkMarineKeypadDevice blinkKeypad:
+            <KeypadDeviceTabs Device="blinkKeypad" />
+            break;
+
+        case GrayhillKeypadDevice grayhillKeypad:
+            <KeypadDeviceTabs Device="grayhillKeypad" />
+            break;
+
         default:
             <MudAlert Severity="Severity.Warning">
                 Unknown device type: @Device.GetType().Name
@@ -113,6 +124,8 @@
         PdmMaxDevice => "dingoPDM-Max",
         PdmDevice => "dingoPDM",
         CanboardDevice => "CANBoard",
+        BlinkMarineKeypadDevice => "Blink Marine Keypad",
+        GrayhillKeypadDevice => "Grayhill Keypad",
         _ => Device.GetType().Name
     };
 

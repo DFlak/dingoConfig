@@ -5,6 +5,8 @@ using domain.Devices.dingoPdm;
 using domain.Devices.dingoPdmMax;
 using domain.Devices.Generic;
 using domain.Devices.Keypad;
+using domain.Devices.Keypad.BlinkMarine;
+using domain.Devices.Keypad.Grayhill;
 using domain.Interfaces;
 using domain.Models;
 using Microsoft.Extensions.Logging;
@@ -59,19 +61,35 @@ public class DeviceManager(ILogger<DeviceManager> logger, ILoggerFactory loggerF
             "pdmmax" => new PdmMaxDevice(name, baseId),
             "canboard" => new CanboardDevice(name, baseId),
             "dbcdevice" => new DbcDevice(name, baseId),
-            "keypad" => new KeypadDevice(name, baseId),
+
+            // BlinkMarine keypad configurations
+            "blinkkeypad-8b2d" => new BlinkMarineKeypadDevice(name, baseId,
+                numButtons: 8, numDials: 2, numAnalogInputs: 0),
+            "blinkkeypad-12b4d" => new BlinkMarineKeypadDevice(name, baseId,
+                numButtons: 12, numDials: 4, numAnalogInputs: 0),
+
+            // Grayhill keypad configurations
+            "grayhillkeypad-8b" => new GrayhillKeypadDevice(name, baseId,
+                numButtons: 8),
+            "grayhillkeypad-12b" => new GrayhillKeypadDevice(name, baseId,
+                numButtons: 12),
+
             _ => throw new ArgumentException($"Unknown device type: {deviceType}")
         };
-        
+
         SetLoggers(device);
 
         _devices[device.Guid] = device;
-        GetDeviceUiState(device.Guid).NeedsRead = true;
+
+        // Keypads don't need read - they're passive reporting devices
+        var needsRead = device is not KeypadDevice;
+        GetDeviceUiState(device.Guid).NeedsRead = needsRead;
+
         logger.LogInformation("Device added: {DeviceType} '{Name}' (ID: {BaseId}, Guid: {Guid})",
             deviceType, name, baseId, device.Guid);
 
         SetCyclicTimer(device);
-        
+
         OnDeviceAdded(new DeviceEventArgs(device));
     }
 
@@ -212,8 +230,11 @@ public class DeviceManager(ILogger<DeviceManager> logger, ILoggerFactory loggerF
                 dbcDevice.SetLogger(loggerFactory.CreateLogger<DbcDevice>());
                 dbcDevice.UpdateIdRange();
                 break;
-            case KeypadDevice keypadDevice:
-                keypadDevice.SetLogger(loggerFactory.CreateLogger<KeypadDevice>());
+            case BlinkMarineKeypadDevice blinkKeypad:
+                blinkKeypad.SetLogger(loggerFactory.CreateLogger<BlinkMarineKeypadDevice>());
+                break;
+            case GrayhillKeypadDevice grayhillKeypad:
+                grayhillKeypad.SetLogger(loggerFactory.CreateLogger<GrayhillKeypadDevice>());
                 break;
         }
     }

@@ -7,7 +7,7 @@ using Microsoft.Extensions.Logging;
 
 namespace domain.Devices.Keypad;
 
-public class KeypadDevice : IDevice 
+public abstract class KeypadDevice : IDevice 
 {
     [JsonIgnore] protected ILogger<KeypadDevice> Logger = null!;
     
@@ -38,14 +38,27 @@ public class KeypadDevice : IDevice
     [JsonPropertyName("numButtons")] public virtual int NumButtons {get; set;} = 0;
     [JsonPropertyName("numDials")] public virtual int NumDials { get; set; } = 0;
     [JsonPropertyName("numAnalogInputs")] public virtual int NumAnalogInputs { get; set; } = 0;
-    
+
+    // Component collections (polymorphic - different types for different brands)
+    [JsonPropertyName("buttons")]
+    public List<object> Buttons { get; init; } = [];
+
+    [JsonPropertyName("dials")]
+    public List<object> Dials { get; init; } = [];
+
+    [JsonPropertyName("analogInputs")]
+    public List<object> AnalogInputs { get; init; } = [];
+
     [JsonConstructor]
     public KeypadDevice(string name, int baseId)
     {
         Name = name;
         BaseId = baseId;
         Guid =  Guid.NewGuid();
+        InitializeCollections();
     }
+
+    protected abstract void InitializeCollections();
     
     public virtual void SetLogger(ILogger<KeypadDevice> logger)
     {

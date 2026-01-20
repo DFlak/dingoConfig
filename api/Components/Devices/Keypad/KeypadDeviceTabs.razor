@@ -1,0 +1,12 @@
+@using domain.Devices.Keypad
+@using api.Components.Devices.Keypad.Tabs
+
+<MudTabs Elevation="2" Rounded="true" ApplyEffectsToContainer="true">
+    <MudTabPanel Text="Dashboard">
+        <KeypadDashboardTab Device="@Device" />
+    </MudTabPanel>
+</MudTabs>
+
+@code {
+    [Parameter] public KeypadDevice Device { get; set; } = default!;
+}
