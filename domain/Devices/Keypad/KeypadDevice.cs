@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 using System.Text.Json.Serialization;
+using domain.Devices.Keypad.Enums;
 using domain.Interfaces;
 using domain.Models;
 using Microsoft.Extensions.Logging;
@@ -33,6 +34,11 @@ public class KeypadDevice : IDevice
         }
     }
     
+    [JsonPropertyName("brand")] public virtual KeypadBrand Brand { get; set; } = KeypadBrand.None;
+    [JsonPropertyName("numButtons")] public virtual int NumButtons {get; set;} = 0;
+    [JsonPropertyName("numDials")] public virtual int NumDials { get; set; } = 0;
+    [JsonPropertyName("numAnalogInputs")] public virtual int NumAnalogInputs { get; set; } = 0;
+    
     [JsonConstructor]
     public KeypadDevice(string name, int baseId)
     {
@@ -41,7 +47,7 @@ public class KeypadDevice : IDevice
         Guid =  Guid.NewGuid();
     }
     
-    public void SetLogger(ILogger<KeypadDevice> logger)
+    public virtual void SetLogger(ILogger<KeypadDevice> logger)
     {
         Logger = logger;
     }
@@ -52,7 +58,7 @@ public class KeypadDevice : IDevice
         Connected = timeSpan.TotalMilliseconds < 500;
     }
 
-    private void Clear()
+    protected virtual void Clear()
     {
 
     }
