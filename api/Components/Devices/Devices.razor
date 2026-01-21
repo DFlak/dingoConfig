@@ -46,7 +46,8 @@
                             <MudSelectItem T="string" Value="@("PdmMax")">PDM-Max</MudSelectItem>
                             <MudSelectItem T="string" Value="@("Canboard")">CANBoard</MudSelectItem>
                             <MudSelectItem T="string" Value="@("DbcDevice")">DBC Device</MudSelectItem>
-                            <MudSelectItem T="string" Value="@("Keypad")">Keypad</MudSelectItem>
+                            <MudSelectItem T="string" Value="@("BlinkKeypad")">Blink Marine Keypad</MudSelectItem>
+                            <MudSelectItem T="string" Value="@("GrayhillKeypad")">Grayhill Keypad</MudSelectItem>
                         </MudSelect>
                     </MudItem>
                     <MudItem xs="12" sm="4">
@@ -58,6 +59,49 @@
                                          Max="2047"
                                          T="int" />
                     </MudItem>
+                    @if (_newDeviceType == "BlinkKeypad")
+                    {
+                        <MudItem xs="12" sm="4">
+                            <MudSelect @bind-Value="_newDeviceModel"
+                                       Label="Model"
+                                       Required="true"
+                                       Variant="Variant.Outlined"
+                                       T="string">
+                                <MudSelectItem T="string" Value="@("PKP1600LI")">PKP-1600-LI</MudSelectItem>
+                                <MudSelectItem T="string" Value="@("PKP2200SI")">PKP-2200-SI</MudSelectItem>
+                                <MudSelectItem T="string" Value="@("PKP2300SI")">PKP-2300-SI</MudSelectItem>
+                                <MudSelectItem T="string" Value="@("PKP2400SI")">PKP-2400-SI</MudSelectItem>
+                                <MudSelectItem T="string" Value="@("PKP2500SI")">PKP-2500-SI</MudSelectItem>
+                                <MudSelectItem T="string" Value="@("PKP2600SI")">PKP-2600-SI</MudSelectItem>
+                                <MudSelectItem T="string" Value="@("PKP3500SI")">PKP-3500-SI</MudSelectItem>
+                                <MudSelectItem T="string" Value="@("PKP1100LI")">PKP-1100-LI</MudSelectItem>
+                                <MudSelectItem T="string" Value="@("PKP1200LI")">PKP-1200-LI</MudSelectItem>
+                                <MudSelectItem T="string" Value="@("PKP1500LI")">PKP-1500-LI</MudSelectItem>
+                                <MudSelectItem T="string" Value="@("PKP2200LI")">PKP-2200-LI</MudSelectItem>
+                                <MudSelectItem T="string" Value="@("PKP2400LI")">PKP-2400-LI</MudSelectItem>
+                                <MudSelectItem T="string" Value="@("PKP2300SIFR")">PKP-2300-SI-FR</MudSelectItem>
+                                <MudSelectItem T="string" Value="@("PKP3500SIMT")">PKP-3500-SI-MT</MudSelectItem>
+                                <MudSelectItem T="string" Value="@("PKP2600SIFR")">PKP-2600-SI-FR</MudSelectItem>
+                                <MudSelectItem T="string" Value="@("RACEPAD")">RacePAD</MudSelectItem>
+                            </MudSelect>
+                        </MudItem>
+                    }
+                    @if (_newDeviceType == "GrayhillKeypad")
+                    {
+                        <MudItem xs="12" sm="4">
+                            <MudSelect @bind-Value="_newDeviceModel"
+                                       Label="Model"
+                                       Required="true"
+                                       Variant="Variant.Outlined"
+                                       T="string">
+                                <MudSelectItem T="string" Value="@("3Kx06")">3Kx06</MudSelectItem>
+                                <MudSelectItem T="string" Value="@("3Kx08")">3Kx08</MudSelectItem>
+                                <MudSelectItem T="string" Value="@("3Kx12")">3Kx12</MudSelectItem>
+                                <MudSelectItem T="string" Value="@("3Kx15")">3Kx15</MudSelectItem>
+                                <MudSelectItem T="string" Value="@("3Kx20")">3Kx20</MudSelectItem>
+                            </MudSelect>
+                        </MudItem>
+                    }
                 </MudGrid>
             </MudCardContent>
             <MudCardActions>
@@ -188,6 +232,7 @@
     private string _newDeviceName = string.Empty;
     private string _newDeviceType = string.Empty;
     private int _newDeviceBaseId;
+    private string _newDeviceModel = string.Empty;
 
     private IDevice? _modifyDevice;
 
@@ -255,7 +300,10 @@
     {
         try
         {
-            DeviceManager.AddDevice(_newDeviceType, _newDeviceName, _newDeviceBaseId);
+            if (_newDeviceType is "BlinkKeypad" or "GrayhillKeypad")
+                DeviceManager.AddDevice($"{_newDeviceType}-{_newDeviceModel}", _newDeviceName, _newDeviceBaseId);
+            else
+                DeviceManager.AddDevice(_newDeviceType, _newDeviceName, _newDeviceBaseId);
 
             Notification.NewSuccess($"Device '{_newDeviceName}' created successfully");
             _showCreateForm = false;

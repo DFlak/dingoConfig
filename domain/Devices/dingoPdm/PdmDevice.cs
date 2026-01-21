@@ -135,7 +135,7 @@ public class PdmDevice : IDeviceConfigurable
         {
             var inputIndex = i;
             StatusMessageSignals[0].Add((
-                new DbcSignal { Name = $"Input{inputIndex}State", StartBit = i, Length = 1 },
+                new DbcSignal { Name = $"Input{inputIndex + 1}.State", StartBit = i, Length = 1 },
                 val => Inputs[inputIndex].State = val != 0
             ));
         }
@@ -159,7 +159,7 @@ public class PdmDevice : IDeviceConfigurable
         {
             var outputIndex = i;
             StatusMessageSignals[1].Add((
-                new DbcSignal { Name = $"Output{outputIndex}Current", StartBit = i * 16, Length = 16, Factor = 0.1, Unit = "A" },
+                new DbcSignal { Name = $"Output{outputIndex + 1}.Current", StartBit = i * 16, Length = 16, Factor = 0.1, Unit = "A" },
                 val => Outputs[outputIndex].Current = val
             ));
         }
@@ -170,7 +170,7 @@ public class PdmDevice : IDeviceConfigurable
         {
             var outputIndex = i;
             StatusMessageSignals[2].Add((
-                new DbcSignal { Name = $"Output{outputIndex}Current", StartBit = (i - 4) * 16, Length = 16, Factor = 0.1, Unit = "A" },
+                new DbcSignal { Name = $"Output{outputIndex + 1}.Current", StartBit = (i - 4) * 16, Length = 16, Factor = 0.1, Unit = "A" },
                 val => Outputs[outputIndex].Current = val
             ));
         }
@@ -181,7 +181,7 @@ public class PdmDevice : IDeviceConfigurable
         {
             var outputIndex = i;
             StatusMessageSignals[3].Add((
-                new DbcSignal { Name = $"Output{outputIndex}State", StartBit = i * 4, Length = 4 },
+                new DbcSignal { Name = $"Output{outputIndex + 1}.State", StartBit = i * 4, Length = 4 },
                 val => Outputs[outputIndex].State = (OutState)val
             ));
         }
@@ -200,7 +200,7 @@ public class PdmDevice : IDeviceConfigurable
         {
             var flasherIndex = i;
             StatusMessageSignals[3].Add((
-                new DbcSignal { Name = $"Flasher{flasherIndex}", StartBit = 48 + i, Length = 1 },
+                new DbcSignal { Name = $"Flasher{flasherIndex + 1}", StartBit = 48 + i, Length = 1 },
                 val => Flashers[flasherIndex].Value = val != 0 && Flashers[flasherIndex].Enabled
             ));
         }
@@ -211,7 +211,7 @@ public class PdmDevice : IDeviceConfigurable
         {
             var outputIndex = i;
             StatusMessageSignals[4].Add((
-                new DbcSignal { Name = $"Output{outputIndex}ResetCount", StartBit = i * 8, Length = 8 },
+                new DbcSignal { Name = $"Output{outputIndex + 1}.ResetCount", StartBit = i * 8, Length = 8 },
                 val => Outputs[outputIndex].ResetCount = (int)val
             ));
         }
@@ -222,7 +222,7 @@ public class PdmDevice : IDeviceConfigurable
         {
             var canInputIndex = i;
             StatusMessageSignals[5].Add((
-                new DbcSignal { Name = $"CanInput{canInputIndex}", StartBit = i, Length = 1 },
+                new DbcSignal { Name = $"CanInput{canInputIndex + 1}", StartBit = i, Length = 1 },
                 val => CanInputs[canInputIndex].Output = val != 0
             ));
         }
@@ -230,7 +230,7 @@ public class PdmDevice : IDeviceConfigurable
         {
             var virtualInputIndex = i;
             StatusMessageSignals[5].Add((
-                new DbcSignal { Name = $"VirtualInput{virtualInputIndex}", StartBit = 32 + i, Length = 1 },
+                new DbcSignal { Name = $"VirtualInput{virtualInputIndex + 1}", StartBit = 32 + i, Length = 1 },
                 val => VirtualInputs[virtualInputIndex].Value = val != 0
             ));
         }
@@ -241,7 +241,7 @@ public class PdmDevice : IDeviceConfigurable
         {
             var counterIndex = i;
             StatusMessageSignals[6].Add((
-                new DbcSignal { Name = $"Counter{counterIndex}", StartBit = i * 8, Length = 8 },
+                new DbcSignal { Name = $"Counter{counterIndex + 1}", StartBit = i * 8, Length = 8 },
                 val => Counters[counterIndex].Value = (int)val
             ));
         }
@@ -249,7 +249,7 @@ public class PdmDevice : IDeviceConfigurable
         {
             var conditionIndex = i;
             StatusMessageSignals[6].Add((
-                new DbcSignal { Name = $"Condition{conditionIndex}", StartBit = 32 + i, Length = 1 },
+                new DbcSignal { Name = $"Condition{conditionIndex + 1}", StartBit = 32 + i, Length = 1 },
                 val => Conditions[conditionIndex].Value = (int)val
             ));
         }
@@ -264,7 +264,7 @@ public class PdmDevice : IDeviceConfigurable
                 if (canInputIndex < NumCanInputs)
                 {
                     StatusMessageSignals[msg].Add((
-                        new DbcSignal { Name = $"CanInput{canInputIndex}Value", StartBit = i * 16, Length = 16 },
+                        new DbcSignal { Name = $"CanInput{canInputIndex + 1}.Value", StartBit = i * 16, Length = 16 },
                         val => CanInputs[canInputIndex].Value = (ushort)val
                     ));
                 }
@@ -277,7 +277,7 @@ public class PdmDevice : IDeviceConfigurable
         {
             var outputIndex = i;
             StatusMessageSignals[15].Add((
-                new DbcSignal { Name = $"Output{outputIndex}DutyCycle", StartBit = i * 8, Length = 8, Unit = "%" },
+                new DbcSignal { Name = $"Output{outputIndex + 1}.DutyCycle", StartBit = i * 8, Length = 8, Unit = "%" },
                 val => Outputs[outputIndex].CurrentDutyCycle = val
             ));
         }

@@ -92,7 +92,7 @@ public class BlinkMarineKeypadDevice : IDevice
         {
             var button = Buttons[i];
             StatusMessageSignals[0].Add((
-                new DbcSignal { Name = $"Button{i}State", StartBit = i, Length = 1},
+                new DbcSignal { Name = $"Button{i + 1}.State", StartBit = i, Length = 1},
                 val => button.State = val != 0
             ));
         }
@@ -103,7 +103,7 @@ public class BlinkMarineKeypadDevice : IDevice
         {
             var dial = Dials[i];
             StatusMessageSignals[1].Add((
-                new DbcSignal { Name = $"Dial{i}Direction", StartBit = (i * 32), Length = 1},
+                new DbcSignal { Name = $"Dial{i + 1}.Direction", StartBit = (i * 32), Length = 1},
                 val => dial.Direction = (DialDirection)val
             ));
         }
@@ -114,7 +114,7 @@ public class BlinkMarineKeypadDevice : IDevice
         {
             var dial = Dials[i];
             StatusMessageSignals[2].Add((
-                new DbcSignal { Name = $"Dial{i}Position", StartBit = (i * 32) + 1, Length = 7},
+                new DbcSignal { Name = $"Dial{i + 1}.Position", StartBit = (i * 32) + 1, Length = 7},
                 val => dial.Position = (int)val
             ));
         }
@@ -125,7 +125,7 @@ public class BlinkMarineKeypadDevice : IDevice
         {
             var dial = Dials[i];
             StatusMessageSignals[3].Add((
-                new DbcSignal { Name = $"Dial{i}Counter", StartBit = (i * 8), Length = 16},
+                new DbcSignal { Name = $"Dial{i + 1}.Counter", StartBit = (i * 8), Length = 16},
                 val => dial.Position = (int)val
             ));
         }
@@ -136,7 +136,7 @@ public class BlinkMarineKeypadDevice : IDevice
         {
             var input = AnalogInputs[i];
             StatusMessageSignals[4].Add((
-                new DbcSignal { Name = $"AnalogInput{i}Value", StartBit = i * 16, Length = 16, Factor = 0.01}, // 5/500
+                new DbcSignal { Name = $"AnalogInput{i + 1}.Value", StartBit = i * 16, Length = 16, Factor = 0.01}, // 5/500
                 val => input.Voltage = val
             ));
         }

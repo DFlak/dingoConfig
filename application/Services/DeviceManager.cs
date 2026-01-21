@@ -54,12 +54,11 @@ public class DeviceManager(ILogger<DeviceManager> logger, ILoggerFactory loggerF
     /// </summary>
     public void AddDevice(string deviceType, string name, int baseId)
     {
-        var lowerDeviceType = deviceType.ToLower();
-        var parts = lowerDeviceType.Split('-', 2); // Limit to 2 parts max
-        var deviceCategory = parts[0];
+        var parts = deviceType.ToLower().Split('-', 2); // Limit to 2 parts max
+        var devType = parts[0];
         var model = parts.Length > 1 ? parts[1] : string.Empty;
 
-        IDevice device = deviceCategory switch
+        IDevice device = devType switch
         {
             "pdm" => new PdmDevice(name, baseId),
             "pdmmax" => new PdmMaxDevice(name, baseId),

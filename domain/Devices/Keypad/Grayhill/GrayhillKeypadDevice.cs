@@ -76,7 +76,7 @@ public class GrayhillKeypadDevice : IDevice
         {
             var button = Buttons[i]; // No cast needed - strongly typed!
             StatusMessageSignals[0].Add((
-                new DbcSignal { Name = $"Button{i}State", StartBit = i, Length = 1},
+                new DbcSignal { Name = $"Button{i + 1}.State", StartBit = i, Length = 1},
                 val => button.State = val != 0
             ));
         }

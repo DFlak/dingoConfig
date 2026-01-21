@@ -87,7 +87,7 @@ public class CanboardDevice : IDevice
         {
             var index = i;
             StatusMessageSignals[0].Add((
-                new DbcSignal { Name = $"AnalogInput{index}Millivolts", StartBit = index * 16, Length = 16, Unit = "mV"},
+                new DbcSignal { Name = $"AnalogInput{index + 1}.Millivolts", StartBit = index * 16, Length = 16, Unit = "mV"},
                 val => AnalogInputs[index].Millivolts = val
             ));
         }
@@ -95,7 +95,7 @@ public class CanboardDevice : IDevice
         // Message 1 (BaseId + 1): Analog input 4 millivolts + board temperature
         StatusMessageSignals[1] =
         [
-            (new DbcSignal { Name = "AnalogInput4Millivolts", StartBit = 0, Length = 16, Unit = "mV"},
+            (new DbcSignal { Name = "AnalogInput5.Millivolts", StartBit = 0, Length = 16, Unit = "mV"},
                 val => AnalogInputs[4].Millivolts = val),
 
 
@@ -111,7 +111,7 @@ public class CanboardDevice : IDevice
         {
             var index = i;
             StatusMessageSignals[2].Add((
-                new DbcSignal { Name = $"RotarySwitch{index}Pos", StartBit = index * 4, Length = 4 },
+                new DbcSignal { Name = $"RotarySwitch{index + 1}.Pos", StartBit = index * 4, Length = 4 },
                 val => AnalogInputs[index].RotarySwitchPos = (short)val
             ));
         }
@@ -121,7 +121,7 @@ public class CanboardDevice : IDevice
         {
             var index = i;
             StatusMessageSignals[2].Add((
-                new DbcSignal { Name = $"DigitalInput{index}State", StartBit = 32 + index, Length = 1 },
+                new DbcSignal { Name = $"DigitalInput{index + 1}.State", StartBit = 32 + index, Length = 1 },
                 val => DigitalInputs[index].State = val != 0
             ));
         }
@@ -131,7 +131,7 @@ public class CanboardDevice : IDevice
         {
             var index = i;
             StatusMessageSignals[2].Add((
-                new DbcSignal { Name = $"AnalogInput{index}DigitalMode", StartBit = 40 + index, Length = 1 },
+                new DbcSignal { Name = $"AnalogInput{index + 1}.DigitalMode", StartBit = 40 + index, Length = 1 },
                 val => AnalogInputs[index].DigitalIn = val != 0
             ));
         }
@@ -141,7 +141,7 @@ public class CanboardDevice : IDevice
         {
             var index = i;
             StatusMessageSignals[2].Add((
-                new DbcSignal { Name = $"DigitalOutput{index}State", StartBit = 48 + index, Length = 1 },
+                new DbcSignal { Name = $"DigitalOutput{index + 1}.State", StartBit = 48 + index, Length = 1 },
                 val => DigitalOutputs[index].State = val != 0
             ));
         }
