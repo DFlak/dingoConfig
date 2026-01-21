@@ -17,7 +17,11 @@ public abstract class KeypadDevice : IDevice
     [JsonPropertyName("baseId")] public int BaseId { get; set; }
     [JsonPropertyName("cyclicGap")] public TimeSpan CyclicGap { get; } =  TimeSpan.FromSeconds(1);
     [JsonPropertyName("cyclicPause")] public TimeSpan CyclicPause { get; } = TimeSpan.FromMilliseconds(1);
-    [JsonIgnore] private DateTime LastRxTime { get; set; }
+    [JsonPropertyName("isSim")] public bool IsSim { get; set; }
+    [JsonIgnore] public int BacklightBrightness { get; set; } = 0;
+    [JsonIgnore] public int IndicatorBrightness { get; set; } = 0;
+    [JsonIgnore] protected DateTime LastRxTime { get; set; }
+    [JsonIgnore] public virtual Dictionary<int, List<(DbcSignal Signal, Action<double> SetValue)>> StatusMessageSignals { get; set; } = null!;
     
     [JsonIgnore]
     public bool Connected
@@ -38,16 +42,10 @@ public abstract class KeypadDevice : IDevice
     [JsonPropertyName("numButtons")] public virtual int NumButtons {get; set;} = 0;
     [JsonPropertyName("numDials")] public virtual int NumDials { get; set; } = 0;
     [JsonPropertyName("numAnalogInputs")] public virtual int NumAnalogInputs { get; set; } = 0;
-
-    // Component collections (polymorphic - different types for different brands)
-    [JsonPropertyName("buttons")]
-    public List<object> Buttons { get; init; } = [];
-
-    [JsonPropertyName("dials")]
-    public List<object> Dials { get; init; } = [];
-
-    [JsonPropertyName("analogInputs")]
-    public List<object> AnalogInputs { get; init; } = [];
+    
+    [JsonPropertyName("buttons")] public List<object> Buttons { get; init; } = [];
+    [JsonPropertyName("dials")] public List<object> Dials { get; init; } = [];
+    [JsonPropertyName("analogInputs")] public List<object> AnalogInputs { get; init; } = [];
 
     [JsonConstructor]
     public KeypadDevice(string name, int baseId)
@@ -56,9 +54,11 @@ public abstract class KeypadDevice : IDevice
         BaseId = baseId;
         Guid =  Guid.NewGuid();
         InitializeCollections();
+        InitializeStatusMessageSignals();
     }
 
     protected abstract void InitializeCollections();
+    protected abstract void InitializeStatusMessageSignals();
     
     public virtual void SetLogger(ILogger<KeypadDevice> logger)
     {
@@ -91,7 +91,7 @@ public abstract class KeypadDevice : IDevice
         return Enumerable.Empty<(int MessageId, DbcSignal Signal)>();
     }
     
-    public virtual List<DeviceCanFrame> GetCyclicMsgs()
+    public virtual List<CanFrame> GetCyclicMsgs()
     {
         return [];
     }

@@ -2,12 +2,12 @@ namespace domain.Devices.Keypad.BlinkMarine.Enums;
 
 public enum ButtonColor
 {
-    Off,
-    Red, //1
-    Green, //2
-    Orange, //3
-    Blue, //4
-    Violet, //5 
-    Cyan, //6 
-    White //7
+    Off = 0x00,
+    Red = 0x01,
+    Green = 0x02,
+    Orange = 0x03,
+    Blue = 0x04,
+    Violet = 0x05,
+    Cyan = 0x06,
+    White = 0x07,
 }

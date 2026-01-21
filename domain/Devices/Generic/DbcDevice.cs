@@ -154,7 +154,7 @@ public class DbcDevice : IDevice
         }
     }
     
-    public List<DeviceCanFrame> GetCyclicMsgs()
+    public List<CanFrame> GetCyclicMsgs()
     {
         return [];
     }

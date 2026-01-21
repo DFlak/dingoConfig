@@ -26,5 +26,5 @@ public interface IDevice
     /// Get all cyclic transmit messages
     /// </summary>
     /// <returns>List of messages to transmit</returns>
-    List<DeviceCanFrame> GetCyclicMsgs();
+    List<CanFrame> GetCyclicMsgs();
 }

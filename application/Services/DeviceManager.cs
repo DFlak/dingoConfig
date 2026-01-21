@@ -277,7 +277,11 @@ public class DeviceManager(ILogger<DeviceManager> logger, ILoggerFactory loggerF
         
         foreach (var msg in msgs)
         {
-            QueueMessage(msg, sendOnly:true);
+            var devMsg = new DeviceCanFrame()
+            {
+                Frame = msg
+            };
+            QueueMessage(devMsg, sendOnly:true);
             Thread.Sleep(device.CyclicPause);
         }
     }

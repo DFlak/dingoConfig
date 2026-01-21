@@ -1068,7 +1068,7 @@ public class PdmDevice : IDeviceConfigurable
         };
     }
     
-    public List<DeviceCanFrame> GetCyclicMsgs()
+    public List<CanFrame> GetCyclicMsgs()
     {
         return [];
     }

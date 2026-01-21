@@ -224,7 +224,7 @@ public class CanboardDevice : IDevice
         }
     }
 
-    public List<DeviceCanFrame> GetCyclicMsgs()
+    public List<CanFrame> GetCyclicMsgs()
     {
         return [];
     }
