@@ -1,6 +1,21 @@
 @using domain.Devices.Keypad.BlinkMarine
 
 <MudGrid>
+    <MudItem>
+        <RingButton
+            Icon="@Icons.Material.Filled.Power"
+            Label="Power"
+            @bind-IsPressed="isPowerPressed"
+            RingEnabled="true"
+            RedValue="255"
+            GreenValue="0"
+            BlueValue="0"
+            BlinkEnabled="false"
+            BlinkRedValue="0"
+            BlinkGreenValue="0"
+            BlinkBlueValue="255"
+            Brightness="0.5"/>
+    </MudItem>
     <MudItem xs="12">
         <MudText Typo="Typo.h6">Buttons</MudText>
         <MudTable Items="@Device.Buttons" Dense="true" Hover="true">
@@ -19,7 +34,8 @@
                     </MudChip>
                 </MudTd>
                 <MudTd>
-                    <div style="width: 30px; height: 30px; background-color: rgb(@context.RedValue, @context.GreenValue, @context.BlueValue); border: 1px solid #ccc;"></div>
+                    <div
+                        style="width: 30px; height: 30px; background-color: rgb(@context.RedValue, @context.GreenValue, @context.BlueValue); border: 1px solid #ccc;"></div>
                 </MudTd>
             </RowTemplate>
         </MudTable>
@@ -68,4 +84,6 @@
 
 @code {
     [Parameter] public BlinkMarineKeypadDevice Device { get; set; } = default!;
+    private bool isPowerPressed = false;
+
 }

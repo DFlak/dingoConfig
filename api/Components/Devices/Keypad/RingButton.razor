@@ -1,0 +1,140 @@
+@using MudBlazor
+@implements IDisposable
+
+<MudStack Spacing="1" AlignItems="AlignItems.Center" Style="display: inline-flex;">
+    <div class="ring-button-container" style="@GetContainerStyle()" @onclick="HandleClick">
+        <!-- Inner Circle with Icon -->
+        <div style="background-color: black; width: 70%; height: 70%; border-radius: 50%; display: flex; align-items: center; justify-content: center; position: relative; z-index: 1;">
+            <MudIcon Icon="@Icon" Style="color: white; font-size: 2rem;" />
+        </div>
+    </div>
+    
+    <MudText Typo="Typo.body2" Style="color: white;">@Label</MudText>
+</MudStack>
+
+@code {
+    [Parameter]
+    public string Icon { get; set; } = Icons.Material.Filled.Circle;
+    
+    [Parameter]
+    public string Label { get; set; } = "Button";
+    
+    [Parameter]
+    public bool IsPressed { get; set; }
+    
+    [Parameter]
+    public EventCallback<bool> IsPressedChanged { get; set; }
+    
+    [Parameter]
+    public bool RingEnabled { get; set; }
+    
+    [Parameter]
+    public int RedValue { get; set; } = 255;
+    
+    [Parameter]
+    public int GreenValue { get; set; } = 0;
+    
+    [Parameter]
+    public int BlueValue { get; set; } = 0;
+    
+    [Parameter]
+    public bool BlinkEnabled { get; set; }
+    
+    [Parameter]
+    public int BlinkRedValue { get; set; } = 0;
+    
+    [Parameter]
+    public int BlinkGreenValue { get; set; } = 0;
+    
+    [Parameter]
+    public int BlinkBlueValue { get; set; } = 255;
+    
+    [Parameter]
+    public double Brightness { get; set; } = 1.0; // 0.0 to 1.0
+    
+    private System.Threading.Timer? _blinkTimer;
+    private bool _showBlinkColor = false;
+    
+    protected override void OnParametersSet()
+    {
+        // Always stop the existing timer first
+        StopBlinkTimer();
+        
+        // Start a new timer if blinking is enabled
+        if (BlinkEnabled && RingEnabled)
+        {
+            StartBlinkTimer();
+        }
+    }
+    
+    private void StartBlinkTimer()
+    {
+        _blinkTimer = new System.Threading.Timer(_ =>
+        {
+            _showBlinkColor = !_showBlinkColor;
+            InvokeAsync(StateHasChanged);
+        }, null, TimeSpan.Zero, TimeSpan.FromMilliseconds(500));
+    }
+    
+    private void StopBlinkTimer()
+    {
+        _blinkTimer?.Dispose();
+        _blinkTimer = null;
+        _showBlinkColor = false;
+    }
+    
+    private async Task HandleClick()
+    {
+        IsPressed = !IsPressed;
+        await IsPressedChanged.InvokeAsync(IsPressed);
+    }
+    
+    private string GetContainerStyle()
+    {
+        var transform = IsPressed ? "translateY(2px)" : "none";
+        var shadow = IsPressed
+            ? "0 1px 2px rgba(0, 0, 0, 0.3)"
+            : "0 4px 6px rgba(0, 0, 0, 0.4)";
+
+        var opacity = Math.Clamp(Brightness, 0, 1);
+
+        int r, g, b;
+
+        if (!RingEnabled)
+        {
+            // Ring is off - use black
+            r = 0;
+            g = 0;
+            b = 0;
+        }
+        else if (BlinkEnabled && _showBlinkColor)
+        {
+            // Blinking is on and we're showing the blink color
+            r = BlinkRedValue;
+            g = BlinkGreenValue;
+            b = BlinkBlueValue;
+        }
+        else
+        {
+            // Ring is on with primary color
+            r = RedValue;
+            g = GreenValue;
+            b = BlueValue;
+        }
+
+        var backgroundColor = $"rgba({r}, {g}, {b}, {opacity})";
+
+        return $"width: 120px; height: 120px; border-radius: 50%; padding: 0; transform: {transform}; box-shadow: {shadow}; transition: all 0.1s ease, background-color 0.3s ease; background-color: {backgroundColor}; display: flex; align-items: center; justify-content: center; cursor: pointer;";
+    }
+    
+    public void Dispose()
+    {
+        StopBlinkTimer();
+    }
+}
+
+<style>
+    .ring-button-container {
+        position: relative;
+    }
+</style>
