@@ -19,14 +19,14 @@ public class DeviceManager(ILogger<DeviceManager> logger, ILoggerFactory loggerF
     private ConcurrentDictionary<(int BaseId, int Prefix, int Index), DeviceCanFrame> _requestQueue = new();
     private Action<CanFrame>? _transmitCallback;
     private readonly Dictionary<Guid, DeviceUiState> _deviceUiState = new();
-    
+
     private readonly Dictionary<Guid, System.Timers.Timer> _cyclicTimers = new();
 
     public int QueueCount => _requestQueue.Count;
 
     private const int MaxRetries = 10;
     private const int TimeoutMs = 500;
-    
+
     public event EventHandler<DeviceEventArgs>? DeviceAdded;
     public event EventHandler<DeviceEventArgs>? DeviceRemoved;
 
@@ -44,7 +44,7 @@ public class DeviceManager(ILogger<DeviceManager> logger, ILoggerFactory loggerF
     public DeviceUiState GetDeviceUiState(Guid deviceId)
     {
         if (_deviceUiState.TryGetValue(deviceId, out var state)) return state;
-        
+
         state = new DeviceUiState();
         _deviceUiState[deviceId] = state;
         return state;
@@ -55,30 +55,23 @@ public class DeviceManager(ILogger<DeviceManager> logger, ILoggerFactory loggerF
     /// </summary>
     public void AddDevice(string deviceType, string name, int baseId)
     {
-        IDevice device = deviceType.ToLower() switch
+        var lowerDeviceType = deviceType.ToLower();
+        var parts = lowerDeviceType.Split('-', 2); // Limit to 2 parts max
+        var deviceCategory = parts[0];
+        var model = parts.Length > 1 ? parts[1] : string.Empty;
+
+        IDevice device = deviceCategory switch
         {
             "pdm" => new PdmDevice(name, baseId),
             "pdmmax" => new PdmMaxDevice(name, baseId),
             "canboard" => new CanboardDevice(name, baseId),
             "dbcdevice" => new DbcDevice(name, baseId),
-
-            // BlinkMarine keypad configurations
-            "blinkkeypad-8b2d" => new BlinkMarineKeypadDevice(name, baseId,
-                numButtons: 8, numDials: 2, numAnalogInputs: 0),
-            "blinkkeypad-12b4d" => new BlinkMarineKeypadDevice(name, baseId,
-                numButtons: 12, numDials: 4, numAnalogInputs: 0),
-
-            // Grayhill keypad configurations
-            "grayhillkeypad-8b" => new GrayhillKeypadDevice(name, baseId,
-                numButtons: 8),
-            "grayhillkeypad-12b" => new GrayhillKeypadDevice(name, baseId,
-                numButtons: 12),
-
-            _ => throw new ArgumentException($"Unknown device type: {deviceType}")
+            "blinkkeypad" => BlinkMarineModels.Create(name, baseId, model),
+            "grayhillkeypad" => GrayhillModels.Create(name, baseId, model),
+            _ => throw new ArgumentException($"Unknown device type: '{deviceType}'")
         };
 
         SetLoggers(device);
-
         _devices[device.Guid] = device;
 
         // Keypads don't need read - they're passive reporting devices
@@ -89,7 +82,6 @@ public class DeviceManager(ILogger<DeviceManager> logger, ILoggerFactory loggerF
             deviceType, name, baseId, device.Guid);
 
         SetCyclicTimer(device);
-
         OnDeviceAdded(new DeviceEventArgs(device));
     }
 
@@ -128,6 +120,7 @@ public class DeviceManager(ILogger<DeviceManager> logger, ILoggerFactory loggerF
         {
             device.UpdateIsConnected();
         }
+
         return _devices.Values;
     }
 
@@ -141,6 +134,7 @@ public class DeviceManager(ILogger<DeviceManager> logger, ILoggerFactory loggerF
         {
             device.UpdateIsConnected();
         }
+
         return devices;
     }
 
@@ -150,11 +144,11 @@ public class DeviceManager(ILogger<DeviceManager> logger, ILoggerFactory loggerF
     public void RemoveDevice(Guid deviceId)
     {
         RemoveCyclicTimer(deviceId);
-        
+
         if (_devices.Remove(deviceId, out var device))
         {
             logger.LogInformation("Device removed: {Name} (Guid: {Guid})", device.Name, deviceId);
-            
+
             OnDeviceRemoved(new DeviceEventArgs(device));
         }
     }
@@ -174,6 +168,7 @@ public class DeviceManager(ILogger<DeviceManager> logger, ILoggerFactory loggerF
             SetCyclicTimer(device);
             OnDeviceAdded(new DeviceEventArgs(device));
         }
+
         logger.LogInformation("Added {Count} devices", devices.Count);
     }
 
@@ -198,6 +193,7 @@ public class DeviceManager(ILogger<DeviceManager> logger, ILoggerFactory loggerF
         {
             device.UpdateIsConnected();
         }
+
         return devices;
     }
 
@@ -244,7 +240,7 @@ public class DeviceManager(ILogger<DeviceManager> logger, ILoggerFactory loggerF
         //Cyclic timers not used or configured
         if ((device.CyclicGap <= TimeSpan.FromMilliseconds(0)) ||
             (device.CyclicPause <= TimeSpan.FromMilliseconds(0))) return;
-        
+
         var timer = new System.Timers.Timer(device.CyclicGap);
         timer.Elapsed += (_, _) => SendCyclicMessages(device);
         timer.AutoReset = true;
@@ -260,7 +256,7 @@ public class DeviceManager(ILogger<DeviceManager> logger, ILoggerFactory loggerF
             timer.Value.Stop();
             timer.Value.Dispose();
         }
-        
+
         _cyclicTimers.Clear();
     }
 
@@ -274,14 +270,14 @@ public class DeviceManager(ILogger<DeviceManager> logger, ILoggerFactory loggerF
     {
         var msgs = device.GetCyclicMsgs();
         if (msgs.Count == 0) return;
-        
+
         foreach (var msg in msgs)
         {
             var devMsg = new DeviceCanFrame()
             {
                 Frame = msg
             };
-            QueueMessage(devMsg, sendOnly:true);
+            QueueMessage(devMsg, sendOnly: true);
             Thread.Sleep(device.CyclicPause);
         }
     }
@@ -308,7 +304,7 @@ public class DeviceManager(ILogger<DeviceManager> logger, ILoggerFactory loggerF
 
         //Some messages have no response, don't queue
         if (sendOnly) return;
-        
+
         //Unique message key, used to find message in transmit queue later
         var key = (frame.DeviceBaseId, frame.Prefix, frame.Index);
 
@@ -328,10 +324,7 @@ public class DeviceManager(ILogger<DeviceManager> logger, ILoggerFactory loggerF
 
     private void StartMessageTimer((int, int, int) key, DeviceCanFrame frame)
     {
-        frame.TimeSentTimer = new Timer(_ =>
-        {
-            HandleMessageTimeout(key, frame);
-        }, null, TimeoutMs, Timeout.Infinite);
+        frame.TimeSentTimer = new Timer(_ => { HandleMessageTimeout(key, frame); }, null, TimeoutMs, Timeout.Infinite);
     }
 
     private void HandleMessageTimeout((int BaseId, int Prefix, int Index) key, DeviceCanFrame frame)
@@ -358,6 +351,7 @@ public class DeviceManager(ILogger<DeviceManager> logger, ILoggerFactory loggerF
             {
                 _transmitCallback(frame.Frame);
             }
+
             StartMessageTimer(key, frame);
 
             logger.LogWarning("Message retry {Attempt}/{MaxRetries}: {Description} (BaseId={BaseId})",
@@ -412,7 +406,7 @@ public class DeviceManager(ILogger<DeviceManager> logger, ILoggerFactory loggerF
         logger.LogInformation("Write started for {DeviceName} (Guid: {Guid})", device.Name, deviceId);
         return true;
     }
-    
+
     /// <summary>
     /// Modify device, name and base ID
     /// Sends modify message to device
@@ -538,12 +532,12 @@ public class DeviceManager(ILogger<DeviceManager> logger, ILoggerFactory loggerF
         logger.LogInformation("Enter bootloader on {DeviceName} (Guid: {Guid})", device.Name, deviceId);
         return true;
     }
-    
+
     private void OnDeviceAdded(DeviceEventArgs e)
     {
         DeviceAdded?.Invoke(this, e);
     }
-    
+
     private void OnDeviceRemoved(DeviceEventArgs e)
     {
         DeviceRemoved?.Invoke(this, e);

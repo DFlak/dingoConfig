@@ -337,13 +337,22 @@ public class BlinkMarineKeypadDevice(string name, int baseId, int numButtons, in
         var msgs = new List<CanFrame>();
         
         msgs.Add(BuildButtonState());
-        
-        if (NumDials > 0)
-            msgs.Add(BuildDialState(0));
-        
-        if (NumDials > 2)
-            msgs.Add(BuildDialState(2));
-        
+
+        switch (NumDials)
+        {
+            case 1:
+                msgs.Add(BuildDialState(0, 1));
+                break;
+            case 2:
+                msgs.Add(BuildDialState(0, 1));
+                msgs.Add(BuildDialState(1, 1));
+                break;
+            case 4:
+                msgs.Add(BuildDialState(0, 2));
+                msgs.Add(BuildDialState(2, 2));
+                break;
+        }
+ 
         if (NumAnalogInputs > 0)
             msgs.Add(BuildAnalogInput());
         
