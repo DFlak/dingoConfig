@@ -1,0 +1,27 @@
+@using domain.Devices.Keypad.Grayhill
+
+<MudGrid>
+    <MudItem xs="12">
+        <MudText Typo="Typo.h6">Buttons</MudText>
+        <MudTable Items="@Device.Buttons" Dense="true" Hover="true">
+            <HeaderContent>
+                <MudTh>Number</MudTh>
+                <MudTh>Name</MudTh>
+                <MudTh>State</MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd>@context.Number</MudTd>
+                <MudTd>@context.Name</MudTd>
+                <MudTd>
+                    <MudChip T="string" Color="@(context.State ? Color.Success : Color.Default)" Size="Size.Small">
+                        @(context.State ? "Pressed" : "Released")
+                    </MudChip>
+                </MudTd>
+            </RowTemplate>
+        </MudTable>
+    </MudItem>
+</MudGrid>
+
+@code {
+    [Parameter] public GrayhillKeypadDevice Device { get; set; } = default!;
+}

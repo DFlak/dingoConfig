@@ -4,7 +4,6 @@ using domain.Devices.Canboard;
 using domain.Devices.dingoPdm;
 using domain.Devices.dingoPdmMax;
 using domain.Devices.Generic;
-using domain.Devices.Keypad;
 using domain.Devices.Keypad.BlinkMarine;
 using domain.Devices.Keypad.Grayhill;
 using domain.Interfaces;
@@ -66,8 +65,8 @@ public class DeviceManager(ILogger<DeviceManager> logger, ILoggerFactory loggerF
             "pdmmax" => new PdmMaxDevice(name, baseId),
             "canboard" => new CanboardDevice(name, baseId),
             "dbcdevice" => new DbcDevice(name, baseId),
-            "blinkkeypad" => BlinkMarineModels.Create(name, baseId, model),
-            "grayhillkeypad" => GrayhillModels.Create(name, baseId, model),
+            "blinkkeypad" => new BlinkMarineKeypadDevice(name, baseId, model),
+            "grayhillkeypad" => new GrayhillKeypadDevice(name, baseId, model),
             _ => throw new ArgumentException($"Unknown device type: '{deviceType}'")
         };
 
@@ -75,7 +74,7 @@ public class DeviceManager(ILogger<DeviceManager> logger, ILoggerFactory loggerF
         _devices[device.Guid] = device;
 
         // Keypads don't need read - they're passive reporting devices
-        var needsRead = device is not KeypadDevice;
+        var needsRead = device is not BlinkMarineKeypadDevice and not GrayhillKeypadDevice;
         GetDeviceUiState(device.Guid).NeedsRead = needsRead;
 
         logger.LogInformation("Device added: {DeviceType} '{Name}' (ID: {BaseId}, Guid: {Guid})",

@@ -1,0 +1,71 @@
+@using domain.Devices.Keypad.BlinkMarine
+
+<MudGrid>
+    <MudItem xs="12">
+        <MudText Typo="Typo.h6">Buttons</MudText>
+        <MudTable Items="@Device.Buttons" Dense="true" Hover="true">
+            <HeaderContent>
+                <MudTh>Number</MudTh>
+                <MudTh>Name</MudTh>
+                <MudTh>State</MudTh>
+                <MudTh>LED Color</MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd>@context.Number</MudTd>
+                <MudTd>@context.Name</MudTd>
+                <MudTd>
+                    <MudChip T="string" Color="@(context.State ? Color.Success : Color.Default)" Size="Size.Small">
+                        @(context.State ? "Pressed" : "Released")
+                    </MudChip>
+                </MudTd>
+                <MudTd>
+                    <div style="width: 30px; height: 30px; background-color: rgb(@context.RedValue, @context.GreenValue, @context.BlueValue); border: 1px solid #ccc;"></div>
+                </MudTd>
+            </RowTemplate>
+        </MudTable>
+    </MudItem>
+
+    @if (Device.NumDials > 0)
+    {
+        <MudItem xs="12" Class="mt-4">
+            <MudText Typo="Typo.h6">Dials</MudText>
+            <MudTable Items="@Device.Dials" Dense="true" Hover="true">
+                <HeaderContent>
+                    <MudTh>Number</MudTh>
+                    <MudTh>Name</MudTh>
+                    <MudTh>Position</MudTh>
+                    <MudTh>Delta</MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd>@context.Number</MudTd>
+                    <MudTd>@context.Name</MudTd>
+                    <MudTd>@context.Position</MudTd>
+                    <MudTd>@context.Delta</MudTd>
+                </RowTemplate>
+            </MudTable>
+        </MudItem>
+    }
+
+    @if (Device.NumAnalogInputs > 0)
+    {
+        <MudItem xs="12" Class="mt-4">
+            <MudText Typo="Typo.h6">Analog Inputs</MudText>
+            <MudTable Items="@Device.AnalogInputs" Dense="true" Hover="true">
+                <HeaderContent>
+                    <MudTh>Number</MudTh>
+                    <MudTh>Name</MudTh>
+                    <MudTh>Voltage (mV)</MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd>@context.Number</MudTd>
+                    <MudTd>@context.Name</MudTd>
+                    <MudTd>@context.Voltage.ToString("F2")</MudTd>
+                </RowTemplate>
+            </MudTable>
+        </MudItem>
+    }
+</MudGrid>
+
+@code {
+    [Parameter] public BlinkMarineKeypadDevice Device { get; set; } = default!;
+}

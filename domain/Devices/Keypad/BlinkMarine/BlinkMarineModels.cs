@@ -2,17 +2,11 @@ namespace domain.Devices.Keypad.BlinkMarine;
 
 public static class BlinkMarineModels
 {
-    public static BlinkMarineKeypadDevice Create(string name, int baseId, string model)
+    public static (int numButtons, int numDials, int numAnalogInputs) Lookup(string model)
     {
         if (string.IsNullOrEmpty(model))
             throw new ArgumentException("BlinkMarine keypad requires a model specification (e.g., 'blinkkeypad-pkp2200si')");
-
-        var config = Lookup(model);
-        return new BlinkMarineKeypadDevice(name, baseId, config.numButtons, config.numDials, config.numAnalogInputs);
-    }
-    
-    private static (int numButtons, int numDials, int numAnalogInputs) Lookup(string model)
-    {
+        
         return model switch
         {
             "pkp1600li" => (6,0,0),

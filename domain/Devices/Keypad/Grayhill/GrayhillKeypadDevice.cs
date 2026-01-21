@@ -1,27 +1,72 @@
 using System.Collections.Concurrent;
 using System.Text.Json.Serialization;
 using domain.Common;
-using domain.Devices.Keypad.BlinkMarine;
 using domain.Devices.Keypad.Enums;
 using domain.Devices.Keypad.Grayhill.Enums;
+using domain.Enums;
+using domain.Interfaces;
 using domain.Models;
 using Microsoft.Extensions.Logging;
 
 namespace domain.Devices.Keypad.Grayhill;
 
-[method: JsonConstructor]
-public class GrayhillKeypadDevice(string name, int baseId, int numButtons) : KeypadDevice(name, baseId)
+public class GrayhillKeypadDevice : IDevice
 {
-    public override KeypadBrand Brand { get; set; } = KeypadBrand.Grayhill;
-    public override int NumButtons { get; set; } = numButtons;
+    [JsonIgnore] private ILogger<GrayhillKeypadDevice>? _logger;
 
-    protected override void InitializeCollections()
+    [JsonIgnore] public Guid Guid { get; }
+    [JsonIgnore] public string Type => "GrayhillKeypad";
+    [JsonPropertyName("name")] public string Name { get; set; }
+    [JsonPropertyName("baseId")] public int BaseId { get; set; }
+    [JsonPropertyName("cyclicGap")] public TimeSpan CyclicGap { get; } = TimeSpan.FromSeconds(1);
+    [JsonPropertyName("cyclicPause")] public TimeSpan CyclicPause { get; } = TimeSpan.FromMilliseconds(1);
+    [JsonPropertyName("isSim")] public bool IsSim { get; set; }
+    [JsonIgnore] private DateTime _lastRxTime = DateTime.Now;
+
+    [JsonIgnore]
+    public bool Connected
+    {
+        get;
+        private set
+        {
+            if (field && !value)
+                Clear();
+            field = value;
+        }
+    }
+
+    [JsonPropertyName("brand")] public KeypadBrand Brand { get; set; } = KeypadBrand.Grayhill;
+    [JsonPropertyName("numButtons")] public int NumButtons { get; set; }
+    [JsonIgnore] public int BacklightBrightness { get; set; }
+    [JsonIgnore] public int IndicatorBrightness { get; set; }
+
+    [JsonPropertyName("buttons")] public List<Button> Buttons { get; init; } = [];
+
+    [JsonIgnore] public Dictionary<int, List<(DbcSignal Signal, Action<double> SetValue)>> StatusMessageSignals { get; set; } = null!;
+
+    [JsonConstructor]
+    public GrayhillKeypadDevice(string name, int baseId, string model)
+    {
+        Name = name;
+        BaseId = baseId;
+        NumButtons = GrayhillModels.Lookup(model);
+        Guid = Guid.NewGuid();
+        InitializeCollections();
+        InitializeStatusMessageSignals();
+    }
+
+    public void SetLogger(ILogger<GrayhillKeypadDevice> logger)
+    {
+        _logger = logger;
+    }
+
+    private void InitializeCollections()
     {
         for (var i = 0; i < NumButtons; i++)
             Buttons.Add(new Button(i + 1, $"button{i + 1}"));
     }
-    
-    protected override void InitializeStatusMessageSignals()
+
+    private void InitializeStatusMessageSignals()
     {
         StatusMessageSignals = new Dictionary<int, List<(DbcSignal Signal, Action<double> SetValue)>>();
 
@@ -29,7 +74,7 @@ public class GrayhillKeypadDevice(string name, int baseId, int numButtons) : Key
         StatusMessageSignals[0] = [];
         for (var i = 0; i < NumButtons; i++)
         {
-            var button = (Button)Buttons[i];
+            var button = Buttons[i]; // No cast needed - strongly typed!
             StatusMessageSignals[0].Add((
                 new DbcSignal { Name = $"Button{i}State", StartBit = i, Length = 1},
                 val => button.State = val != 0
@@ -37,15 +82,21 @@ public class GrayhillKeypadDevice(string name, int baseId, int numButtons) : Key
         }
     }
 
-    protected override void Clear()
+    public void UpdateIsConnected()
     {
-        foreach (Button btn in Buttons)
-            btn.State = false;
-
-        Logger.LogInformation("{Name} Grayhill Keypad cleared", Name);
+        var timeSpan = DateTime.Now - _lastRxTime;
+        Connected = timeSpan.TotalMilliseconds < 500;
     }
 
-    public override bool InIdRange(int id)
+    private void Clear()
+    {
+        foreach (var btn in Buttons)
+            btn.State = false;
+
+        _logger?.LogInformation("{Name} Grayhill Keypad cleared", Name);
+    }
+
+    public bool InIdRange(int id)
     {
         // CANopen uses BaseId as node ID (1-127)
         // Message IDs: 0x180 + nodeId, 0x200 + nodeId, etc.
@@ -53,10 +104,8 @@ public class GrayhillKeypadDevice(string name, int baseId, int numButtons) : Key
                id == ((int)MessageId.LedControl + BaseId);
     }
 
-    public override void Read(int id, byte[] data, ref ConcurrentDictionary<(int BaseId, int Prefix, int Index), DeviceCanFrame> queue)
+    public void Read(int id, byte[] data, ref ConcurrentDictionary<(int BaseId, int Prefix, int Index), DeviceCanFrame> queue)
     {
-        LastRxTime = DateTime.Now;
-
         switch ((MessageId)id - BaseId)
         {
             case MessageId.ButtonState:
@@ -71,7 +120,12 @@ public class GrayhillKeypadDevice(string name, int baseId, int numButtons) : Key
             case MessageId.BrightnessControl:
                 ParseBrightnessControl(data);
                 break;
+            default:
+                //Don't update LastRxTime - invalid message
+                return;
         }
+
+        _lastRxTime = DateTime.Now;
     }
 
     private void ParseButtonState(byte[] data)
@@ -132,7 +186,7 @@ public class GrayhillKeypadDevice(string name, int baseId, int numButtons) : Key
         return new CanFrame((int)MessageId.ButtonState + BaseId, 3, data);
     }
 
-    public override IEnumerable<(int MessageId, DbcSignal Signal)> GetStatusSignals()
+    public IEnumerable<(int MessageId, DbcSignal Signal)> GetStatusSignals()
     {
         foreach (var kvp in StatusMessageSignals)
         {
@@ -159,7 +213,7 @@ public class GrayhillKeypadDevice(string name, int baseId, int numButtons) : Key
         }
     }
 
-    public override List<CanFrame> GetCyclicMsgs()
+    public List<CanFrame> GetCyclicMsgs()
     {
         if (!IsSim) return [];
         

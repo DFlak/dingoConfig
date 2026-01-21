@@ -1,12 +1,23 @@
-@using domain.Devices.Keypad
+@using domain.Interfaces
+@using domain.Devices.Keypad.BlinkMarine
+@using domain.Devices.Keypad.Grayhill
 @using api.Components.Devices.Keypad.Tabs
 
 <MudTabs Elevation="2" Rounded="true" ApplyEffectsToContainer="true">
     <MudTabPanel Text="Dashboard">
-        <KeypadDashboardTab Device="@Device" />
+        @switch (Device)
+        {
+            case BlinkMarineKeypadDevice blinkKeypad:
+                <BlinkMarineDashboardTab Device="blinkKeypad" />
+                break;
+
+            case GrayhillKeypadDevice grayhillKeypad:
+                <GrayhillDashboardTab Device="grayhillKeypad" />
+                break;
+        }
     </MudTabPanel>
 </MudTabs>
 
 @code {
-    [Parameter] public KeypadDevice Device { get; set; } = default!;
+    [Parameter] public IDevice Device { get; set; } = default!;
 }
