@@ -220,6 +220,11 @@ public class BlinkMarineKeypadDevice(string name, int baseId, int numButtons, in
                 data,
                 startBit: (i * 8),
                 length: 16);
+
+            dial.TopPosition = (int)DbcSignalCodec.ExtractSignalInt(
+                data,
+                startBit: (i * 24),
+                length: 8);
         }
     }
 
@@ -256,14 +261,46 @@ public class BlinkMarineKeypadDevice(string name, int baseId, int numButtons, in
         return new CanFrame((int)MessageId.ButtonState + BaseId, 5, data);
     }
 
-    private CanFrame BuildDialState(int firstDialIndex)
+    private CanFrame BuildDialState(int firstDialIndex, int numDials)
     {
+        var data = new byte[8];
         
+        for (var i = 0; i < numDials && i < Dials.Count; i++)
+        {
+            var dial = (Dial)Dials[i + firstDialIndex];
+            
+            DbcSignalCodec.InsertBool(data, dial.Direction == DialDirection.CounterClockwise, startBit: 0);
+            DbcSignalCodec.InsertSignalInt( data, 
+                                            value: dial.Position, 
+                                            startBit: (i * 32) + 1, 
+                                            length: 7);
+            DbcSignalCodec.InsertSignalInt( data, 
+                                            value: dial.Counter,
+                                            startBit: (i * 8) + 1,
+                                            length: 16);
+            DbcSignalCodec.InsertSignalInt( data,
+                                            value: dial.TopPosition,
+                                            startBit: (i * 24),
+                                            length: 8);
+        }
+
+        var id = (int)MessageId.DialStateA;
+        if (firstDialIndex > 0) id = (int)MessageId.DialStateB;
+
+        return new CanFrame(id, 8, data);
     }
 
     private CanFrame BuildAnalogInput()
     {
+        var data = new byte[8];
+
+        for (var i = 0; i < AnalogInputs.Count; i++)
+        {
+            var input = (AnalogInput)AnalogInputs[i];
+            DbcSignalCodec.InsertSignal(data, input.Voltage, i * 16, 16, factor: 0.01);
+        }
         
+        return new  CanFrame((int)MessageId.AnalogInput + BaseId, 8, data);
     }
 
     public override IEnumerable<(int MessageId, DbcSignal Signal)> GetStatusSignals()
@@ -297,10 +334,19 @@ public class BlinkMarineKeypadDevice(string name, int baseId, int numButtons, in
     {
         if (!IsSim) return [];
         
-        //Transmit button states
-        return
-        [ 
-            BuildButtonState(),
-        ];
+        var msgs = new List<CanFrame>();
+        
+        msgs.Add(BuildButtonState());
+        
+        if (NumDials > 0)
+            msgs.Add(BuildDialState(0));
+        
+        if (NumDials > 2)
+            msgs.Add(BuildDialState(2));
+        
+        if (NumAnalogInputs > 0)
+            msgs.Add(BuildAnalogInput());
+        
+        return msgs;
     }
 }
