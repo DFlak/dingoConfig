@@ -8,6 +8,7 @@ public class Button(int number, string name)
 {
     [JsonPropertyName("number")] public int Number { get; } = number;
     [JsonPropertyName("name")] public string Name { get; set; } = name;
+    [JsonPropertyName("icon")] public string Icon { get; set; } = "Circle";
     [JsonPropertyName("mode")] public ButtonMode Mode { get; set; } //For sim
     [JsonIgnore] public bool State { get; set; }
     
