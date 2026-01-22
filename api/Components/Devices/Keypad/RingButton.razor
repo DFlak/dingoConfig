@@ -1,132 +1,147 @@
+@using domain.Devices.Keypad.BlinkMarine.Enums
 @using MudBlazor
 @implements IDisposable
 
 <MudStack Spacing="1" AlignItems="AlignItems.Center" Style="display: inline-flex;">
-    <div class="ring-button-container" style="@GetContainerStyle()" @onclick="HandleClick">
-        <!-- Inner Circle with Icon -->
-        <div style="background-color: black; width: 70%; height: 70%; border-radius: 50%; display: flex; align-items: center; justify-content: center; position: relative; z-index: 1;">
-            <MudIcon Icon="@Icon" Style="color: white; font-size: 2rem;" />
+    <div class="ring-button-container @(Button.State ? "pressed" : "")"
+         style="width: @(Size)px; height: @(Size)px; background-color: @GetRingColor();"
+         @onclick="HandleClick">
+        <div class="ring-button-inner">
+            <MudIcon Icon="@Icon" Style="@($"color: white; font-size: {Size * 0.35}px;")" />
         </div>
     </div>
-    
-    <MudText Typo="Typo.body2" Style="color: white;">@Label</MudText>
+
+    <MudText Typo="Typo.body2" Style="color: white;">@Button.Name</MudText>
 </MudStack>
 
 @code {
     [Parameter]
     public string Icon { get; set; } = Icons.Material.Filled.Circle;
-    
+
     [Parameter]
-    public string Label { get; set; } = "Button";
-    
-    [Parameter]
-    public bool IsPressed { get; set; }
-    
-    [Parameter]
-    public EventCallback<bool> IsPressedChanged { get; set; }
-    
-    [Parameter]
-    public bool RingEnabled { get; set; }
-    
-    [Parameter]
-    public int RedValue { get; set; } = 255;
-    
-    [Parameter]
-    public int GreenValue { get; set; } = 0;
-    
-    [Parameter]
-    public int BlueValue { get; set; } = 0;
-    
-    [Parameter]
-    public bool BlinkEnabled { get; set; }
-    
-    [Parameter]
-    public int BlinkRedValue { get; set; } = 0;
-    
-    [Parameter]
-    public int BlinkGreenValue { get; set; } = 0;
-    
-    [Parameter]
-    public int BlinkBlueValue { get; set; } = 255;
-    
-    [Parameter]
-    public double Brightness { get; set; } = 1.0; // 0.0 to 1.0
-    
+    public int Size { get; set; } = 120;
+
+    [Parameter, EditorRequired]
+    public domain.Devices.Keypad.BlinkMarine.Button Button { get; set; } = null!;
+
     private System.Threading.Timer? _blinkTimer;
-    private bool _showBlinkColor = false;
-    
+    private bool _showBlinkColor;
+    private bool _isBlinking;
+
+    private System.Drawing.Color _indicatorColor;
+    private System.Drawing.Color _blinkColor;
+    private double _opacity = 1.0;
+
     protected override void OnParametersSet()
     {
-        // Always stop the existing timer first
-        StopBlinkTimer();
-        
-        // Start a new timer if blinking is enabled
-        if (BlinkEnabled && RingEnabled)
+        SetRingColor();
+
+        var shouldBlink = Button.BlinkColor != ButtonColor.Off;
+        if (shouldBlink && !_isBlinking)
         {
             StartBlinkTimer();
         }
+        else if (!shouldBlink && _isBlinking)
+        {
+            StopBlinkTimer();
+        }
     }
-    
+
     private void StartBlinkTimer()
     {
+        _isBlinking = true;
         _blinkTimer = new System.Threading.Timer(_ =>
         {
             _showBlinkColor = !_showBlinkColor;
             InvokeAsync(StateHasChanged);
         }, null, TimeSpan.Zero, TimeSpan.FromMilliseconds(500));
     }
-    
+
     private void StopBlinkTimer()
     {
         _blinkTimer?.Dispose();
         _blinkTimer = null;
         _showBlinkColor = false;
+        _isBlinking = false;
     }
-    
-    private async Task HandleClick()
+
+    private void HandleClick()
     {
-        IsPressed = !IsPressed;
-        await IsPressedChanged.InvokeAsync(IsPressed);
+        Button.State = !Button.State;
     }
-    
-    private string GetContainerStyle()
+
+    private void SetRingColor()
     {
-        var transform = IsPressed ? "translateY(2px)" : "none";
-        var shadow = IsPressed
-            ? "0 1px 2px rgba(0, 0, 0, 0.3)"
-            : "0 4px 6px rgba(0, 0, 0, 0.4)";
-
-        var opacity = Math.Clamp(Brightness, 0, 1);
-
-        int r, g, b;
-
-        if (!RingEnabled)
+        //Testing
+        Button.IndicatorColor = ButtonColor.Off;
+        Button.IndicatorBrightness = 63;
+        Button.BacklightBrightness = 50;
+        Button.BlinkColor = ButtonColor.Orange;
+        
+        _indicatorColor = System.Drawing.Color.Black;
+        if (Button.IndicatorColor != ButtonColor.Off)
         {
-            // Ring is off - use black
-            r = 0;
-            g = 0;
-            b = 0;
-        }
-        else if (BlinkEnabled && _showBlinkColor)
-        {
-            // Blinking is on and we're showing the blink color
-            r = BlinkRedValue;
-            g = BlinkGreenValue;
-            b = BlinkBlueValue;
+            _opacity = Map(Button.IndicatorBrightness, 0, 63, 0, 1.0);
+            _indicatorColor = ButtonColorToColor(Button.IndicatorColor);
         }
         else
         {
-            // Ring is on with primary color
-            r = RedValue;
-            g = GreenValue;
-            b = BlueValue;
+            _opacity = Map(Button.IndicatorBrightness, 0, 100, 0, 1.0);
+            _indicatorColor = BacklightColorToColor(Button.BacklightColor);
         }
 
-        var backgroundColor = $"rgba({r}, {g}, {b}, {opacity})";
+        _blinkColor = _indicatorColor;
+        if (Button.BlinkColor != ButtonColor.Off)
+        {
+            _blinkColor = ButtonColorToColor((ButtonColor)(Convert.ToByte(Button.IndicatorColor) ^ Convert.ToByte(Button.BlinkColor)));
+        }
+    }
 
-        return $"width: 120px; height: 120px; border-radius: 50%; padding: 0; transform: {transform}; box-shadow: {shadow}; transition: all 0.1s ease, background-color 0.3s ease; background-color: {backgroundColor}; display: flex; align-items: center; justify-content: center; cursor: pointer;";
+    private System.Drawing.Color ButtonColorToColor(ButtonColor color)
+    {
+        return color switch
+        {
+            ButtonColor.Off => System.Drawing.Color.Gray,
+            ButtonColor.Red => System.Drawing.Color.Red,
+            ButtonColor.Green => System.Drawing.Color.Lime,
+            ButtonColor.Blue => System.Drawing.Color.Blue,
+            ButtonColor.Orange => System.Drawing.Color.Orange,
+            ButtonColor.Violet => System.Drawing.Color.DarkViolet,
+            ButtonColor.Cyan => System.Drawing.Color.Cyan,
+            ButtonColor.White => System.Drawing.Color.White,
+            _ => System.Drawing.Color.Black
+        };
+    }
+
+    private System.Drawing.Color BacklightColorToColor(BacklightColor color)
+    {
+        return color switch
+        {
+            BacklightColor.Off => System.Drawing.Color.Gray,
+            BacklightColor.Red => System.Drawing.Color.Red,
+            BacklightColor.Green => System.Drawing.Color.Lime,
+            BacklightColor.Blue => System.Drawing.Color.Blue,
+            BacklightColor.Yellow => System.Drawing.Color.Yellow,
+            BacklightColor.Cyan => System.Drawing.Color.Cyan,
+            BacklightColor.Violet => System.Drawing.Color.DarkViolet,
+            BacklightColor.White => System.Drawing.Color.White,
+            BacklightColor.Amber => System.Drawing.Color.Gold,
+            BacklightColor.YellowGreen => System.Drawing.Color.GreenYellow,
+            _ => System.Drawing.Color.Black
+        };
     }
     
+    private static double Map(double value, double fromMin, double fromMax, double toMin, double toMax)
+    {
+        return (value - fromMin) / (fromMax - fromMin) * (toMax - toMin) + toMin;
+    }
+
+    private string GetRingColor()
+    {
+        var color = _showBlinkColor ? _blinkColor : _indicatorColor;
+        return $"rgba({color.R}, {color.G}, {color.B}, {_opacity})";
+    }
+
     public void Dispose()
     {
         StopBlinkTimer();
@@ -135,6 +150,28 @@
 
 <style>
     .ring-button-container {
-        position: relative;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        margin: 4px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.4);
+        transition: transform 0.1s ease, box-shadow 0.1s ease, background-color 0.3s ease;
+    }
+
+    .ring-button-container.pressed {
+        transform: translateY(2px);
+        box-shadow: 0 0 0 4px var(--mud-palette-primary), 0 1px 2px rgba(0, 0, 0, 0.3);
+    }
+
+    .ring-button-inner {
+        background-color: black;
+        width: 70%;
+        height: 70%;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
     }
 </style>

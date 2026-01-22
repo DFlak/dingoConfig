@@ -409,14 +409,17 @@ public class DeviceManager(ILogger<DeviceManager> logger, ILoggerFactory loggerF
     /// Modify device, name and base ID
     /// Sends modify message to device
     /// </summary>
-    /// <returns>
-    /// Send modify success
-    /// </returns>
-    public bool ModifyDeviceConfig(Guid deviceId, string newName, int newId)
+    public void ModifyDeviceConfig(Guid deviceId, string newName, int newId)
     {
         var device = GetDevice(deviceId);
         if (device is not IDeviceConfigurable configurable)
-            return false;
+        {
+            if (device == null) return;
+            
+            device.Name = newName;
+            device.BaseId = newId;
+            return;
+        }
 
         var modifyMsgs = configurable.GetModifyMsgs(newId);
         foreach (var msg in modifyMsgs)
@@ -433,7 +436,6 @@ public class DeviceManager(ILogger<DeviceManager> logger, ILoggerFactory loggerF
         device.Name = newName;
         device.BaseId = newId;
 
-        return true;
     }
 
     /// <summary>

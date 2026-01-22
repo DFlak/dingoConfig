@@ -250,11 +250,17 @@ public class BlinkMarineKeypadDevice : IDevice
     private void ParseLedBrightness(byte[] data)
     {
         IndicatorBrightness = (int)DbcSignalCodec.ExtractSignalInt(data, startBit: 0, length: 8, factor: 1.58); //100% / 63 = 1.58
+
+        foreach (var button in Buttons)
+            button.IndicatorBrightness = IndicatorBrightness;
     }
 
     private void ParseBacklight(byte[] data)
     {
         BacklightBrightness = DbcSignalCodec.ExtractSignalInt(data, startBit: 0, length: 1) > 0 ? 100 : 0;
+        
+        foreach (var button in Buttons)
+            button.BacklightBrightness = BacklightBrightness;
     }
 
     private void ParseDialState(byte[] data, int firstDialIndex)
