@@ -37,7 +37,8 @@
                                       Variant="Variant.Outlined" />
                     </MudItem>
                     <MudItem xs="12" sm="4">
-                        <MudSelect @bind-Value="_newDeviceType"
+                        <MudSelect Value="_newDeviceType"
+                                   ValueChanged="OnDeviceTypeChanged"
                                    Label="Device Type"
                                    Required="true"
                                    Variant="Variant.Outlined"
@@ -360,6 +361,15 @@
             Notification.NewError($"Error deleting device {device.Name}", ex);
         }
     }
+    
+    private void OnDeviceTypeChanged(string deviceType)
+    {
+        _newDeviceType = deviceType;
+        
+        //If a name hasn't been set, populate a default name
+        if (_newDeviceName.Length == 0)
+            _newDeviceName = _newDeviceType.Trim().Replace(" ", "");
+    }
 
     private void NavigateToDevice(Guid deviceId)
     {
@@ -383,4 +393,5 @@
     {
         _refreshTimer?.Dispose();
     }
+
 }
