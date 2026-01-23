@@ -12,7 +12,7 @@
         </div>
     </div>
 
-    <MudText Typo="Typo.body2" Style="color: white;">@Button.Name</MudText>
+    <MudTextField Class="centered-input" @bind-Value="Button.Name" Style="@($"width: {Size}px;")"></MudTextField>
 </MudStack>
 
 @code {
@@ -159,7 +159,7 @@
     }
 
     .ring-button-container.pressed {
-        transform: translateY(2px);
+        transform: scale(0.9);
         box-shadow: 0 0 0 4px var(--mud-palette-primary), 0 1px 2px rgba(0, 0, 0, 0.3);
     }
 
@@ -171,5 +171,9 @@
         display: flex;
         align-items: center;
         justify-content: center;
+    }
+
+    .centered-input .mud-input-slot {
+        text-align: center !important;
     }
 </style>

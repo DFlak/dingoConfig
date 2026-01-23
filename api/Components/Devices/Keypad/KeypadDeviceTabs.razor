@@ -4,17 +4,34 @@
 @using api.Components.Devices.Keypad.Tabs
 
 <MudTabs Elevation="2" Rounded="true" ApplyEffectsToContainer="true">
-    <MudTabPanel Text="Dashboard">
+    <MudTabPanel Text="Dashboard" Icon="@Icons.Material.Filled.Dashboard">
         @switch (Device)
         {
             case BlinkMarineKeypadDevice blinkKeypad:
-                <BlinkMarineDashboardTab Device="blinkKeypad" />
+                <api.Components.Devices.Keypad.BlinkMarine.Tabs.DashboardTab Device="blinkKeypad" />
                 break;
 
             case GrayhillKeypadDevice grayhillKeypad:
-                <GrayhillDashboardTab Device="grayhillKeypad" />
+                <api.Components.Devices.Keypad.Grayhill.Tabs.DashboardTab Device="grayhillKeypad" />
                 break;
         }
+    </MudTabPanel>
+    
+    <MudTabPanel Text="Settings" Icon="@Icons.Material.Filled.Settings">
+        @switch (Device)
+        {
+            case BlinkMarineKeypadDevice blinkKeypad:
+                <api.Components.Devices.Keypad.BlinkMarine.Tabs.SettingsTab Device="blinkKeypad" />
+                break;
+
+            case GrayhillKeypadDevice grayhillKeypad:
+                <api.Components.Devices.Keypad.Grayhill.Tabs.SettingsTab Device="grayhillKeypad" />
+                break;
+        }
+    </MudTabPanel>
+    
+    <MudTabPanel Text="SDO" Icon="@Icons.Material.Filled.SyncAlt">
+        <SdoDashboard Device="Device" />
     </MudTabPanel>
 </MudTabs>
 

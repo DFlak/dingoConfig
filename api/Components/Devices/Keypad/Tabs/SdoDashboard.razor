@@ -1,0 +1,9 @@
+@using domain.Interfaces
+<div
+    style="overflow-y: auto; height: calc(100vh - 250px); padding: 24px; scrollbar-width: auto; scrollbar-color: #888 transparent;">
+
+</div>
+
+@code {
+    [Parameter] public IDevice Device { get; set; } = default!;
+}

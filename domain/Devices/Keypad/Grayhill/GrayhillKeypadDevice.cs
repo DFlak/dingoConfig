@@ -1,9 +1,7 @@
 using System.Collections.Concurrent;
 using System.Text.Json.Serialization;
 using domain.Common;
-using domain.Devices.Keypad.Enums;
 using domain.Devices.Keypad.Grayhill.Enums;
-using domain.Enums;
 using domain.Interfaces;
 using domain.Models;
 using Microsoft.Extensions.Logging;
@@ -35,7 +33,6 @@ public class GrayhillKeypadDevice : IDevice
         }
     }
 
-    [JsonPropertyName("brand")] public KeypadBrand Brand { get; set; } = KeypadBrand.Grayhill;
     [JsonPropertyName("numButtons")] public int NumButtons { get; set; }
     [JsonIgnore] public int BacklightBrightness { get; set; }
     [JsonIgnore] public int IndicatorBrightness { get; set; }
@@ -134,7 +131,7 @@ public class GrayhillKeypadDevice : IDevice
         // Each byte contains 8 button states
         for (var i = 0; i < NumButtons && i < Buttons.Count; i++)
         {
-            var button = (Button)Buttons[i];
+            var button = Buttons[i];
             var byteIndex = i / 8;
             var bitIndex = i % 8;
 
@@ -148,7 +145,7 @@ public class GrayhillKeypadDevice : IDevice
         // LEDs are packed as 3 bits per button
         for (var i = 0; i < NumButtons && i < Buttons.Count; i++)
         {
-            var button = (Button)Buttons[i];
+            var button = Buttons[i];
             
             for (var j = 0; j < Button.LedCount; j++)
             {
@@ -179,7 +176,7 @@ public class GrayhillKeypadDevice : IDevice
 
         for (var i = 0; i < Buttons.Count; i++)
         {
-            var button = (Button)Buttons[i];
+            var button = Buttons[i];
             DbcSignalCodec.InsertBool(data, button.State, i);
         }
     

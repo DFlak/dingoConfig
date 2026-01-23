@@ -12,4 +12,7 @@ public class Dial(int number, string name)
     [JsonIgnore] public int Delta { get; set; }   
     [JsonIgnore] public DialDirection Direction { get; set; }
     [JsonIgnore] public int Counter { get; set; }
+    [JsonIgnore] public bool[] Leds { get; set; } = new bool[8];
+    [JsonIgnore] public bool RingLed {get; set;}
+    [JsonIgnore] public bool RingLedBlink {get; set;}
 }

@@ -1,0 +1,35 @@
+@using domain.Devices.Keypad.BlinkMarine
+<div
+    style="overflow-y: auto; height: calc(100vh - 250px); padding: 24px; scrollbar-width: auto; scrollbar-color: #888 transparent;">
+
+    <MudExpansionPanels MultiExpansion="true">
+        <MudExpansionPanel Text="Buttons">
+            <MudStack>
+
+            </MudStack>
+        </MudExpansionPanel>
+
+        @if (Device.NumDials > 0)
+        {
+            <MudExpansionPanel Text="Dials">
+                <MudStack>
+
+                </MudStack>
+            </MudExpansionPanel>
+        }
+
+        @if (Device.NumDials > 0)
+        {
+            <MudExpansionPanel Text="Analog Inputs">
+                <MudStack>
+
+                </MudStack>
+            </MudExpansionPanel>
+        }
+        
+    </MudExpansionPanels>
+</div>
+
+@code {
+    [Parameter] public BlinkMarineKeypadDevice Device { get; set; } = default!;
+}
