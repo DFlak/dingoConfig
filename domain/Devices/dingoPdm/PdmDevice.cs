@@ -29,6 +29,10 @@ public class PdmDevice : IDeviceConfigurable
     [JsonIgnore] protected virtual int NumFlashers => 4;
     [JsonIgnore] protected virtual int NumCounters => 4;
     [JsonIgnore] protected virtual int NumConditions => 32;
+    [JsonIgnore] protected virtual int NumKeypads => 2;
+    [JsonIgnore] protected virtual int KeypadMaxButtons => 20;
+    [JsonIgnore] protected virtual int KeypadMaxDials => 4;
+    
 
     [JsonIgnore] protected virtual int PdmType => 0; //0=dingoPDM, 1=dingoPDM-Max
     [JsonIgnore] protected bool PdmTypeOk;
@@ -37,6 +41,7 @@ public class PdmDevice : IDeviceConfigurable
     [JsonIgnore] public virtual string Type => "dingoPDM";
     [JsonPropertyName("name")] public string Name { get; set; }
     [JsonPropertyName("baseId")] public int BaseId { get; set; }
+    [JsonIgnore] public Dictionary<string, Dictionary<string, int>> VarMap { get; set; } = null!;
 
     
     [JsonIgnore][Plotable(displayName:"DevState")] public DeviceState DeviceState { get; private set; }
@@ -88,6 +93,7 @@ public class PdmDevice : IDeviceConfigurable
         Guid = Guid.NewGuid();
 
         InitializeCollections();
+        InitializeVarMap();
     }
 
     public void SetLogger(ILogger<PdmDevice> logger)
@@ -280,6 +286,118 @@ public class PdmDevice : IDeviceConfigurable
                 new DbcSignal { Name = $"Output{outputIndex + 1}.DutyCycle", StartBit = i * 8, Length = 8, Unit = "%" },
                 val => Outputs[outputIndex].CurrentDutyCycle = val
             ));
+        }
+    }
+
+    private void InitializeVarMap()
+    {
+        VarMap =  new Dictionary<string, Dictionary<string, int>>();
+        
+        var index = 0;
+        
+        VarMap.Add("Sys", new Dictionary<string, int>
+        {
+            { "None", index++ },
+            { "Always On", index++ },
+        });
+
+        if (NumDigitalInputs > 0)
+        {
+            var props = new Dictionary<string, int>();
+            for(var i=0; i< NumDigitalInputs; i++)
+                props.Add(i + 1 + " State", index++);    
+            
+            VarMap.Add("Input",  props);
+        }
+        
+        if (NumCanInputs > 0)
+        {
+            var props = new Dictionary<string, int>();
+            for (var i = 0; i < NumCanInputs; i++)
+            {
+                props.Add(i + 1 + " State", index++);
+                props.Add(i + 1 + " Value", index++);
+            }
+
+            VarMap.Add("CAN Input",  props);
+        }
+        
+        if (NumVirtualInputs > 0)
+        {
+            var props = new Dictionary<string, int>();
+            for(var i=0; i< NumVirtualInputs; i++)
+                props.Add(i + 1 + " State", index++);    
+            
+            VarMap.Add("Virtual Input",  props);
+        }
+        
+        if (NumOutputs > 0)
+        {
+            var props = new Dictionary<string, int>();
+            for (var i = 0; i < NumOutputs; i++)
+            {
+                props.Add(i + 1 + " On", index++);
+                props.Add(i + 1 + " Current", index++);
+                props.Add(i + 1 + " Overcurrent", index++);
+                props.Add(i + 1 + " Fault", index++);
+            }
+
+            VarMap.Add("Output",  props);
+        }
+        
+        if (NumFlashers > 0)
+        {
+            var props = new Dictionary<string, int>();
+            for (var i = 0; i < NumFlashers; i++)
+                props.Add(i + 1 + " On", index++);
+            
+            VarMap.Add("Flasher",  props);
+        }
+        
+        if (NumConditions > 0)
+        {
+            var props = new Dictionary<string, int>();
+            for (var i = 0; i < NumConditions; i++)
+                props.Add(i + 1 + " Value", index++);
+            
+            VarMap.Add("Condition",  props);
+        }
+        
+        if (NumCounters > 0)
+        {
+            var props = new Dictionary<string, int>();
+            for (var i = 0; i < NumCounters; i++)
+                props.Add(i + 1 + " Value", index++);
+            
+            VarMap.Add("Counter",  props);
+        }
+        
+        VarMap.Add("Wiper", new Dictionary<string, int>
+        {
+            { "Slow Out", index++ },
+            { "Fast Out", index++ },
+            { "Park Out", index++ },
+            { "Inter Out", index++ },
+            { "Wash Out", index++ },
+            { "Swipe Out", index++ }
+        });
+
+        if (NumKeypads > 0)
+        {
+            for (var i = 0; i < NumKeypads; i++)
+            {
+                var props = new Dictionary<string, int>();
+                for (var j = 0; j < KeypadMaxButtons; j++)
+                {
+                    props.Add("Button" + j + 1, index++);
+                }
+                for (var j = 0; j < KeypadMaxDials; j++)
+                {
+                    props.Add("Dial " + j + 1 , index++);
+                }
+                
+                VarMap.Add("Keypad " + i + 1,  props);
+            }
         }
     }
 
