@@ -260,7 +260,9 @@ public class DeviceManager(ILogger<DeviceManager> logger, ILoggerFactory loggerF
 
     private void RemoveCyclicTimer(Guid deviceId)
     {
-        _cyclicTimers[deviceId].Stop();
+        if (!_cyclicTimers.TryGetValue(deviceId, out var timer)) return;
+        
+        timer.Stop();
         _cyclicTimers.Remove(deviceId);
     }
 

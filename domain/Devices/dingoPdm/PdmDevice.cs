@@ -41,7 +41,7 @@ public class PdmDevice : IDeviceConfigurable
     [JsonIgnore] public virtual string Type => "dingoPDM";
     [JsonPropertyName("name")] public string Name { get; set; }
     [JsonPropertyName("baseId")] public int BaseId { get; set; }
-    [JsonIgnore] public Dictionary<string, Dictionary<string, int>> VarMap { get; set; } = null!;
+    [JsonIgnore] public List<DeviceVariable> VarMap { get; set; } = null!;
 
     
     [JsonIgnore][Plotable(displayName:"DevState")] public DeviceState DeviceState { get; private set; }
@@ -291,112 +291,245 @@ public class PdmDevice : IDeviceConfigurable
 
     private void InitializeVarMap()
     {
-        VarMap =  new Dictionary<string, Dictionary<string, int>>();
+        VarMap = [];
         
         var index = 0;
-        
-        VarMap.Add("Sys", new Dictionary<string, int>
-        {
-            { "None", index++ },
-            { "Always On", index++ },
-        });
 
+        VarMap.Add(new DeviceVariable
+        {
+            FunctionName = "None",
+            FunctionIndex = 0,
+            PropertyName = "Value",
+            DataType = "bool",
+            VariableIndex = index++
+        });
+        
+        VarMap.Add(new DeviceVariable
+        {
+            FunctionName = "AlwaysOn",
+            FunctionIndex = 0,
+            PropertyName = "Value",
+            DataType = "bool",
+            VariableIndex = index++
+        });
+        
         if (NumDigitalInputs > 0)
         {
-            var props = new Dictionary<string, int>();
-            for(var i=0; i< NumDigitalInputs; i++)
-                props.Add(i + 1 + " State", index++);    
-            
-            VarMap.Add("Input",  props);
+            for (var i = 0; i < NumDigitalInputs; i++)
+            {
+                VarMap.Add(new DeviceVariable
+                {
+                    FunctionName = "Input",
+                    FunctionIndex = i + 1,
+                    PropertyName = "State",
+                    DataType = "bool",
+                    VariableIndex = index++
+                });
+            }
         }
         
         if (NumCanInputs > 0)
         {
-            var props = new Dictionary<string, int>();
             for (var i = 0; i < NumCanInputs; i++)
             {
-                props.Add(i + 1 + " State", index++);
-                props.Add(i + 1 + " Value", index++);
+                VarMap.Add(new DeviceVariable
+                {
+                    FunctionName = "CANInput",
+                    FunctionIndex = i + 1,
+                    PropertyName = "State",
+                    DataType = "bool",
+                    VariableIndex = index++
+                });
+                VarMap.Add(new DeviceVariable
+                {
+                    FunctionName = "CANInput",
+                    FunctionIndex = i + 1,
+                    PropertyName = "Value",
+                    DataType = "float",
+                    VariableIndex = index++
+                });
             }
-
-            VarMap.Add("CAN Input",  props);
         }
         
         if (NumVirtualInputs > 0)
         {
-            var props = new Dictionary<string, int>();
             for(var i=0; i< NumVirtualInputs; i++)
-                props.Add(i + 1 + " State", index++);    
-            
-            VarMap.Add("Virtual Input",  props);
+            {
+                VarMap.Add(new DeviceVariable
+                {
+                    FunctionName = "VirtualInput",
+                    FunctionIndex = i + 1,
+                    PropertyName = "State",
+                    DataType = "bool",
+                    VariableIndex = index++
+                });
+            }  
         }
         
         if (NumOutputs > 0)
         {
-            var props = new Dictionary<string, int>();
             for (var i = 0; i < NumOutputs; i++)
             {
-                props.Add(i + 1 + " On", index++);
-                props.Add(i + 1 + " Current", index++);
-                props.Add(i + 1 + " Overcurrent", index++);
-                props.Add(i + 1 + " Fault", index++);
+                VarMap.Add(new DeviceVariable
+                {
+                    FunctionName = "Output",
+                    FunctionIndex = i + 1,
+                    PropertyName = "On",
+                    DataType = "bool",
+                    VariableIndex = index++
+                });
+                VarMap.Add(new DeviceVariable
+                {
+                    FunctionName = "Output",
+                    FunctionIndex = i + 1,
+                    PropertyName = "Current",
+                    DataType = "float",
+                    VariableIndex = index++
+                });
+                VarMap.Add(new DeviceVariable
+                {
+                    FunctionName = "Output",
+                    FunctionIndex = i + 1,
+                    PropertyName = "Overcurrent",
+                    DataType = "bool",
+                    VariableIndex = index++
+                });
+                VarMap.Add(new DeviceVariable
+                {
+                    FunctionName = "Output",
+                    FunctionIndex = i + 1,
+                    PropertyName = "Fault",
+                    DataType = "bool",
+                    VariableIndex = index++
+                });
             }
-
-            VarMap.Add("Output",  props);
         }
         
         if (NumFlashers > 0)
         {
-            var props = new Dictionary<string, int>();
             for (var i = 0; i < NumFlashers; i++)
-                props.Add(i + 1 + " On", index++);
-            
-            VarMap.Add("Flasher",  props);
+            {
+                VarMap.Add(new DeviceVariable
+                {
+                    FunctionName = "Flasher",
+                    FunctionIndex = i + 1,
+                    PropertyName = "State",
+                    DataType = "bool",
+                    VariableIndex = index++
+                });
+            }
         }
         
         if (NumConditions > 0)
         {
-            var props = new Dictionary<string, int>();
             for (var i = 0; i < NumConditions; i++)
-                props.Add(i + 1 + " Value", index++);
-            
-            VarMap.Add("Condition",  props);
+            {
+                VarMap.Add(new DeviceVariable
+                {
+                    FunctionName = "Condition",
+                    FunctionIndex = i + 1,
+                    PropertyName = "Value",
+                    DataType = "bool",
+                    VariableIndex = index++
+                });
+            }
         }
         
         if (NumCounters > 0)
         {
-            var props = new Dictionary<string, int>();
             for (var i = 0; i < NumCounters; i++)
-                props.Add(i + 1 + " Value", index++);
-            
-            VarMap.Add("Counter",  props);
+            {
+                VarMap.Add(new DeviceVariable
+                {
+                    FunctionName = "Counter",
+                    FunctionIndex = i + 1,
+                    PropertyName = "Value",
+                    DataType = "int",
+                    VariableIndex = index++
+                });
+            }
         }
         
-        VarMap.Add("Wiper", new Dictionary<string, int>
+        VarMap.Add(new DeviceVariable
         {
-            { "Slow Out", index++ },
-            { "Fast Out", index++ },
-            { "Park Out", index++ },
-            { "Inter Out", index++ },
-            { "Wash Out", index++ },
-            { "Swipe Out", index++ }
+            FunctionName = "Wiper.Slow",
+            FunctionIndex = 0,
+            PropertyName = "Output",
+            DataType = "bool",
+            VariableIndex = index++
         });
-
+        
+        VarMap.Add(new DeviceVariable
+        {
+            FunctionName = "Wiper.Fast",
+            FunctionIndex = 0,
+            PropertyName = "Output",
+            DataType = "bool",
+            VariableIndex = index++
+        });
+        
+        VarMap.Add(new DeviceVariable
+        {
+            FunctionName = "Wiper.Park",
+            FunctionIndex = 0,
+            PropertyName = "Output",
+            DataType = "bool",
+            VariableIndex = index++
+        });
+        
+        VarMap.Add(new DeviceVariable
+        {
+            FunctionName = "Wiper.Inter",
+            FunctionIndex = 0,
+            PropertyName = "Output",
+            DataType = "bool",
+            VariableIndex = index++
+        });
+        
+        VarMap.Add(new DeviceVariable
+        {
+            FunctionName = "Wiper.Wash",
+            FunctionIndex = 0,
+            PropertyName = "Output",
+            DataType = "bool",
+            VariableIndex = index++
+        });
+        
+        VarMap.Add(new DeviceVariable
+        {
+            FunctionName = "Wiper.Swipe",
+            FunctionIndex = 0,
+            PropertyName = "Output",
+            DataType = "bool",
+            VariableIndex = index++
+        });
+        
         if (NumKeypads > 0)
         {
             for (var i = 0; i < NumKeypads; i++)
             {
-                var props = new Dictionary<string, int>();
                 for (var j = 0; j < KeypadMaxButtons; j++)
                 {
-                    props.Add("Button" + j + 1, index++);
+                    VarMap.Add(new DeviceVariable
+                    {
+                        FunctionName = $"Keypad{i + 1}.Button",
+                        FunctionIndex = j + 1,
+                        PropertyName = "State",
+                        DataType = "bool",
+                        VariableIndex = index++
+                    });
                 }
                 for (var j = 0; j < KeypadMaxDials; j++)
                 {
-                    props.Add("Dial " + j + 1 , index++);
+                    VarMap.Add(new DeviceVariable
+                    {
+                        FunctionName = $"Keypad{i + 1}.Dial",
+                        FunctionIndex = j + 1,
+                        PropertyName = "Position",
+                        DataType = "int",
+                        VariableIndex = index++
+                    });
                 }
-                
-                VarMap.Add("Keypad " + i + 1,  props);
             }
         }
     }

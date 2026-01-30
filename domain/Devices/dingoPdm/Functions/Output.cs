@@ -24,7 +24,7 @@ public class Output : IDeviceFunction
     [JsonPropertyName("resetTime")] public int ResetTime { get; set; }  //seconds
     [JsonPropertyName("inrushCurrentLimit")] public double InrushCurrentLimit { get; set; }
     [JsonPropertyName("inrushTime")] public int InrushTime { get; set; }
-    [JsonPropertyName("input")] public VarMap Input { get; set; }
+    [JsonPropertyName("input")] public DeviceVariable Input { get; set; } = new();
     [JsonPropertyName("pwmEnabled")] public bool PwmEnabled { get; set; }
     [JsonPropertyName("softStartEnabled")] public bool SoftStartEnabled { get; set; }
     [JsonPropertyName("variableDutyCycle")] public bool VariableDutyCycle { get; set; }
@@ -56,6 +56,7 @@ public class Output : IDeviceFunction
     {
         Number = number;
         Name = name;
+            
         SettingsRxSignals = InitializeRxSignals();
         SettingsTxSignals = InitializeTxSignals();
     }
@@ -70,7 +71,7 @@ public class Output : IDeviceFunction
                     val => Enabled = val != 0),
 
                 (new DbcSignal { Name = "Input", StartBit = 16, Length = 8 },
-                    val => Input = (VarMap)val),
+                    val => Input.VariableIndex = (int)val),
 
                 (new DbcSignal { Name = "CurrentLimit", StartBit = 24, Length = 8 },
                     val => CurrentLimit = val),
@@ -132,7 +133,7 @@ public class Output : IDeviceFunction
                     () => Number - 1),
 
                 (new DbcSignal { Name = "Input", StartBit = 16, Length = 8 },
-                    () => (int)Input),
+                    () => Input.VariableIndex),
 
                 (new DbcSignal { Name = "CurrentLimit", StartBit = 24, Length = 8 },
                     () => CurrentLimit),

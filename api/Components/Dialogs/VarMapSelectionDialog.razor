@@ -1,0 +1,130 @@
+@using domain.Interfaces
+@using domain.Models
+
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6">
+            <MudIcon Icon="@Icons.Material.Filled.Sensors" Class="mr-2"/>
+            Select Variable
+        </MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudText Typo="Typo.caption" Class="mb-3">
+            Select a variable from device variables
+        </MudText>
+
+        @* Search Box *@
+        <MudTextField @bind-Value="_searchText"
+                      Label="Search variables"
+                      Variant="Variant.Outlined"
+                      Immediate="true"
+                      Adornment="Adornment.Start"
+                      AdornmentIcon="@Icons.Material.Filled.Search"
+                      Clearable="true"
+                      Margin="Margin.Dense"
+                      Class="mb-3"/>
+
+        @if (!Device.VarMap.Any())
+        {
+            <MudAlert Severity="Severity.Info" Dense="true">
+                No variables found
+            </MudAlert>
+        }
+        else
+        {
+            <MudPaper Elevation="0" MaxHeight="500px" Style="overflow-y: auto;">
+                @foreach (var function in GetFilteredVariables())
+                {
+                    <MudList T="string" Dense="true">
+                        @* Function Level *@
+                        <MudListItem T="string"
+                                     Icon="@Icons.Material.Filled.DeviceHub"
+                                     IconColor="Color.Primary">
+                            <ChildContent>
+                                <MudText Typo="Typo.body1">
+                                    <b>@GetFunctionName(function)</b>
+                                </MudText>
+                            </ChildContent>
+                            <NestedList>
+                                @foreach (var property in GetFilteredVariables().Where(n => n.FunctionName.Equals(function.FunctionName) &&
+                                                                                                        n.FunctionIndex == function.FunctionIndex))
+                                {
+                                    <MudListItem T="string"
+                                                 Icon="@Icons.Material.Filled.Message"
+                                                 IconColor="Color.Secondary"
+                                                 Expanded="false"
+                                                 OnClick="@(() => OnSignalSelected(property))"
+                                                 Style="@(IsSelected(property) ? "background-color: var(--mud-palette-action-default-hover);" : "")">
+                                        <MudText Typo="Typo.body2">
+                                            @property.PropertyName
+                                        </MudText>
+                                        <MudText Typo="Typo.caption" Color="Color.Secondary"
+                                                 Inline="true">
+                                            (Type: @property.DataType)
+                                        </MudText>
+                                    </MudListItem>
+                                }
+                            </NestedList>
+                        </MudListItem>
+                    </MudList>
+                }
+            </MudPaper>
+        }
+    </DialogContent>
+    <DialogActions>
+        <MudButton Variant="Variant.Outlined" OnClick="Cancel">Cancel</MudButton>
+        <MudButton Color="Color.Primary"
+                   Variant="Variant.Outlined"
+                   OnClick="Submit"
+                   Disabled="@(_selectedVar == null)">
+            Select
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] IMudDialogInstance MudDialog { get; set; } = null!;
+    [Parameter, EditorRequired] public IDeviceConfigurable Device { get; set; }
+    [Parameter, EditorRequired] public string Datatype { get; set; }
+
+    private DeviceVariable? _selectedVar;
+    private string _searchText = "";
+
+    private List<DeviceVariable> GetFilteredVariables()
+    {
+        return Device.VarMap.Where(n => (n.FunctionName.ToLower().Contains(_searchText.ToLower()) ||
+                                        n.PropertyName.ToLower().Contains(_searchText.ToLower())) &&
+                                        n.DataType.ToLower().Contains(Datatype.ToLower())).ToList();
+    }
+
+    private bool IsSelected(DeviceVariable variable)
+    {
+        return _selectedVar?.VariableIndex == variable.VariableIndex;
+    }
+
+    private void OnSignalSelected( DeviceVariable variable)
+    {
+        _selectedVar = variable;
+    }
+
+    private void Submit()
+    {
+        MudDialog.Close(DialogResult.Ok(_selectedVar));
+    }
+
+    private void Cancel()
+    {
+        MudDialog.Cancel();
+    }
+
+    private string GetFunctionName(DeviceVariable variable)
+    {
+        if (variable.FunctionName.Equals("None") ||
+            variable.FunctionName.Equals("AlwaysOn") ||
+            variable.FunctionName.Contains("Wiper") ||
+            variable.FunctionName.Contains("Starter"))
+            return $"{variable.FunctionName}";
+
+        return $"{variable.FunctionName}{variable.FunctionIndex}";
+    }
+}
