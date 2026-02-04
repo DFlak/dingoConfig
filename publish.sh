@@ -1,10 +1,10 @@
 #!/bin/bash
 
-# Extract version from api.csproj
-VERSION=$(grep -oP '(?<=<Version>)[^<]+' api/api.csproj)
+# Extract version from web.csproj
+VERSION=$(grep -oP '(?<=<Version>)[^<]+' web/web.csproj)
 
 if [ -z "$VERSION" ]; then
-    echo "Error: Could not extract version from api/api.csproj"
+    echo "Error: Could not extract version from web/web.csproj"
     exit 1
 fi
 
@@ -12,7 +12,7 @@ echo "Publishing dingoConfig version $VERSION"
 echo "========================================="
 
 # Common publish arguments
-PROJECT="api/api.csproj"
+PROJECT="web/web.csproj"
 CONFIG="Release"
 PUBLISH_ARGS="--self-contained true"
 

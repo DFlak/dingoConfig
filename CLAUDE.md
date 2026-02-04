@@ -17,7 +17,7 @@ dotnet build dingoConfig.sln
 
 ### Run the application
 ```bash
-dotnet run --project api/api.csproj
+dotnet run --project web/web.csproj
 ```
 
 ### Publish self-contained executables
@@ -29,7 +29,7 @@ dotnet run --project api/api.csproj
 
 ### Build specific projects
 ```bash
-dotnet build api/api.csproj
+dotnet build web/web.csproj
 dotnet build domain/domain.csproj
 dotnet build infrastructure/infrastructure.csproj
 dotnet build application/application.csproj
@@ -47,7 +47,7 @@ This project follows **Clean Architecture** with clear separation of concerns ac
 ### Layer Structure and Dependencies
 
 ```
-api (Presentation - Blazor Server)
+web (Presentation - Blazor Server)
 ├── depends on: application, infrastructure
 ├── Components/
 │   ├── Pages/ - 7 pages (Home, Devices, Device, CanLog, GlobalLog, Error, NotFound)
@@ -297,7 +297,7 @@ builder.Logging.Services.AddSingleton<ILoggerProvider>(sp =>
 
 ### 6. NotificationService (Unified Snackbar + Logging)
 
-**Location**: `api/Services/NotificationService.cs`
+**Location**: `web/Services/NotificationService.cs`
 
 **NEW FEATURE** - Convenience service that combines MudBlazor Snackbar notifications with GlobalLogger logging in a single call.
 
@@ -460,7 +460,7 @@ if (success)
 
 ## Dependency Injection Setup
 
-**Location**: `api/Program.cs`
+**Location**: `web/Program.cs`
 
 ### Service Lifetimes
 
@@ -776,7 +776,7 @@ All functions implement `IDeviceFunction` interface:
 
 3. **Update ConfigFileManager** serialization logic
 
-4. **Create UI Components** in `api/Components/Devices/{DeviceType}/`
+4. **Create UI Components** in `web/Components/Devices/{DeviceType}/`
    - Create `{DeviceType}DeviceTabs.razor` - Tab container
    - Create `Tabs/` folder with tab components (Dashboard, Configuration, etc.)
    - Add pattern matching case in `Device.razor` and `BaseDeviceView.razor`
@@ -842,7 +842,7 @@ Individual tab components (Dashboard, Configuration, Plot, Flow)
 - No device-specific views needed (eliminated redundant middle layer)
 
 **Tab Components** - Device-specific tabs:
-- Located in `api/Components/Devices/{DeviceType}/Tabs/`
+- Located in `web/Components/Devices/{DeviceType}/Tabs/`
 - Examples: `DashboardTab.razor`, `ConfigurationTab.razor`
 - Each tab receives the device as a parameter
 - Organized by device type for maintainability
@@ -1043,7 +1043,7 @@ DbcSignalCodec.InsertBool(
 
 ### Adding a New UI Page
 
-1. Create `api/Components/Pages/PageName.razor`
+1. Create `web/Components/Pages/PageName.razor`
 2. Add `@page "/route"` directive
 3. Add navigation link to `NavMenu.razor`
 4. Use `@rendermode InteractiveServer` for stateful components
@@ -1051,8 +1051,8 @@ DbcSignalCodec.InsertBool(
 
 ### Adding a New Service
 
-1. Create service class in `application/Services/` or `api/Services/`
-2. Register in `api/Program.cs` with appropriate lifetime
+1. Create service class in `application/Services/` or `web/Services/`
+2. Register in `web/Program.cs` with appropriate lifetime
 3. Inject where needed via DI
 4. Use `ILogger<T>` for logging (auto-captured by GlobalLogger)
 

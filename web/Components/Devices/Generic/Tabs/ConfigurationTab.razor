@@ -1,0 +1,159 @@
+@using web.Services
+@using domain.Devices.Generic
+@using domain.Enums
+@using domain.Models
+@inject IDialogService DialogService
+@inject NotificationService Notification
+@typeparam TDevice where TDevice : DbcDevice
+
+<div
+    style="overflow-y: auto; height: calc(100vh - 250px); padding: 24px; scrollbar-width: auto; scrollbar-color: #888 transparent;">
+    <MudStack AlignItems="AlignItems.Stretch" Spacing="2">
+        <MudCard>
+            <MudCardContent>
+                <MudButton Variant="Variant.Outlined"
+                           Color="Color.Secondary"
+                           StartIcon="@Icons.Material.Filled.FolderOpen"
+                           OnClick="@OpenDbcFile"
+                           Size="Size.Large"
+                           Style="max-width: 300px"
+                           Class="mb-3">
+                    Open DBC File
+                </MudButton>
+            </MudCardContent>
+        </MudCard>
+        <MudDivider Vertical="false"/>
+        <MudCard>
+            <MudCardHeader>
+                <CardHeaderContent>
+                    <MudText Typo="Typo.h6">Custom Signal</MudText>
+                </CardHeaderContent>
+            </MudCardHeader>
+            <MudCardContent>
+                <MudGrid Spacing="5">
+                    <MudItem>
+                        <MudStack AlignItems="AlignItems.Center" Spacing="2">
+                            <MudTextField @bind-Value="_customSignal.Name"
+                                          Label="Name"
+                                          Required="false"
+                                          Placeholder="Enter a name"
+                                          Variant="Variant.Outlined"/>
+                            <MudTextField @bind-Value="_customSignal.Unit"
+                                          Label="Unit"
+                                          Required="false"
+                                          Placeholder="Unit optional"
+                                          Variant="Variant.Outlined"/>
+                        </MudStack>
+                    </MudItem>
+                    <MudItem>
+                        <MudStack AlignItems="AlignItems.Center" Spacing="2">
+                            <MudNumericField @bind-Value="_customSignal.Id"
+                                             Label="ID"
+                                             Min="0"
+                                             Max="536870912"
+                                             Required="true"/>
+                            <MudNumericField @bind-Value="_customSignal.StartBit"
+                                             Label="Start Bit"
+                                             Min="0"
+                                             Max="63"
+                                             Required="true"/>
+                            <MudNumericField @bind-Value="_customSignal.Length"
+                                             Label="Length"
+                                             Min="0"
+                                             Max="64"
+                                             Required="true"/>
+                            <MudSelect T="ByteOrder" @bind-Value="_customSignal.ByteOrder" Variant="Variant.Outlined"
+                                       Dense="true">
+                                @foreach (ByteOrder byteOrder in Enum.GetValues(typeof(ByteOrder)))
+                                {
+                                    <MudSelectItem T="ByteOrder" Value="@byteOrder">@byteOrder</MudSelectItem>
+                                }
+                            </MudSelect>
+                        </MudStack>
+                    </MudItem>
+                    <MudItem>
+                        <MudStack AlignItems="AlignItems.Center" Spacing="2">
+                            <MudNumericField @bind-Value="_customSignal.Factor"
+                                             Label="Factor"
+                                             Min="0.000001"
+                                             Required="false"/>
+                            <MudNumericField @bind-Value="_customSignal.Offset"
+                                             Label="Offset"
+                                             Required="false"/>
+                            <MudCheckBox @bind-Value="_customSignal.IsSigned" Label="Signed" Dense="true"/>
+                        </MudStack>
+                    </MudItem>
+                    <MudItem>
+                        <MudStack AlignItems="AlignItems.Center" Spacing="2">
+                            <MudNumericField @bind-Value="_customSignal.Min"
+                                             Label="Min"
+                                             Required="false"/>
+                            <MudNumericField @bind-Value="_customSignal.Max"
+                                             Label="Max"
+                                             Required="false"/>
+                        </MudStack>
+                    </MudItem>
+                </MudGrid>
+            </MudCardContent>
+            <MudCardActions>
+                <MudButton Variant="Variant.Outlined"
+                           Color="Color.Secondary"
+                           StartIcon="@Icons.Material.Filled.Add"
+                           OnClick="@AddCustomSignal"
+                           Size="Size.Medium"
+                           Disabled="@(!CustomSignalReady())"
+                           Class="mb-3">
+                    Add Signal
+                </MudButton>
+            </MudCardActions>
+        </MudCard>
+
+        <MudDivider Vertical="false"/>
+        <DbcSignalGrid Signals="Device.DbcSignals"/>
+    </MudStack>
+
+</div>
+
+@code {
+    [Parameter, EditorRequired] public TDevice Device { get; set; } = null!;
+
+    private DbcSignal _customSignal = new();
+
+    private async Task OpenDbcFile()
+    {
+        var parameters = new DialogParameters
+        {
+            { nameof(OpenFileDialog.FileFilter), "*.dbc" }
+        };
+        var options = new DialogOptions
+        {
+            MaxWidth = MaxWidth.Medium,
+            FullWidth = true
+        };
+
+        var dialog = await DialogService.ShowAsync<OpenFileDialog>("Open DBC File", parameters, options);
+        var dialogResult = await dialog.Result;
+
+        if (dialogResult is { Canceled: false, Data: string fileName })
+        {
+            if(await Device.ParseDbcFile(fileName)) 
+                Notification.NewSuccess($"{Device.Name} opened DBC file {fileName}");
+            else
+                Notification.NewError($"{Device.Name} failed to open DBC file {fileName}");    
+        }
+    }
+
+    private async Task AddCustomSignal()
+    {
+        if( await Device.AddCustomSignal(_customSignal))
+            Notification.NewSuccess($"{Device.Name} added custom signal {_customSignal.Name}");
+        else
+            Notification.NewError($"{Device.Name} error adding custom signal {_customSignal.Name}");
+    }
+
+    private bool CustomSignalReady()
+    {
+        return _customSignal is { Id: > 0, Length: > 0, Name.Length: > 0, Factor: > 0 };
+    }
+
+}

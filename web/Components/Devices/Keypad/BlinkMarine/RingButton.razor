@@ -1,0 +1,179 @@
+@using web.Components.Devices.Keypad
+@using domain.Devices.Keypad.BlinkMarine.Enums
+@using MudBlazor
+@implements IDisposable
+
+<MudStack Spacing="1" AlignItems="AlignItems.Center" Style="display: inline-flex;">
+    <div class="ring-button-container @(Button.State ? "pressed" : "")"
+         style="width: @(Size)px; height: @(Size)px; background-color: @GetRingColor();"
+         @onclick="HandleClick">
+        <div class="ring-button-inner">
+            <MudIcon Icon="@IconMap.Get(Button.Icon)" Style="@($"color: white; font-size: {Size * 0.35}px;")" />
+        </div>
+    </div>
+
+    <MudTextField Class="centered-input" @bind-Value="Button.Name" Style="@($"width: {Size}px;")"></MudTextField>
+</MudStack>
+
+@code {
+    [Parameter]
+    public int Size { get; set; } = 120;
+
+    [Parameter, EditorRequired]
+    public domain.Devices.Keypad.BlinkMarine.Button Button { get; set; } = null!;
+
+    private System.Threading.Timer? _blinkTimer;
+    private bool _showBlinkColor;
+    private bool _isBlinking;
+
+    private System.Drawing.Color _indicatorColor;
+    private System.Drawing.Color _blinkColor;
+    private double _opacity = 1.0;
+
+    protected override void OnParametersSet()
+    {
+        SetRingColor();
+
+        var shouldBlink = Button.BlinkColor != ButtonColor.Off;
+        if (shouldBlink && !_isBlinking)
+        {
+            StartBlinkTimer();
+        }
+        else if (!shouldBlink && _isBlinking)
+        {
+            StopBlinkTimer();
+        }
+    }
+
+    private void StartBlinkTimer()
+    {
+        _isBlinking = true;
+        _blinkTimer = new System.Threading.Timer(_ =>
+        {
+            _showBlinkColor = !_showBlinkColor;
+            InvokeAsync(StateHasChanged);
+        }, null, TimeSpan.Zero, TimeSpan.FromMilliseconds(500));
+    }
+
+    private void StopBlinkTimer()
+    {
+        _blinkTimer?.Dispose();
+        _blinkTimer = null;
+        _showBlinkColor = false;
+        _isBlinking = false;
+    }
+
+    private void HandleClick()
+    {
+        Button.State = !Button.State;
+    }
+
+    private void SetRingColor()
+    {
+        //Testing
+        Button.IndicatorColor = ButtonColor.Off;
+        Button.IndicatorBrightness = 63;
+        Button.BacklightBrightness = 50;
+        Button.BlinkColor = ButtonColor.Orange;
+        
+        _indicatorColor = System.Drawing.Color.Black;
+        if (Button.IndicatorColor != ButtonColor.Off)
+        {
+            _opacity = Map(Button.IndicatorBrightness, 0, 63, 0, 1.0);
+            _indicatorColor = ButtonColorToColor(Button.IndicatorColor);
+        }
+        else
+        {
+            _opacity = Map(Button.IndicatorBrightness, 0, 100, 0, 1.0);
+            _indicatorColor = BacklightColorToColor(Button.BacklightColor);
+        }
+
+        _blinkColor = _indicatorColor;
+        if (Button.BlinkColor != ButtonColor.Off)
+        {
+            _blinkColor = ButtonColorToColor((ButtonColor)(Convert.ToByte(Button.IndicatorColor) ^ Convert.ToByte(Button.BlinkColor)));
+        }
+    }
+
+    private System.Drawing.Color ButtonColorToColor(ButtonColor color)
+    {
+        return color switch
+        {
+            ButtonColor.Off => System.Drawing.Color.Gray,
+            ButtonColor.Red => System.Drawing.Color.Red,
+            ButtonColor.Green => System.Drawing.Color.Lime,
+            ButtonColor.Blue => System.Drawing.Color.Blue,
+            ButtonColor.Orange => System.Drawing.Color.Orange,
+            ButtonColor.Violet => System.Drawing.Color.DarkViolet,
+            ButtonColor.Cyan => System.Drawing.Color.Cyan,
+            ButtonColor.White => System.Drawing.Color.White,
+            _ => System.Drawing.Color.Black
+        };
+    }
+
+    private System.Drawing.Color BacklightColorToColor(BacklightColor color)
+    {
+        return color switch
+        {
+            BacklightColor.Off => System.Drawing.Color.Gray,
+            BacklightColor.Red => System.Drawing.Color.Red,
+            BacklightColor.Green => System.Drawing.Color.Lime,
+            BacklightColor.Blue => System.Drawing.Color.Blue,
+            BacklightColor.Yellow => System.Drawing.Color.Yellow,
+            BacklightColor.Cyan => System.Drawing.Color.Cyan,
+            BacklightColor.Violet => System.Drawing.Color.DarkViolet,
+            BacklightColor.White => System.Drawing.Color.White,
+            BacklightColor.Amber => System.Drawing.Color.Gold,
+            BacklightColor.YellowGreen => System.Drawing.Color.GreenYellow,
+            _ => System.Drawing.Color.Black
+        };
+    }
+    
+    private static double Map(double value, double fromMin, double fromMax, double toMin, double toMax)
+    {
+        return (value - fromMin) / (fromMax - fromMin) * (toMax - toMin) + toMin;
+    }
+
+    private string GetRingColor()
+    {
+        var color = _showBlinkColor ? _blinkColor : _indicatorColor;
+        return $"rgba({color.R}, {color.G}, {color.B}, {_opacity})";
+    }
+
+    public void Dispose()
+    {
+        StopBlinkTimer();
+    }
+}
+
+<style>
+    .ring-button-container {
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        margin: 4px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.4);
+        transition: transform 0.1s ease, box-shadow 0.1s ease, background-color 0.3s ease;
+    }
+
+    .ring-button-container.pressed {
+        transform: scale(0.9);
+        box-shadow: 0 0 0 4px var(--mud-palette-primary), 0 1px 2px rgba(0, 0, 0, 0.3);
+    }
+
+    .ring-button-inner {
+        background-color: black;
+        width: 70%;
+        height: 70%;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .centered-input .mud-input-slot {
+        text-align: center !important;
+    }
+</style>

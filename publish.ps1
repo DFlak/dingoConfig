@@ -1,9 +1,9 @@
-# Extract version from api.csproj
-$version = Select-String -Path "api/api.csproj" -Pattern "<Version>(.*?)</Version>" |
+# Extract version from web.csproj
+$version = Select-String -Path "web/web.csproj" -Pattern "<Version>(.*?)</Version>" |
     ForEach-Object { $_.Matches.Groups[1].Value }
 
 if (-not $version) {
-    Write-Error "Error: Could not extract version from api/api.csproj"
+    Write-Error "Error: Could not extract version from web/web.csproj"
     exit 1
 }
 
@@ -15,7 +15,7 @@ $outputDir = "publish/dingoConfig-$version"
 New-Item -ItemType Directory -Force -Path $outputDir | Out-Null
 
 # Common publish arguments
-$project = "api/api.csproj"
+$project = "web/web.csproj"
 $config = "Release"
 $publishArgs = "--self-contained", "true"
 

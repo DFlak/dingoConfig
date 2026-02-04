@@ -1,0 +1,148 @@
+@using System.Reflection
+@using web.Services
+@using domain.Interfaces
+@using application.Services
+@inject DeviceManager DeviceManager
+@inject IHostApplicationLifetime AppLifetime
+@inject IDialogService DialogService
+@inject NotificationService Notification
+@rendermode InteractiveServer
+@implements IDisposable
+
+<MudNavMenu>
+    <MudNavLink Href="" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Home">
+        Home
+    </MudNavLink>
+
+    <MudDivider Class="my-2" />
+
+    
+
+    <MudNavLink Href="devices" 
+                Icon="@Icons.Material.Filled.Memory"
+                IconColor= "@(AnyDeviceConnected() ? Color.Success : Color.Default)"
+                Style="@($"{(AnyDeviceConnected() ? "color: var(--mud-palette-success);" : "")}")">
+        Devices
+    </MudNavLink>
+
+    @if (_devices.Any())
+    {
+        @foreach (var device in _devices)
+        {
+            <MudNavLink Href="@($"device/{device.Guid}")"
+                        Icon="@GetDeviceIcon(device.GetType().Name)"
+                        IconColor= "@(device.Connected ? Color.Success : Color.Default)"
+                        Style="@($"padding-left: 32px; {(device.Connected ? "color: var(--mud-palette-success);" : "")}")">
+                @device.Name
+            </MudNavLink>
+        }
+    }
+    
+    <MudNavLink Href="can-log" Icon="@Icons.Material.Filled.Article">
+        CAN Log
+    </MudNavLink>
+
+    <MudNavLink Href="system-log" Icon="@Icons.Material.Filled.ListAlt">
+        Messages
+    </MudNavLink>
+</MudNavMenu>
+
+<MudStack Style="margin-top: auto; padding: 16px;" Spacing="2">
+    <MudText Align="Align.Left">Queue:@DeviceManager.QueueCount</MudText>
+    <MudText Align="Align.Left">@GetVersion()</MudText>
+    <MudButton StartIcon="@Icons.Material.Filled.PowerSettingsNew"
+               Color="Color.Error"
+               Variant="Variant.Text"
+               OnClick="@ShutdownAsync"
+               FullWidth="true">
+        Shutdown
+    </MudButton>
+</MudStack>
+
+@code
+{
+    private List<IDevice> _devices = new();
+    private Timer? _refreshTimer;
+
+    protected override void OnInitialized()
+    {
+        LoadDevices();
+
+        // Refresh device list every second to catch new devices and connection status changes
+        _refreshTimer = new Timer(_ =>
+        {
+            InvokeAsync(() =>
+            {
+                LoadDevices();
+                StateHasChanged();
+            });
+        }, null, TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(1));
+    }
+
+    private void LoadDevices()
+    {
+        try
+        {
+            _devices = DeviceManager.GetAllDevices().ToList();
+        }
+        catch
+        {
+            // Silently fail - don't show errors in nav menu
+            _devices = new List<IDevice>();
+        }
+    }
+
+    private string GetDeviceIcon(string deviceType)
+    {
+        return deviceType switch
+        {
+            "PdmDevice" => Icons.Material.Filled.Bolt,
+            "PdmMaxDevice" => Icons.Material.Filled.OfflineBolt,
+            "CanboardDevice" => Icons.Material.Filled.DeveloperBoard,
+            "DbcDevice" => Icons.Material.Filled.FactCheck,
+            "BlinkMarineKeypadDevice" or "GrayhillKeypadDevice" => Icons.Material.Filled.CalendarViewMonth,
+            _ => Icons.Material.Filled.DeviceUnknown
+                
+                // https://mudblazor.com/features/icons#icons
+                // Settings = Icons.Material.Filled.Tune
+                // Plots = Icons.Material.Filled.StackedLineChart
+                // CAN log = Icons.Material.Filled.Article or Computer or DataExploration or Dvr
+                // Keypad = @Icons.Material.Filled.GridOn or CalendarViewMonth or DragIndicator
+                // PDM Alt = @Icons.Material.Filled.ElectricBolt or ElectricalServices
+        };
+    }
+    
+    private static string GetVersion()
+    {
+        var assembly = Assembly.GetExecutingAssembly();
+        //Pass a 3 in ToString() to get major.minor.build
+        var version = assembly.GetName().Version?.ToString(3) ?? "Unknown";
+        return $"v{version}";
+    }
+
+    private async Task ShutdownAsync()
+    {
+        var result = await DialogService.ShowMessageBox(
+            "Shutdown",
+            "Are you sure you want to shut down the application?",
+            yesText: "Shutdown",
+            cancelText: "Cancel");
+
+        if (result == true)
+        {
+            Notification.NewInfo($"Shutdown");
+            // Trigger graceful shutdown
+            AppLifetime.StopApplication();
+        }
+    }
+
+    private bool AnyDeviceConnected()
+    {
+        return DeviceManager.GetAllDevices().Any(dev => dev.Connected);
+    }
+
+    public void Dispose()
+    {
+        _refreshTimer?.Dispose();
+    }
+}
