@@ -32,6 +32,7 @@
             <EditTemplate>
                 <MudNumericField @key="@($"freq-{context.Item.Number}-{_refreshCounter}")"
                                  Value="@context.Item.Frequency"
+                                 Disabled="!context.Item.PwmEnabled"
                                  ValueChanged="@((int val) => OnFrequencyChanged(context.Item, val))"/>
             </EditTemplate>
         </TemplateColumn>
@@ -39,17 +40,19 @@
             <EditTemplate>
                 <MudNumericField @key="@($"dc-{context.Item.Number}-{_refreshCounter}")"
                                  Value="@context.Item.FixedDutyCycle"
+                                 Disabled="!context.Item.PwmEnabled"
                                  ValueChanged="@((int val) => OnDutyCycleChanged(context.Item, val))"/>
             </EditTemplate>
         </TemplateColumn>
         <PropertyColumn Property="x => x.VariableDutyCycle" Title="Variable DC" CellStyle="max-width: 100px">
             <EditTemplate>
-                <MudCheckBox @bind-Value="context.Item.VariableDutyCycle" Dense="true" />
+                <MudCheckBox @bind-Value="context.Item.VariableDutyCycle" Dense="true" Disabled="!context.Item.PwmEnabled"/>
             </EditTemplate>
         </PropertyColumn>
         <PropertyColumn Property="x => x.DutyCycleInput" Title="DC Input" CellStyle="max-width: 150px">
             <EditTemplate>
-                <MudSelect T="VarMap" @bind-Value="context.Item.DutyCycleInput" Variant="Variant.Outlined" Dense="true">
+                <MudSelect T="VarMap" @bind-Value="context.Item.DutyCycleInput" Variant="Variant.Outlined" Dense="true"
+                           Disabled="!context.Item.PwmEnabled">
                     @foreach (VarMap varMap in Enum.GetValues(typeof(VarMap)))
                     {
                         <MudSelectItem T="VarMap" Value="@varMap">@varMap</MudSelectItem>
@@ -61,18 +64,20 @@
             <EditTemplate>
                 <MudNumericField @key="@($"dcDenom-{context.Item.Number}-{_refreshCounter}")"
                                  Value="@context.Item.DutyCycleDenominator"
+                                 Disabled="!context.Item.PwmEnabled"
                                  ValueChanged="@((int val) => OnDutyCycleDenominatorChanged(context.Item, val))"/>
             </EditTemplate>
         </TemplateColumn>
         <PropertyColumn Property="x => x.SoftStartEnabled" Title="Soft Start" CellStyle="max-width: 100px">
             <EditTemplate>
-                <MudCheckBox @bind-Value="context.Item.SoftStartEnabled" Dense="true" />
+                <MudCheckBox @bind-Value="context.Item.SoftStartEnabled" Dense="true" Disabled="!context.Item.PwmEnabled"/>
             </EditTemplate>
         </PropertyColumn>
         <TemplateColumn Title="SS Duration (ms)" Resizable="true" CellStyle="max-width: 100px">
             <EditTemplate>
                 <MudNumericField @key="@($"ssRampTime-{context.Item.Number}-{_refreshCounter}")"
                                  Value="@context.Item.SoftStartRampTime"
+                                 Disabled="!context.Item.PwmEnabled"
                                  ValueChanged="@((int val) => OnSoftStartRampTimeChanged(context.Item, val))"/>
             </EditTemplate>
         </TemplateColumn>

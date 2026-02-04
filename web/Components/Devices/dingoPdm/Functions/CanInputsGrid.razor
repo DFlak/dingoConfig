@@ -32,6 +32,7 @@
                     <MudIconButton Icon="@Icons.Material.Filled.Add"
                                    Color="Color.Primary"
                                    Size="Size.Small"
+                                   Disabled="!context.Item.Enabled"
                                    OnClick="@(() => OpenSignalSelectorAsync(context.Item))"/>
                 </EditTemplate>
             </TemplateColumn>
@@ -49,6 +50,7 @@
                 <EditTemplate>
                     <MudNumericField @key="@($"id-{context.Item.Number}-{_refreshCounter}")"
                                      Value="@context.Item.Id"
+                                     Disabled="!context.Item.Enabled"
                                      ValueChanged="@((int val) => OnIdChanged(context.Item, val))"
                                      Step="1"/>
                 </EditTemplate>
@@ -62,6 +64,7 @@
                 <EditTemplate>
                     <MudNumericField @key="@($"dlc-{context.Item.Number}-{_refreshCounter}")"
                                      Value="@context.Item.Dlc"
+                                     Disabled="!context.Item.Enabled"
                                      ValueChanged="@((int val) => OnDlcChanged(context.Item, val))"
                                      Step="1"/>
                 </EditTemplate>
@@ -70,13 +73,15 @@
                 <EditTemplate>
                     <MudNumericField @key="@($"startByte-{context.Item.Number}-{_refreshCounter}")"
                                      Value="@context.Item.StartingByte"
+                                     Disabled="!context.Item.Enabled"
                                      ValueChanged="@((int val) => OnStartByteChanged(context.Item, val))"
                                      Step="1"/>
                 </EditTemplate>
             </TemplateColumn>
             <PropertyColumn Property="x => x.Operator" CellStyle="max-width: 200px">
                 <EditTemplate>
-                    <MudSelect T="Operator" @bind-Value="context.Item.Operator" Variant="Variant.Outlined" Dense="true">
+                    <MudSelect T="Operator" @bind-Value="context.Item.Operator" Variant="Variant.Outlined" Dense="true"
+                               Disabled="!context.Item.Enabled">
                         @foreach (Operator op in Enum.GetValues(typeof(Operator)))
                         {
                             <MudSelectItem T="Operator" Value="@op">@op</MudSelectItem>
@@ -88,13 +93,14 @@
                 <EditTemplate>
                     <MudNumericField @key="@($"onVal-{context.Item.Number}-{_refreshCounter}")"
                                      Value="@context.Item.OnVal"
+                                     Disabled="!context.Item.Enabled"
                                      ValueChanged="@((int val) => OnValueChanged(context.Item, val))"/>
                 </EditTemplate>
             </TemplateColumn>
             <PropertyColumn Property="x => x.Mode" CellStyle="max-width: 200px">
                 <EditTemplate>
                     <MudSelect T="domain.Enums.InputMode" @bind-Value="context.Item.Mode" Variant="Variant.Outlined"
-                               Dense="true">
+                               Disabled="!context.Item.Enabled" Dense="true">
                         @foreach (domain.Enums.InputMode mode in Enum.GetValues(typeof(domain.Enums.InputMode)))
                         {
                             <MudSelectItem T="domain.Enums.InputMode" Value="@mode">@mode</MudSelectItem>
@@ -104,13 +110,14 @@
             </PropertyColumn>
             <PropertyColumn Property="x => x.TimeoutEnabled" Title="Timeout En" CellStyle="max-width: 100px">
                 <EditTemplate>
-                    <MudCheckBox @bind-Value="context.Item.TimeoutEnabled" Dense="true"/>
+                    <MudCheckBox @bind-Value="context.Item.TimeoutEnabled" Dense="true" Disabled="!context.Item.Enabled"/>
                 </EditTemplate>
             </PropertyColumn>
             <TemplateColumn Title="Timeout (s)" Resizable="true" CellStyle="max-width: 150px">
                 <EditTemplate>
                     <MudNumericField @key="@($"timeout-{context.Item.Number}-{_refreshCounter}")"
                                      Value="@context.Item.Timeout"
+                                     Disabled="!context.Item.Enabled"
                                      ValueChanged="@((int val) => OnTimeoutChanged(context.Item, val))"/>
                 </EditTemplate>
             </TemplateColumn>

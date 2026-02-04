@@ -31,6 +31,7 @@
                         <MudSelect Value="Wiper.Mode"
                                    Label="Wiper Mode"
                                    ValueChanged="@((WiperMode val) => OnModeSelected(val))"
+                                   Disabled="!Wiper.Enabled"
                                    Variant="Variant.Outlined">
                             @foreach (WiperMode mode in Enum.GetValues(typeof(WiperMode)))
                             {
@@ -44,6 +45,7 @@
                                          Value= "Wiper.WashWipeCycles"
                                          Label="Wash Wipe Cycles"
                                          Variant="Variant.Outlined"
+                                         Disabled="!Wiper.Enabled"
                                          ValueChanged="@((int val) => OnWashWipeCyclesChanged(Wiper, val))"/>
                     </MudCardContent>
                 </MudCard>
@@ -58,6 +60,7 @@
                         <MudSelect @bind-Value="Wiper.ParkInput"
                                    Label="Park Input"
                                    Variant="Variant.Outlined"
+                                   Disabled="!Wiper.Enabled"
                                    T="VarMap">
                             @foreach (VarMap varMap in Enum.GetValues(typeof(VarMap)))
                             {
@@ -77,7 +80,7 @@
                         <MudSelect @bind-Value="Wiper.SlowInput"
                                    Label="Slow Input"
                                    Variant="Variant.Outlined"
-                                   Disabled="@_slowInputDisabled"
+                                   Disabled="@(!Wiper.Enabled || _slowInputDisabled)"
                                    T="VarMap">
                             @foreach (VarMap varMap in Enum.GetValues(typeof(VarMap)))
                             {
@@ -87,7 +90,7 @@
                         <MudSelect @bind-Value="Wiper.FastInput"
                                    Label="Fast Input"
                                    Variant="Variant.Outlined"
-                                   Disabled="@_fastInputDisabled"
+                                   Disabled="@(!Wiper.Enabled || _fastInputDisabled)"
                                    T="VarMap">
                             @foreach (VarMap varMap in Enum.GetValues(typeof(VarMap)))
                             {
@@ -97,7 +100,7 @@
                         <MudSelect @bind-Value="Wiper.InterInput"
                                    Label="Intermittent Input"
                                    Variant="Variant.Outlined"
-                                   Disabled="@_interInputDisabled"
+                                   Disabled="@(!Wiper.Enabled || _interInputDisabled)"
                                    T="VarMap">
                             @foreach (VarMap varMap in Enum.GetValues(typeof(VarMap)))
                             {
@@ -107,7 +110,7 @@
                         <MudSelect @bind-Value="Wiper.OnInput"
                                    Label="On Input"
                                    Variant="Variant.Outlined"
-                                   Disabled="@_onInputDisabled"
+                                   Disabled="@(!Wiper.Enabled || _onInputDisabled)"
                                    T="VarMap">
                             @foreach (VarMap varMap in Enum.GetValues(typeof(VarMap)))
                             {
@@ -117,7 +120,7 @@
                         <MudSelect @bind-Value="Wiper.SpeedInput"
                                    Label="Speed Input"
                                    Variant="Variant.Outlined"
-                                   Disabled="@_speedInputDisabled"
+                                   Disabled="@(!Wiper.Enabled || _speedInputDisabled)"
                                    T="VarMap">
                             @foreach (VarMap varMap in Enum.GetValues(typeof(VarMap)))
                             {
@@ -137,6 +140,7 @@
                         <MudSelect @bind-Value="Wiper.SwipeInput"
                                    Label="Swipe Input"
                                    Variant="Variant.Outlined"
+                                   Disabled="!Wiper.Enabled"
                                    T="VarMap">
                             @foreach (VarMap varMap in Enum.GetValues(typeof(VarMap)))
                             {
@@ -146,6 +150,7 @@
                         <MudSelect @bind-Value="Wiper.WashInput"
                                    Label="Wash Input"
                                    Variant="Variant.Outlined"
+                                   Disabled="!Wiper.Enabled"
                                    T="VarMap">
                             @foreach (VarMap varMap in Enum.GetValues(typeof(VarMap)))
                             {
@@ -168,7 +173,7 @@
                             <MudSelect @bind-Value="Wiper.SpeedMap[index]"
                                        Label="@($"Speed {index}")"
                                        Variant="Variant.Outlined"
-                                       Disabled="_speedInputDisabled">
+                                       Disabled="@(!Wiper.Enabled || _speedInputDisabled)">
                                 @foreach (WiperSpeed speed in Enum.GetValues(typeof(WiperSpeed)))
                                 {
                                     <MudSelectItem Value="@speed">@speed</MudSelectItem>
@@ -191,7 +196,7 @@
                             <MudSelect @bind-Value="Wiper.SpeedMap[index]"
                                        Label="@($"Speed {index}")"
                                        Variant="Variant.Outlined"
-                                       Disabled="_speedInputDisabled">
+                                       Disabled="@(!Wiper.Enabled || _speedInputDisabled)">
                                 @foreach (WiperSpeed speed in Enum.GetValues(typeof(WiperSpeed)))
                                 {
                                     <MudSelectItem Value="@speed">@speed</MudSelectItem>
@@ -215,6 +220,7 @@
                                              Value= "Wiper.IntermitTime[index]"
                                              Label="@($"Delay {index}")"
                                              Variant="Variant.Outlined"
+                                             Disabled="!Wiper.Enabled"
                                              ValueChanged="@((double val) => OnIntermitTimeChanged(Wiper, index, val))"/>
                         }
                     </MudCardContent>
@@ -234,6 +240,7 @@
                                              Value= "Wiper.IntermitTime[index]"
                                              Label="@($"Delay {index}")"
                                              Variant="Variant.Outlined"
+                                             Disabled="!Wiper.Enabled"
                                              ValueChanged="@((double val) => OnIntermitTimeChanged(Wiper, index, val))"/>
                         }
                     </MudCardContent>

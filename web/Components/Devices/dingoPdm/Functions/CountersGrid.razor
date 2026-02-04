@@ -32,6 +32,7 @@
             <EditTemplate>
                 <MudNumericField @key="@($"minCount-{context.Item.Number}-{_refreshCounter}")"
                                  Value="@context.Item.MinCount"
+                                 Disabled="!context.Item.Enabled"
                                  ValueChanged="@((int val) => OnMinCountChanged(context.Item, val))"/>
             </EditTemplate>
         </TemplateColumn>
@@ -39,17 +40,19 @@
             <EditTemplate>
                 <MudNumericField @key="@($"maxCount-{context.Item.Number}-{_refreshCounter}")"
                                  Value="@context.Item.MaxCount"
+                                 Disabled="!context.Item.Enabled"
                                  ValueChanged="@((int val) => OnMaxCountChanged(context.Item, val))"/>
             </EditTemplate>
         </TemplateColumn>
         <PropertyColumn Property="x => x.WrapAround" Title="Wrap" CellStyle="max-width: 100px">
             <EditTemplate>
-                <MudCheckBox @bind-Value="context.Item.WrapAround" Dense="true" />
+                <MudCheckBox @bind-Value="context.Item.WrapAround" Dense="true" Disabled="!context.Item.Enabled"/>
             </EditTemplate>
         </PropertyColumn>
         <PropertyColumn Property="x => x.IncInput" Title="Inc Input" CellStyle="max-width: 200px">
             <EditTemplate>
-                <MudSelect T="VarMap" @bind-Value="context.Item.IncInput" Variant="Variant.Outlined" Dense="true">
+                <MudSelect T="VarMap" @bind-Value="context.Item.IncInput" Variant="Variant.Outlined" Dense="true"
+                           Disabled="!context.Item.Enabled">
                     @foreach (VarMap varMap in Enum.GetValues(typeof(VarMap)))
                     {
                         <MudSelectItem T="VarMap" Value="@varMap">@varMap</MudSelectItem>
@@ -59,7 +62,8 @@
         </PropertyColumn>
         <PropertyColumn Property="x => x.IncEdge" Title="Inc Edge" CellStyle="max-width: 200px">
             <EditTemplate>
-                <MudSelect T="InputEdge" @bind-Value="context.Item.IncEdge" Variant="Variant.Outlined" Dense="true">
+                <MudSelect T="InputEdge" @bind-Value="context.Item.IncEdge" Variant="Variant.Outlined" Dense="true"
+                           Disabled="!context.Item.Enabled">
                     @foreach (InputEdge edge in Enum.GetValues(typeof(InputEdge)))
                     {
                         <MudSelectItem T="InputEdge" Value="@edge">@edge</MudSelectItem>
@@ -69,7 +73,8 @@
         </PropertyColumn>
         <PropertyColumn Property="x => x.DecInput" Title="Dec Input" CellStyle="max-width: 200px">
             <EditTemplate>
-                <MudSelect T="VarMap" @bind-Value="context.Item.DecInput" Variant="Variant.Outlined" Dense="true">
+                <MudSelect T="VarMap" @bind-Value="context.Item.DecInput" Variant="Variant.Outlined" Dense="true"
+                           Disabled="!context.Item.Enabled">
                     @foreach (VarMap varMap in Enum.GetValues(typeof(VarMap)))
                     {
                         <MudSelectItem T="VarMap" Value="@varMap">@varMap</MudSelectItem>
@@ -79,7 +84,8 @@
         </PropertyColumn>
         <PropertyColumn Property="x => x.DecEdge" Title="Dec Edge" CellStyle="max-width: 200px">
             <EditTemplate>
-                <MudSelect T="InputEdge" @bind-Value="context.Item.DecEdge" Variant="Variant.Outlined" Dense="true">
+                <MudSelect T="InputEdge" @bind-Value="context.Item.DecEdge" Variant="Variant.Outlined" Dense="true"
+                           Disabled="!context.Item.Enabled">
                     @foreach (InputEdge edge in Enum.GetValues(typeof(InputEdge)))
                     {
                         <MudSelectItem T="InputEdge" Value="@edge">@edge</MudSelectItem>
@@ -89,7 +95,8 @@
         </PropertyColumn>
         <PropertyColumn Property="x => x.ResetInput" Title="Reset Input" CellStyle="max-width: 200px">
             <EditTemplate>
-                <MudSelect T="VarMap" @bind-Value="context.Item.ResetInput" Variant="Variant.Outlined" Dense="true">
+                <MudSelect T="VarMap" @bind-Value="context.Item.ResetInput" Variant="Variant.Outlined" Dense="true"
+                           Disabled="!context.Item.Enabled">
                     @foreach (VarMap varMap in Enum.GetValues(typeof(VarMap)))
                     {
                         <MudSelectItem T="VarMap" Value="@varMap">@varMap</MudSelectItem>
@@ -99,7 +106,8 @@
         </PropertyColumn>
         <PropertyColumn Property="x => x.ResetEdge" Title="Reset Edge" CellStyle="max-width: 200px">
             <EditTemplate>
-                <MudSelect T="InputEdge" @bind-Value="context.Item.ResetEdge" Variant="Variant.Outlined" Dense="true">
+                <MudSelect T="InputEdge" @bind-Value="context.Item.ResetEdge" Variant="Variant.Outlined" Dense="true"
+                           Disabled="!context.Item.Enabled">
                     @foreach (InputEdge edge in Enum.GetValues(typeof(InputEdge)))
                     {
                         <MudSelectItem T="InputEdge" Value="@edge">@edge</MudSelectItem>

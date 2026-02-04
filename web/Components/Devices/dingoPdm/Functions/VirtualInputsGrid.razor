@@ -29,7 +29,8 @@
         </PropertyColumn>
         <PropertyColumn Property="x => x.Mode" CellStyle="max-width: 200px">
             <EditTemplate>
-                <MudSelect T="domain.Enums.InputMode" @bind-Value="context.Item.Mode" Variant="Variant.Outlined" Dense="true">
+                <MudSelect T="domain.Enums.InputMode" @bind-Value="context.Item.Mode" Variant="Variant.Outlined" Dense="true"
+                           Disabled="!context.Item.Enabled">
                     @foreach (domain.Enums.InputMode mode in Enum.GetValues(typeof(domain.Enums.InputMode)))
                     {
                         <MudSelectItem T="domain.Enums.InputMode" Value="@mode">@mode</MudSelectItem>
@@ -39,12 +40,13 @@
         </PropertyColumn>
         <PropertyColumn Property="x => x.Not0" Title="Not 0" CellStyle="max-width: 100px">
             <EditTemplate>
-                <MudCheckBox @bind-Value="context.Item.Not0" Dense="true" />
+                <MudCheckBox @bind-Value="context.Item.Not0" Dense="true" Disabled="!context.Item.Enabled"/>
             </EditTemplate>
         </PropertyColumn>
         <PropertyColumn Property="x => x.Var0" Title="Var 0" CellStyle="max-width: 200px">
             <EditTemplate>
-                <MudSelect T="VarMap" @bind-Value="context.Item.Var0" Variant="Variant.Outlined" Dense="true">
+                <MudSelect T="VarMap" @bind-Value="context.Item.Var0" Variant="Variant.Outlined" Dense="true"
+                           Disabled="!context.Item.Enabled">
                     @foreach (VarMap varMap in Enum.GetValues(typeof(VarMap)))
                     {
                         <MudSelectItem T="VarMap" Value="@varMap">@varMap</MudSelectItem>
@@ -54,7 +56,8 @@
         </PropertyColumn>
         <PropertyColumn Property="x => x.Cond0" Title="Cond 0" CellStyle="max-width: 200px">
             <EditTemplate>
-                <MudSelect T="Conditional" @bind-Value="context.Item.Cond0" Variant="Variant.Outlined" Dense="true">
+                <MudSelect T="Conditional" @bind-Value="context.Item.Cond0" Variant="Variant.Outlined" Dense="true"
+                           Disabled="!context.Item.Enabled">
                     @foreach (Conditional cond in Enum.GetValues(typeof(Conditional)))
                     {
                         <MudSelectItem T="Conditional" Value="@cond">@cond</MudSelectItem>
@@ -64,12 +67,13 @@
         </PropertyColumn>
         <PropertyColumn Property="x => x.Not1" Title="Not 1" CellStyle="max-width: 100px">
             <EditTemplate>
-                <MudCheckBox @bind-Value="context.Item.Not1" Dense="true" />
+                <MudCheckBox @bind-Value="context.Item.Not1" Dense="true" Disabled="!context.Item.Enabled"/>
             </EditTemplate>
         </PropertyColumn>
         <PropertyColumn Property="x => x.Var1" Title="Var 1" CellStyle="max-width: 200px">
             <EditTemplate>
-                <MudSelect T="VarMap" @bind-Value="context.Item.Var1" Variant="Variant.Outlined" Dense="true">
+                <MudSelect T="VarMap" @bind-Value="context.Item.Var1" Variant="Variant.Outlined" Dense="true"
+                           Disabled="!context.Item.Enabled">
                     @foreach (VarMap varMap in Enum.GetValues(typeof(VarMap)))
                     {
                         <MudSelectItem T="VarMap" Value="@varMap">@varMap</MudSelectItem>
@@ -79,7 +83,8 @@
         </PropertyColumn>
         <PropertyColumn Property="x => x.Cond1" Title="Cond 1" CellStyle="max-width: 200px">
             <EditTemplate>
-                <MudSelect T="Conditional" @bind-Value="context.Item.Cond1" Variant="Variant.Outlined" Dense="true">
+                <MudSelect T="Conditional" @bind-Value="context.Item.Cond1" Variant="Variant.Outlined" Dense="true"
+                           Disabled="!context.Item.Enabled">
                     @foreach (Conditional cond in Enum.GetValues(typeof(Conditional)))
                     {
                         <MudSelectItem T="Conditional" Value="@cond">@cond</MudSelectItem>
@@ -89,12 +94,13 @@
         </PropertyColumn>
         <PropertyColumn Property="x => x.Not2" Title="Not 2" CellStyle="max-width: 100px">
             <EditTemplate>
-                <MudCheckBox @bind-Value="context.Item.Not2" Dense="true" />
+                <MudCheckBox @bind-Value="context.Item.Not2" Dense="true" Disabled="!context.Item.Enabled"/>
             </EditTemplate>
         </PropertyColumn>
         <PropertyColumn Property="x => x.Var2" Title="Var 2" CellStyle="max-width: 200px">
             <EditTemplate>
-                <MudSelect T="VarMap" @bind-Value="context.Item.Var2" Variant="Variant.Outlined" Dense="true">
+                <MudSelect T="VarMap" @bind-Value="context.Item.Var2" Variant="Variant.Outlined" Dense="true"
+                           Disabled="!context.Item.Enabled">
                     @foreach (VarMap varMap in Enum.GetValues(typeof(VarMap)))
                     {
                         <MudSelectItem T="VarMap" Value="@varMap">@varMap</MudSelectItem>
@@ -104,7 +110,8 @@
         </PropertyColumn>
         <PropertyColumn Property="x => x.Cond2" Title="Cond 2" CellStyle="max-width: 200px">
             <EditTemplate>
-                <MudSelect T="Conditional" @bind-Value="context.Item.Cond2" Variant="Variant.Outlined" Dense="true">
+                <MudSelect T="Conditional" @bind-Value="context.Item.Cond2" Variant="Variant.Outlined" Dense="true"
+                           Disabled="!context.Item.Enabled">
                     @foreach (Conditional cond in Enum.GetValues(typeof(Conditional)))
                     {
                         <MudSelectItem T="Conditional" Value="@cond">@cond</MudSelectItem>

@@ -30,7 +30,8 @@
         </PropertyColumn>
         <PropertyColumn Property="x => x.Mode" CellStyle="max-width: 200px">
             <EditTemplate>
-                <MudSelect T="domain.Enums.InputMode" @bind-Value="context.Item.Mode" Variant="Variant.Outlined" Dense="true">
+                <MudSelect T="domain.Enums.InputMode" @bind-Value="context.Item.Mode" Variant="Variant.Outlined" Dense="true"
+                           Disabled="!context.Item.Enabled">
                     @foreach (domain.Enums.InputMode mode in Enum.GetValues(typeof(domain.Enums.InputMode)))
                     {
                         <MudSelectItem T="domain.Enums.InputMode" Value="@mode">@mode</MudSelectItem>
@@ -40,12 +41,13 @@
         </PropertyColumn>
         <PropertyColumn Property="x => x.Invert" CellStyle="max-width: 100px">
             <EditTemplate>
-                <MudCheckBox @bind-Value="context.Item.Invert" Dense="true" />
+                <MudCheckBox @bind-Value="context.Item.Invert" Dense="true" Disabled="!context.Item.Enabled"/>
             </EditTemplate>
         </PropertyColumn>
         <PropertyColumn Property="x => x.Pull" CellStyle="max-width: 200px">
             <EditTemplate>
-                <MudSelect T="InputPull" @bind-Value="context.Item.Pull" Variant="Variant.Outlined" Dense="true">
+                <MudSelect T="InputPull" @bind-Value="context.Item.Pull" Variant="Variant.Outlined" Dense="true"
+                           Disabled="!context.Item.Enabled">
                     @foreach (InputPull pull in Enum.GetValues(typeof(InputPull)))
                     {
                         <MudSelectItem T="InputPull" Value="@pull">@pull</MudSelectItem>
@@ -57,6 +59,7 @@
             <EditTemplate>
                 <MudNumericField @key="@($"debounce-{context.Item.Number}-{_refreshCounter}")"
                                  Value="@context.Item.DebounceTime"
+                                 Disabled="!context.Item.Enabled"
                                  ValueChanged="@((int val) => OnDebounceChanged(context.Item, val))"/>
             </EditTemplate>
         </TemplateColumn>

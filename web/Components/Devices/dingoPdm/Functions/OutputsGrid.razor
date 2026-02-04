@@ -36,6 +36,7 @@
                     <MudIconButton Icon="@Icons.Material.Filled.Search"
                                Color="Color.Primary"
                                Size="Size.Small"
+                               Disabled="(!context.Item.Enabled || context.Item.PrimaryOutput >= 0)"
                                Style="max-width: 20px"
                                OnClick="@(() => OpenVariableSelectorAsync(context.Item, "bool"))">
                     </MudIconButton>
@@ -47,6 +48,7 @@
             <EditTemplate>
                 <MudNumericField @key="@($"currentLimit-{context.Item.Number}-{_refreshCounter}")"
                                  Value="@context.Item.CurrentLimit"
+                                 Disabled="!context.Item.Enabled || context.Item.PrimaryOutput >= 0"
                                  ValueChanged="@((double val) => OnCurrentLimitChanged(context.Item, val))"/>
             </EditTemplate>
         </TemplateColumn>
@@ -54,6 +56,7 @@
             <EditTemplate>
                 <MudNumericField @key="@($"inrushLimit-{context.Item.Number}-{_refreshCounter}")"
                                  Value="@context.Item.InrushCurrentLimit"
+                                 Disabled="!context.Item.Enabled || context.Item.PrimaryOutput >= 0"
                                  ValueChanged="@((double val) => OnInrushLimitChanged(context.Item, val))"/>
             </EditTemplate>
         </TemplateColumn>
@@ -61,12 +64,14 @@
             <EditTemplate>
                 <MudNumericField @key="@($"inrushTime-{context.Item.Number}-{_refreshCounter}")"
                                  Value="@context.Item.InrushTime"
+                                 Disabled="!context.Item.Enabled || context.Item.PrimaryOutput >= 0"
                                  ValueChanged="@((int val) => OnInrushTimeChanged(context.Item, val))"/>
             </EditTemplate>
         </TemplateColumn>
         <PropertyColumn Property="x => x.ResetMode" Title="Reset Mode" CellStyle="max-width: 150px">
             <EditTemplate>
-                <MudSelect T="ResetMode" @bind-Value="context.Item.ResetMode" Variant="Variant.Outlined" Dense="true">
+                <MudSelect T="ResetMode" @bind-Value="context.Item.ResetMode" Variant="Variant.Outlined" Dense="true" 
+                           Disabled="!context.Item.Enabled || context.Item.PrimaryOutput >= 0">
                     @foreach (ResetMode resetMode in Enum.GetValues(typeof(ResetMode)))
                     {
                         <MudSelectItem T="ResetMode" Value="@resetMode">@resetMode</MudSelectItem>
@@ -78,6 +83,7 @@
             <EditTemplate>
                 <MudNumericField @key="@($"resetCount-{context.Item.Number}-{_refreshCounter}")"
                                  Value="@context.Item.ResetCountLimit"
+                                 Disabled="!context.Item.Enabled || context.Item.PrimaryOutput >= 0"
                                  ValueChanged="@((int val) => OnResetCountChanged(context.Item, val))"/>
             </EditTemplate>
         </TemplateColumn>
@@ -85,9 +91,24 @@
             <EditTemplate>
                 <MudNumericField @key="@($"resetTime-{context.Item.Number}-{_refreshCounter}")"
                                  Value="@context.Item.ResetTime"
+                                 Disabled="!context.Item.Enabled || context.Item.PrimaryOutput >= 0"
                                  ValueChanged="@((int val) => OnResetTimeChanged(context.Item, val))"/>
             </EditTemplate>
         </TemplateColumn>
+        <PropertyColumn Property="x => x.PrimaryOutput" Title="Primary Out" CellStyle="max-width: 150px">
+            <EditTemplate>
+                <MudSelect T="int" Value="context.Item.PrimaryOutput" Variant="Variant.Outlined" Dense="true"
+                           Disabled="@(!context.Item.Enabled)"
+                           ValueChanged="@((int val) => OnPrimaryOutChanged(context.Item, val))">
+                    <MudSelectItem T="int" Value="-1">None</MudSelectItem>
+                    @for (var i = 0; i < Outputs.Count; i++)
+                    {
+                        var outNum = i;
+                        <MudSelectItem T="int" Value="i">@(outNum+1)</MudSelectItem>
+                    }
+                </MudSelect>
+            </EditTemplate>
+        </PropertyColumn>
     </Columns>
 </MudDataGrid>
 
@@ -188,6 +209,12 @@
         _ => "OFF"
     };
 
+    private void OnPrimaryOutChanged(Output item, int value)
+    {
+        item.PrimaryOutput = value;
+        _refreshCounter++;
+    }
+
     private string GetSelectedVarText(DeviceVariable variable)
     {
         if(variable.FunctionName.Length == 0)
@@ -201,4 +228,5 @@
 
         return $"{variable.FunctionName}{variable.FunctionIndex}.{variable.PropertyName}";
     }
+
 }

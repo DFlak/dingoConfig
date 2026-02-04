@@ -33,6 +33,7 @@ public class Output : IDeviceFunction
     [JsonPropertyName("frequency")] public int Frequency { get; set; }
     [JsonPropertyName("softStartRampTime")] public int SoftStartRampTime { get; set; }
     [JsonPropertyName("dutyCycleDenominator")] public int DutyCycleDenominator { get; set; }
+    [JsonPropertyName("primaryOutput")] public int PrimaryOutput { get; set; } = -1; //-1 = pairing disabled
     
     [JsonIgnore][Plotable(displayName:"Current", unit:"A")] public double Current { get; set; }
     [JsonIgnore][Plotable(displayName:"State")] public OutState State { get; set; }

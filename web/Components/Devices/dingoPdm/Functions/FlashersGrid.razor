@@ -30,12 +30,13 @@
         </PropertyColumn>
         <PropertyColumn Property="x => x.Single" Title="Single Flash" CellStyle="max-width: 100px">
             <EditTemplate>
-                <MudCheckBox @bind-Value="context.Item.Single" Dense="true" />
+                <MudCheckBox @bind-Value="context.Item.Single" Dense="true" Disabled="!context.Item.Enabled"/>
             </EditTemplate>
         </PropertyColumn>
         <PropertyColumn Property="x => x.Input" Title="Input Source" CellStyle="max-width: 200px">
             <EditTemplate>
-                <MudSelect T="VarMap" @bind-Value="context.Item.Input" Variant="Variant.Outlined" Dense="true">
+                <MudSelect T="VarMap" @bind-Value="context.Item.Input" Variant="Variant.Outlined" Dense="true"
+                           Disabled="!context.Item.Enabled">
                     @foreach (VarMap varMap in Enum.GetValues(typeof(VarMap)))
                     {
                         <MudSelectItem T="VarMap" Value="@varMap">@varMap</MudSelectItem>
@@ -47,6 +48,7 @@
             <EditTemplate>
                 <MudNumericField @key="@($"onTime-{context.Item.Number}-{_refreshCounter}")"
                                  Value="@context.Item.OnTime"
+                                 Disabled="!context.Item.Enabled"
                                  ValueChanged="@((int val) => OnTimeChanged(context.Item, val))"/>
             </EditTemplate>
         </TemplateColumn>
@@ -54,6 +56,7 @@
             <EditTemplate>
                 <MudNumericField @key="@($"offTime-{context.Item.Number}-{_refreshCounter}")"
                                  Value="@context.Item.OffTime"
+                                 Disabled="!context.Item.Enabled"
                                  ValueChanged="@((int val) => OffTimeChanged(context.Item, val))"/>
             </EditTemplate>
         </TemplateColumn>
