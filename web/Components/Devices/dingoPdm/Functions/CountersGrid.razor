@@ -115,6 +115,18 @@
                 </MudSelect>
             </EditTemplate>
         </PropertyColumn>
+        <PropertyColumn Property="x => x.HoldToReset" Title="Hold To Reset" CellStyle="max-width: 100px">
+            <EditTemplate>
+                <MudCheckBox @bind-Value="context.Item.HoldToReset" Dense="true" />
+            </EditTemplate>
+        </PropertyColumn>
+        <TemplateColumn Title="Reset Time (s)" Resizable="true" CellStyle="max-width: 100px">
+            <EditTemplate>
+                <MudNumericField @key="@($"resetTime-{context.Item.Number}-{_refreshCounter}")"
+                                 Value="@context.Item.ResetTime"
+                                 ValueChanged="@((int val) => ResetTimeChanged(context.Item, val))"/>
+            </EditTemplate>
+        </TemplateColumn>
     </Columns>
 </MudDataGrid>
 
@@ -145,6 +157,18 @@
             Notification.NewWarning($"{item.Name}.MaxCount must be {min} to {max}");
         }
         item.MaxCount = Math.Clamp(value, min, max);
+        _refreshCounter++;
+    }
+    
+    private void ResetTimeChanged(Counter item, int value)
+    {
+        const int min = 0;
+        const int max = 10;
+        if (value < min || value > max)
+        {
+            Notification.NewWarning($"{item.Name}.ResetTime must be {min} to {max}");
+        }
+        item.ResetTime = Math.Clamp(value, min, max);
         _refreshCounter++;
     }
 }

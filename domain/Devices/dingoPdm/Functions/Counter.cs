@@ -21,7 +21,9 @@ public class Counter : IDeviceFunction
     [JsonPropertyName("decEdge")] public InputEdge DecEdge {get; set;}
     [JsonPropertyName("resetEdge")] public InputEdge ResetEdge {get; set;}
     [JsonPropertyName("wrapAround")] public bool WrapAround {get; set;}
-
+    [JsonPropertyName("holdToReset")] public bool HoldToReset {get; set;}
+    [JsonPropertyName("resetTime")] public int  ResetTime {get; set;}
+    
     [JsonIgnore][Plotable(displayName:"State")] public int Value {get; set;}
 
     [JsonIgnore] private List<(DbcSignal Signal, Action<double> SetValue)> SettingsRxSignals { get; }

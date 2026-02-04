@@ -2,13 +2,10 @@ namespace domain.Devices.dingoPdm.Enums;
 
 public enum MessageSrc
 {
-    StatePowerOn = 1,
-    StateStarting,
-    StateRun,
+    StateRun = 1,
+    StateSleep,
     StateOvertemp,
     StateError,
-    StateSleep,
-    StateWake,
     OverCurrent,
     BatteryVoltage,
     CAN,
@@ -19,5 +16,6 @@ public enum MessageSrc
     ADC,
     I2C,
     TempSensor,
-    USBConnected
+    USBConnected,
+    Init
 }
