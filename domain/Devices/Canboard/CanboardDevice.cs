@@ -46,7 +46,7 @@ public class CanboardDevice : IDevice
     [JsonIgnore] public double BoardTempC { get; private set; }
     [JsonIgnore] public int Heartbeat { get; private set; }
 
-    [JsonIgnore] private Dictionary<int, List<(DbcSignal Signal, Action<double> SetValue)>> StatusMessageSignals { get; set; } = null!;
+    [JsonIgnore] private Dictionary<int, List<(DbcSignal Signal, Action<double> SetValue)>> StatusSigs { get; set; } = null!;
 
     [JsonConstructor]
     public CanboardDevice(string name, int baseId)
@@ -56,8 +56,8 @@ public class CanboardDevice : IDevice
         BaseId = baseId;
 
         // ReSharper disable VirtualMemberCallInConstructor
-        InitializeCollections();
-        InitializeStatusMessageSignals();
+        InitCollections();
+        InitStatusSigs();
     }
     
     public void SetLogger(ILogger<CanboardDevice> logger)
@@ -65,7 +65,7 @@ public class CanboardDevice : IDevice
         Logger = logger;
     }
 
-    protected virtual void InitializeCollections()
+    protected virtual void InitCollections()
     {
         for (var i = 0; i < NumAnalogInputs; i++)
             AnalogInputs.Add(new AnalogInput(i + 1, "analogInput" + (i + 1)));
@@ -77,23 +77,23 @@ public class CanboardDevice : IDevice
             DigitalOutputs.Add(new DigitalOutput(i + 1, "digitalOutput" + (i + 1)));
     }
 
-    protected virtual void InitializeStatusMessageSignals()
+    protected virtual void InitStatusSigs()
     {
-        StatusMessageSignals = new Dictionary<int, List<(DbcSignal Signal, Action<double> SetValue)>>();
+        StatusSigs = new Dictionary<int, List<(DbcSignal Signal, Action<double> SetValue)>>();
 
         // Message 0 (BaseId + 0): Analog inputs 0-3 millivolts
-        StatusMessageSignals[0] = new List<(DbcSignal, Action<double>)>();
+        StatusSigs[0] = new List<(DbcSignal, Action<double>)>();
         for (var i = 0; i < 4 && i < NumAnalogInputs; i++)
         {
             var index = i;
-            StatusMessageSignals[0].Add((
+            StatusSigs[0].Add((
                 new DbcSignal { Name = $"AnalogInput{index + 1}.Millivolts", StartBit = index * 16, Length = 16, Unit = "mV"},
                 val => AnalogInputs[index].Millivolts = val
             ));
         }
 
         // Message 1 (BaseId + 1): Analog input 4 millivolts + board temperature
-        StatusMessageSignals[1] =
+        StatusSigs[1] =
         [
             (new DbcSignal { Name = "AnalogInput5.Millivolts", StartBit = 0, Length = 16, Unit = "mV"},
                 val => AnalogInputs[4].Millivolts = val),
@@ -104,13 +104,13 @@ public class CanboardDevice : IDevice
         ];
 
         // Message 2 (BaseId + 2): Complex message with rotary switches, digital I/O, heartbeat
-        StatusMessageSignals[2] = [];
+        StatusSigs[2] = [];
 
         // Rotary switch positions (4-bit each)
         for (var i = 0; i < NumAnalogInputs; i++)
         {
             var index = i;
-            StatusMessageSignals[2].Add((
+            StatusSigs[2].Add((
                 new DbcSignal { Name = $"RotarySwitch{index + 1}.Pos", StartBit = index * 4, Length = 4 },
                 val => AnalogInputs[index].RotarySwitchPos = (short)val
             ));
@@ -120,7 +120,7 @@ public class CanboardDevice : IDevice
         for (var i = 0; i < NumDigitalInputs; i++)
         {
             var index = i;
-            StatusMessageSignals[2].Add((
+            StatusSigs[2].Add((
                 new DbcSignal { Name = $"DigitalInput{index + 1}.State", StartBit = 32 + index, Length = 1 },
                 val => DigitalInputs[index].State = val != 0
             ));
@@ -130,7 +130,7 @@ public class CanboardDevice : IDevice
         for (var i = 0; i < NumAnalogInputs; i++)
         {
             var index = i;
-            StatusMessageSignals[2].Add((
+            StatusSigs[2].Add((
                 new DbcSignal { Name = $"AnalogInput{index + 1}.DigitalMode", StartBit = 40 + index, Length = 1 },
                 val => AnalogInputs[index].DigitalIn = val != 0
             ));
@@ -140,14 +140,14 @@ public class CanboardDevice : IDevice
         for (var i = 0; i < NumDigitalOutputs; i++)
         {
             var index = i;
-            StatusMessageSignals[2].Add((
+            StatusSigs[2].Add((
                 new DbcSignal { Name = $"DigitalOutput{index + 1}.State", StartBit = 48 + index, Length = 1 },
                 val => DigitalOutputs[index].State = val != 0
             ));
         }
 
         // Heartbeat (8-bit at bit 56)
-        StatusMessageSignals[2].Add((
+        StatusSigs[2].Add((
             new DbcSignal { Name = "Heartbeat", StartBit = 56, Length = 8 },
             val => Heartbeat = (int)val
         ));
@@ -181,11 +181,10 @@ public class CanboardDevice : IDevice
         return (id >= BaseId) && (id <= BaseId + 2);
     }
 
-    public void Read(int id, byte[] data,
-        ref ConcurrentDictionary<(int BaseId, int Prefix, int Index), DeviceCanFrame> queue)
+    public void Read(int id, byte[] data, ref ConcurrentDictionary<(int BaseId, int Index, int SubIndex), DeviceCanFrame> queue)
     {
         var offset = id - BaseId;
-        if (StatusMessageSignals.TryGetValue(offset, out var signals))
+        if (StatusSigs.TryGetValue(offset, out var signals))
         {
             foreach (var (signal, setValue) in signals)
             {
@@ -197,9 +196,9 @@ public class CanboardDevice : IDevice
         LastRxTime = DateTime.Now;
     }
 
-    public IEnumerable<(int MessageId, DbcSignal Signal)> GetStatusSignals()
+    public IEnumerable<(int MessageId, DbcSignal Signal)> GetStatusSigs()
     {
-        foreach (var kvp in StatusMessageSignals)
+        foreach (var kvp in StatusSigs)
         {
             var messageId = BaseId + kvp.Key;
             foreach (var (signal, _) in kvp.Value)

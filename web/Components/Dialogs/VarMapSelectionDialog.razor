@@ -119,10 +119,7 @@
 
     private string GetFunctionName(DeviceVariable variable)
     {
-        if (variable.FunctionName.Equals("None") ||
-            variable.FunctionName.Equals("AlwaysOn") ||
-            variable.FunctionName.Contains("Wiper") ||
-            variable.FunctionName.Contains("Starter"))
+        if (variable.SingleVariable)
             return $"{variable.FunctionName}";
 
         return $"{variable.FunctionName}{variable.FunctionIndex}";

@@ -2,6 +2,7 @@ using System.Collections.Concurrent;
 using System.Text.Json.Serialization;
 using domain.Common;
 using domain.Devices.Keypad.BlinkMarine.Enums;
+using domain.Devices.Keypad.BlinkMarine.Functions;
 using domain.Devices.Keypad.Enums;
 using domain.Interfaces;
 using domain.Models;
@@ -49,7 +50,7 @@ public class BlinkMarineKeypadDevice : IDevice
     [JsonPropertyName("analogInputs")] public List<AnalogInput> AnalogInputs { get; init; } = [];
 
     [JsonIgnore]
-    public Dictionary<int, List<(DbcSignal Signal, Action<double> SetValue)>> StatusMessageSignals { get; set; } =
+    public Dictionary<int, List<(DbcSignal Signal, Action<double> SetValue)>> StatusSigs { get; set; } =
         null!;
 
     [JsonConstructor]
@@ -64,8 +65,8 @@ public class BlinkMarineKeypadDevice : IDevice
         NumDials = config.numDials;
         NumAnalogInputs = config.numAnalogInputs;
         Guid = Guid.NewGuid();
-        InitializeCollections();
-        InitializeStatusMessageSignals();
+        InitCollections();
+        InitStatusSigs();
     }
 
     public void SetLogger(ILogger<BlinkMarineKeypadDevice> logger)
@@ -73,7 +74,7 @@ public class BlinkMarineKeypadDevice : IDevice
         _logger = logger;
     }
 
-    private void InitializeCollections()
+    private void InitCollections()
     {
         for (var i = 0; i < NumButtons; i++)
             Buttons.Add(new Button(i + 1, $"button{i + 1}"));
@@ -85,60 +86,60 @@ public class BlinkMarineKeypadDevice : IDevice
             AnalogInputs.Add(new AnalogInput(i + 1, $"analogInput{i + 1}"));
     }
 
-    private void InitializeStatusMessageSignals()
+    private void InitStatusSigs()
     {
-        StatusMessageSignals = new Dictionary<int, List<(DbcSignal Signal, Action<double> SetValue)>>();
+        StatusSigs = new Dictionary<int, List<(DbcSignal Signal, Action<double> SetValue)>>();
 
         // Button States
-        StatusMessageSignals[0] = [];
+        StatusSigs[0] = [];
         for (var i = 0; i < NumButtons; i++)
         {
             var button = Buttons[i];
-            StatusMessageSignals[0].Add((
+            StatusSigs[0].Add((
                 new DbcSignal { Name = $"Button{i + 1}.State", StartBit = i, Length = 1 },
                 val => button.State = val != 0
             ));
         }
 
         // Dial Direction
-        StatusMessageSignals[1] = [];
+        StatusSigs[1] = [];
         for (var i = 0; i < NumDials; i++)
         {
             var dial = Dials[i];
-            StatusMessageSignals[1].Add((
+            StatusSigs[1].Add((
                 new DbcSignal { Name = $"Dial{i + 1}.Direction", StartBit = (i * 32), Length = 1 },
                 val => dial.Direction = (DialDirection)val
             ));
         }
 
         // Dial Position
-        StatusMessageSignals[2] = [];
+        StatusSigs[2] = [];
         for (var i = 0; i < NumDials; i++)
         {
             var dial = Dials[i];
-            StatusMessageSignals[2].Add((
+            StatusSigs[2].Add((
                 new DbcSignal { Name = $"Dial{i + 1}.Position", StartBit = (i * 32) + 1, Length = 7 },
                 val => dial.Position = (int)val
             ));
         }
 
         // Dial Counter
-        StatusMessageSignals[3] = [];
+        StatusSigs[3] = [];
         for (var i = 0; i < NumDials; i++)
         {
             var dial = Dials[i];
-            StatusMessageSignals[3].Add((
+            StatusSigs[3].Add((
                 new DbcSignal { Name = $"Dial{i + 1}.Counter", StartBit = (i * 8), Length = 16 },
                 val => dial.Position = (int)val
             ));
         }
 
         // Analog Inputs
-        StatusMessageSignals[4] = [];
+        StatusSigs[4] = [];
         for (var i = 0; i < NumAnalogInputs; i++)
         {
             var input = AnalogInputs[i];
-            StatusMessageSignals[4].Add((
+            StatusSigs[4].Add((
                 new DbcSignal
                     { Name = $"AnalogInput{i + 1}.Value", StartBit = i * 16, Length = 16, Factor = 0.01 }, // 5/500
                 val => input.Voltage = val
@@ -185,8 +186,7 @@ public class BlinkMarineKeypadDevice : IDevice
                id == ((int)MessageId.Heartbeat + BaseId);
     }
 
-    public void Read(int id, byte[] data,
-        ref ConcurrentDictionary<(int BaseId, int Prefix, int Index), DeviceCanFrame> queue)
+    public void Read(int id, byte[] data, ref ConcurrentDictionary<(int BaseId, int Index, int SubIndex), DeviceCanFrame> queue)
     {
         switch ((MessageId)id - BaseId)
         {
@@ -468,9 +468,9 @@ public class BlinkMarineKeypadDevice : IDevice
         return new CanFrame((int)MessageId.AnalogInput + BaseId, 8, data);
     }
 
-    public IEnumerable<(int MessageId, DbcSignal Signal)> GetStatusSignals()
+    public IEnumerable<(int MessageId, DbcSignal Signal)> GetStatusSigs()
     {
-        foreach (var kvp in StatusMessageSignals)
+        foreach (var kvp in StatusSigs)
         {
             var messageId = BaseId + kvp.Key;
             foreach (var (signal, _) in kvp.Value)

@@ -2,15 +2,14 @@ using System.ComponentModel.DataAnnotations;
 using System.Text.Json.Serialization;
 using domain.Common;
 using domain.Devices.dingoPdm.Enums;
-using domain.Enums;
 using domain.Interfaces;
 using domain.Models;
-using static domain.Common.DbcSignalCodec;
 
 namespace domain.Devices.dingoPdm.Functions;
 
 public class Output : IDeviceFunction
 {
+    [JsonIgnore] public const int BaseIndex = 0x1000;
     [JsonPropertyName("enabled")] public bool Enabled { get; set; }
     [JsonPropertyName("name")] public string Name { get; set; }
     [JsonPropertyName("number")] public int Number { get; }
@@ -28,7 +27,7 @@ public class Output : IDeviceFunction
     [JsonPropertyName("pwmEnabled")] public bool PwmEnabled { get; set; }
     [JsonPropertyName("softStartEnabled")] public bool SoftStartEnabled { get; set; }
     [JsonPropertyName("variableDutyCycle")] public bool VariableDutyCycle { get; set; }
-    [JsonPropertyName("dutyCycleInput")] public VarMap DutyCycleInput { get; set; }
+    [JsonPropertyName("dutyCycleInput")] public DeviceVariable DutyCycleInput { get; set; } = new();
     [JsonPropertyName("fixedDutyCycle")] public int FixedDutyCycle { get; set; }
     [JsonPropertyName("frequency")] public int Frequency { get; set; }
     [JsonPropertyName("softStartRampTime")] public int SoftStartRampTime { get; set; }
@@ -49,274 +48,141 @@ public class Output : IDeviceFunction
     }
     [JsonIgnore][Plotable(displayName:"CalcCurrent", unit:"A")] public double CalculatedCurrent { get; private set; }
 
-    [JsonIgnore] private Dictionary<MessagePrefix, List<(DbcSignal Signal, Action<double> SetValue)>> SettingsRxSignals { get; }
-    [JsonIgnore] private Dictionary<MessagePrefix, List<(DbcSignal Signal, Func<double> GetValue)>> SettingsTxSignals { get; }
+    [JsonIgnore] public List<DeviceParameter> Params { get; }
 
     [JsonConstructor]
     public Output(int number, string name)
     {
         Number = number;
         Name = name;
-            
-        SettingsRxSignals = InitializeRxSignals();
-        SettingsTxSignals = InitializeTxSignals();
+
+        Params = InitParams();
     }
 
-    private Dictionary<MessagePrefix, List<(DbcSignal Signal, Action<double> SetValue)>> InitializeRxSignals()
+    private List<DeviceParameter> InitParams()
     {
-        return new Dictionary<MessagePrefix, List<(DbcSignal Signal, Action<double> SetValue)>>
-        {
-            [MessagePrefix.Outputs] =
-            [
-                (new DbcSignal { Name = "Enabled", StartBit = 8, Length = 1 },
-                    val => Enabled = val != 0),
-
-                (new DbcSignal { Name = "Input", StartBit = 16, Length = 8 },
-                    val => Input.VariableIndex = (int)val),
-
-                (new DbcSignal { Name = "CurrentLimit", StartBit = 24, Length = 8 },
-                    val => CurrentLimit = val),
-
-                (new DbcSignal { Name = "ResetMode", StartBit = 32, Length = 4 },
-                    val => ResetMode = (ResetMode)val),
-
-                (new DbcSignal { Name = "ResetCountLimit", StartBit = 36, Length = 4 },
-                    val => ResetCountLimit = (int)val),
-
-                (new DbcSignal { Name = "ResetTime", StartBit = 40, Length = 8, Factor = 0.1 },
-                    val => ResetTime = (int)val),
-
-                (new DbcSignal { Name = "InrushCurrentLimit", StartBit = 48, Length = 8 },
-                    val => InrushCurrentLimit = val),
-
-                (new DbcSignal { Name = "InrushTime", StartBit = 56, Length = 8, Factor = 0.1 },
-                    val => InrushTime = (int)val)
-            ],
-            [MessagePrefix.OutputsPwm] =
-            [
-                (new DbcSignal { Name = "PwmEnabled", StartBit = 8, Length = 1 },
-                    val => PwmEnabled = val != 0),
-
-                (new DbcSignal { Name = "SoftStartEnabled", StartBit = 9, Length = 1 },
-                    val => SoftStartEnabled = val != 0),
-
-                (new DbcSignal { Name = "VariableDutyCycle", StartBit = 10, Length = 1 },
-                    val => VariableDutyCycle = val != 0),
-
-                (new DbcSignal { Name = "DutyCycleInput", StartBit = 16, Length = 8 },
-                    val => DutyCycleInput = (VarMap)val),
-
-                (new DbcSignal { Name = "FixedDutyCycle", StartBit = 33, Length = 7 },
-                    val => FixedDutyCycle = (int)val),
-
-                (new DbcSignal { Name = "SoftStartRampTime", StartBit = 40, Length = 16, ByteOrder = ByteOrder.BigEndian },
-                    val => SoftStartRampTime = (int)val),
-
-                (new DbcSignal { Name = "DutyCycleDenominator", StartBit = 56, Length = 8 },
-                    val => DutyCycleDenominator = (int)val)
-            ]
-        };
-    }
-
-    private Dictionary<MessagePrefix, List<(DbcSignal Signal, Func<double> GetValue)>> InitializeTxSignals()
-    {
-        return new Dictionary<MessagePrefix, List<(DbcSignal Signal, Func<double> GetValue)>>
-        {
-            [MessagePrefix.Outputs] =
-            [
-                (new DbcSignal { Name = "Prefix", StartBit = 0, Length = 8 },
-                    () => (int)MessagePrefix.Outputs),
-
-                (new DbcSignal { Name = "Enabled", StartBit = 8, Length = 1 },
-                    () => Enabled ? 1 : 0),
-
-                (new DbcSignal { Name = "Index", StartBit = 12, Length = 4 },
-                    () => Number - 1),
-
-                (new DbcSignal { Name = "Input", StartBit = 16, Length = 8 },
-                    () => Input.VariableIndex),
-
-                (new DbcSignal { Name = "CurrentLimit", StartBit = 24, Length = 8 },
-                    () => CurrentLimit),
-
-                (new DbcSignal { Name = "ResetMode", StartBit = 32, Length = 4 },
-                    () => (int)ResetMode),
-
-                (new DbcSignal { Name = "ResetCountLimit", StartBit = 36, Length = 4 },
-                    () => ResetCountLimit),
-
-                (new DbcSignal { Name = "ResetTime", StartBit = 40, Length = 8, Factor = 0.1 },
-                    () => ResetTime),
-
-                (new DbcSignal { Name = "InrushCurrentLimit", StartBit = 48, Length = 8 },
-                    () => InrushCurrentLimit),
-
-                (new DbcSignal { Name = "InrushTime", StartBit = 56, Length = 8, Factor = 0.1 },
-                    () => InrushTime)
-            ],
-            [MessagePrefix.OutputsPwm] =
-            [
-                (new DbcSignal { Name = "Prefix", StartBit = 0, Length = 8 },
-                    () => (int)MessagePrefix.OutputsPwm),
-
-                (new DbcSignal { Name = "PwmEnabled", StartBit = 8, Length = 1 },
-                    () => PwmEnabled ? 1 : 0),
-
-                (new DbcSignal { Name = "SoftStartEnabled", StartBit = 9, Length = 1 },
-                    () => SoftStartEnabled ? 1 : 0),
-
-                (new DbcSignal { Name = "VariableDutyCycle", StartBit = 10, Length = 1 },
-                    () => VariableDutyCycle ? 1 : 0),
-
-                (new DbcSignal { Name = "Index", StartBit = 12, Length = 4 },
-                    () => Number - 1),
-
-                (new DbcSignal { Name = "DutyCycleInput", StartBit = 16, Length = 8 },
-                    () => (int)DutyCycleInput),
-
-                (new DbcSignal { Name = "FrequencyUpper", StartBit = 24, Length = 8 },
-                    () => Frequency >> 1),
-
-                (new DbcSignal { Name = "FrequencyLsb", StartBit = 32, Length = 1 },
-                    () => Frequency & 0x01),
-
-                (new DbcSignal { Name = "FixedDutyCycle", StartBit = 33, Length = 7 },
-                    () => FixedDutyCycle),
-
-                (new DbcSignal { Name = "SoftStartRampTime", StartBit = 40, Length = 16, ByteOrder = ByteOrder.BigEndian },
-                    () => SoftStartRampTime),
-
-                (new DbcSignal { Name = "DutyCycleDenominator", StartBit = 56, Length = 8 },
-                    () => DutyCycleDenominator)
-            ]
-        };
-    }
-
-    public static int ExtractIndex(byte data, MessagePrefix prefix)
-    {
-        return (data & 0xF0) >> 4;
-    }
-    
-    public DeviceCanFrame? CreateUploadRequest(int baseId, MessagePrefix prefix)
-    {
-        switch (prefix)
-        {
-            case MessagePrefix.Outputs:
+        var subIndex = 0;
+        return
+        [
+            new DeviceParameter
             {
-                var data = new byte[8];
-                InsertSignalInt(data, (long)MessagePrefix.Outputs, 0, 8);
-                InsertSignalInt(data, Number - 1, 12, 4);
-
-                return new DeviceCanFrame
-                {
-                    DeviceBaseId = baseId,
-                    Sent = false,
-                    Received = false,
-                    Prefix = (int)MessagePrefix.Outputs,
-                    Index = Number - 1,
-                    Frame = new CanFrame(Id: baseId - 1, Len: 2, Payload: data),
-                    MsgDescription = $"Output{Number}"
-                };
-            }
-            case MessagePrefix.OutputsPwm:
-            {
-                var data = new byte[8];
-                InsertSignalInt(data, (long)MessagePrefix.OutputsPwm, 0, 8);
-                InsertSignalInt(data, Number - 1, 12, 4);
-
-                return new DeviceCanFrame
-                {
-                    DeviceBaseId = baseId,
-                    Sent = false,
-                    Received = false,
-                    Prefix = (int)MessagePrefix.OutputsPwm,
-                    Index = Number - 1,
-                    Frame = new CanFrame(Id: baseId - 1, Len: 2, Payload: data),
-                    MsgDescription = $"OutputPwm{Number}"
-                };
-            }
-            default:
-                return null;
-        }
-    }
-
-    public DeviceCanFrame? CreateDownloadRequest(int baseId, MessagePrefix prefix)
-    {
-        return prefix switch
-        {
-            MessagePrefix.Outputs => new DeviceCanFrame
-            {
-                DeviceBaseId = baseId,
-                Sent = false,
-                Received = false,
-                Prefix = (int)MessagePrefix.Outputs,
-                Index = Number - 1,
-                Frame = new CanFrame(Id: baseId - 1, Len: 8, Payload: Write()),
-                MsgDescription = $"Output{Number}"
+                ParentName = Name, Name = "enabled", Index = BaseIndex + (Number - 1), SubIndex = subIndex++,
+                GetValue = () => Enabled, SetValue = val => Enabled = (bool)val,
+                ValueType = Enabled.GetType(),
+                DefaultValue = false
             },
-            MessagePrefix.OutputsPwm => new DeviceCanFrame
+            new DeviceParameter
             {
-                DeviceBaseId = baseId,
-                Sent = false,
-                Received = false,
-                Prefix = (int)MessagePrefix.OutputsPwm,
-                Index = Number - 1,
-                Frame = new CanFrame(Id: baseId - 1, Len: 8, Payload: WritePwm()),
-                MsgDescription = $"OutputPwm{Number}"
+                ParentName = Name, Name = "input", Index = BaseIndex + (Number - 1), SubIndex = subIndex++,
+                GetValue = () => Input.VariableIndex, SetValue = val => Input.VariableIndex = (int)val,
+                ValueType = Input.VariableIndex.GetType(),
+                DefaultValue = 0
             },
-            _ => null
-        };
-    }
-
-    public bool Receive(byte[] data, MessagePrefix prefix)
-    {
-        if (data.Length != 8)
-            return false;
-
-        if (!SettingsRxSignals.TryGetValue(prefix, out var signals))
-            return false;
-
-        // Parse all signals using dictionary
-        foreach (var (signal, setValue) in signals)
-        {
-            var value = ExtractSignal(data, signal);
-            setValue(value);
-        }
-
-        // Special handling for OutputsPwm frequency (9-bit split encoding)
-        if (prefix != MessagePrefix.OutputsPwm) return true;
-        var freqUpper = (int)ExtractSignalInt(data, 24, 8);
-        var freqLsb = (int)ExtractSignalInt(data, 32, 1);
-        Frequency = (freqUpper << 1) | freqLsb;
-
-        return true;
-    }
-
-    private byte[] Write()
-    {
-        var data = new byte[8];
-        var signals = SettingsTxSignals[MessagePrefix.Outputs];
-
-        foreach (var (signal, getValue) in signals)
-        {
-            signal.Value = getValue();
-            InsertSignal(data, signal);
-        }
-
-        return data;
-    }
-
-    private byte[] WritePwm()
-    {
-        var data = new byte[8];
-        var signals = SettingsTxSignals[MessagePrefix.OutputsPwm];
-
-        foreach (var (signal, getValue) in signals)
-        {
-            signal.Value = getValue();
-            InsertSignal(data, signal);
-        }
-
-        return data;
+            new DeviceParameter
+            {
+                ParentName = Name, Name = "currentLimit", Index = BaseIndex + (Number - 1), SubIndex = subIndex++,
+                GetValue = () => CurrentLimit, SetValue = val => CurrentLimit = (double)val,
+                ValueType = CurrentLimit.GetType(),
+                DefaultValue = 0.0
+            },
+            new DeviceParameter
+            {
+                ParentName = Name, Name = "resetMode", Index = BaseIndex + (Number - 1), SubIndex = subIndex++,
+                GetValue = () => ResetMode, SetValue = val => ResetMode = (ResetMode)val,
+                ValueType = ResetMode.GetType(),
+                DefaultValue = ResetMode.None
+            },
+            new DeviceParameter
+            {
+                ParentName = Name, Name = "resetCountLimit", Index = BaseIndex + (Number - 1), SubIndex = subIndex++,
+                GetValue = () => ResetCountLimit, SetValue = val => ResetCountLimit = (int)val,
+                ValueType = ResetCountLimit.GetType(),
+                DefaultValue = 0
+            },
+            new DeviceParameter
+            {
+                ParentName = Name, Name = "resetTime", Index = BaseIndex + (Number - 1), SubIndex = subIndex++,
+                GetValue = () => ResetTime, SetValue = val => ResetTime = (int)val,
+                ValueType = ResetTime.GetType(),
+                DefaultValue = 0
+            },
+            new DeviceParameter
+            {
+                ParentName = Name, Name = "inrushCurrentLimit", Index = BaseIndex + (Number - 1), SubIndex = subIndex++,
+                GetValue = () => InrushCurrentLimit, SetValue = val => InrushCurrentLimit = (double)val,
+                ValueType = InrushCurrentLimit.GetType(),
+                DefaultValue = 0.0
+            },
+            new DeviceParameter
+            {
+                ParentName = Name, Name = "inrushTime", Index = BaseIndex + (Number - 1), SubIndex = subIndex++,
+                GetValue = () => InrushTime, SetValue = val => InrushTime = (int)val,
+                ValueType = InrushTime.GetType(),
+                DefaultValue = 0
+            },
+            new DeviceParameter
+            {
+                ParentName = Name, Name = "pwmEnabled", Index = BaseIndex + (Number - 1), SubIndex = subIndex++,
+                GetValue = () => PwmEnabled, SetValue = val => PwmEnabled = (bool)val,
+                ValueType = PwmEnabled.GetType(),
+                DefaultValue = false
+            },
+            new DeviceParameter
+            {
+                ParentName = Name, Name = "softStartEnabled", Index = BaseIndex + (Number - 1), SubIndex = subIndex++,
+                GetValue = () => SoftStartEnabled, SetValue = val => SoftStartEnabled = (bool)val,
+                ValueType = SoftStartEnabled.GetType(),
+                DefaultValue = false
+            },
+            new DeviceParameter
+            {
+                ParentName = Name, Name = "variableDutyCycle", Index = BaseIndex + (Number - 1), SubIndex = subIndex++,
+                GetValue = () => VariableDutyCycle, SetValue = val => VariableDutyCycle = (bool)val,
+                ValueType = VariableDutyCycle.GetType(),
+                DefaultValue = false
+            },
+            new DeviceParameter
+            {
+                ParentName = Name, Name = "dutyCycleInput", Index = BaseIndex + (Number - 1), SubIndex = subIndex++,
+                GetValue = () => DutyCycleInput.VariableIndex, SetValue = val => DutyCycleInput.VariableIndex = (int)val,
+                ValueType = DutyCycleInput.VariableIndex.GetType(),
+                DefaultValue = 0
+            },
+            new DeviceParameter
+            {
+                ParentName = Name, Name = "fixedDutyCycle", Index = BaseIndex + (Number - 1), SubIndex = subIndex++,
+                GetValue = () => FixedDutyCycle, SetValue = val => FixedDutyCycle = (int)val,
+                ValueType = FixedDutyCycle.GetType(),
+                DefaultValue = 0
+            },
+            new DeviceParameter
+            {
+                ParentName = Name, Name = "frequency", Index = BaseIndex + (Number - 1), SubIndex = subIndex++,
+                GetValue = () => Frequency, SetValue = val => Frequency = (int)val,
+                ValueType = Frequency.GetType(),
+                DefaultValue = 0
+            },
+            new DeviceParameter
+            {
+                ParentName = Name, Name = "softStartRampTime", Index = BaseIndex + (Number - 1), SubIndex = subIndex++,
+                GetValue = () => SoftStartRampTime, SetValue = val => SoftStartRampTime = (int)val,
+                ValueType = SoftStartRampTime.GetType(),
+                DefaultValue = 0
+            },
+            new DeviceParameter
+            {
+                ParentName = Name, Name = "dutyCycleDenominator", Index = BaseIndex + (Number - 1), SubIndex = subIndex++,
+                GetValue = () => DutyCycleDenominator, SetValue = val => DutyCycleDenominator = (int)val,
+                ValueType = DutyCycleDenominator.GetType(),
+                DefaultValue = 0
+            },
+            new DeviceParameter
+            {
+                ParentName = Name, Name = "primaryOutput", Index = BaseIndex + (Number - 1), SubIndex = subIndex++,
+                GetValue = () => PrimaryOutput, SetValue = val => PrimaryOutput = (int)val,
+                ValueType = PrimaryOutput.GetType(),
+                DefaultValue = -1
+            }
+        ];
     }
 }

@@ -1,7 +1,10 @@
 @using web.Services
 @using domain.Devices.dingoPdm.Functions
 @using domain.Devices.dingoPdm.Enums
+@using domain.Models
+@inject IDialogService DialogService
 @inject NotificationService Notification
+@typeparam TDevice where TDevice : domain.Interfaces.IDeviceConfigurable
 
 <MudDataGrid Items="@Counters" Dense="true" Hover="true" Striped="false" EditMode="DataGridEditMode.Cell" ReadOnly="false"
              SortMode="SortMode.None" ColumnResizeMode="ResizeMode.Container" Virtualize="true" 
@@ -49,15 +52,18 @@
                 <MudCheckBox @bind-Value="context.Item.WrapAround" Dense="true" Disabled="!context.Item.Enabled"/>
             </EditTemplate>
         </PropertyColumn>
-        <PropertyColumn Property="x => x.IncInput" Title="Inc Input" CellStyle="max-width: 200px">
+        <PropertyColumn Property="x => x.IncInput" Title="Inc Var" CellStyle="max-width: 250px;">
             <EditTemplate>
-                <MudSelect T="VarMap" @bind-Value="context.Item.IncInput" Variant="Variant.Outlined" Dense="true"
-                           Disabled="!context.Item.Enabled">
-                    @foreach (VarMap varMap in Enum.GetValues(typeof(VarMap)))
-                    {
-                        <MudSelectItem T="VarMap" Value="@varMap">@varMap</MudSelectItem>
-                    }
-                </MudSelect>
+                <MudStack Row="true">
+                    <MudIconButton Icon="@Icons.Material.Filled.Search"
+                               Color="Color.Primary"
+                               Size="Size.Small"
+                               Disabled="(!context.Item.Enabled)"
+                               Style="max-width: 20px"
+                               OnClick="@(() => OpenVariableSelectorAsync(context.Item, "bool", "inc"))">
+                    </MudIconButton>
+                    <MudText>@GetSelectedVarText(context.Item.IncInput)</MudText>
+                </MudStack>
             </EditTemplate>
         </PropertyColumn>
         <PropertyColumn Property="x => x.IncEdge" Title="Inc Edge" CellStyle="max-width: 200px">
@@ -71,15 +77,18 @@
                 </MudSelect>
             </EditTemplate>
         </PropertyColumn>
-        <PropertyColumn Property="x => x.DecInput" Title="Dec Input" CellStyle="max-width: 200px">
+        <PropertyColumn Property="x => x.DecInput" Title="Dec Var" CellStyle="max-width: 250px;">
             <EditTemplate>
-                <MudSelect T="VarMap" @bind-Value="context.Item.DecInput" Variant="Variant.Outlined" Dense="true"
-                           Disabled="!context.Item.Enabled">
-                    @foreach (VarMap varMap in Enum.GetValues(typeof(VarMap)))
-                    {
-                        <MudSelectItem T="VarMap" Value="@varMap">@varMap</MudSelectItem>
-                    }
-                </MudSelect>
+                <MudStack Row="true">
+                    <MudIconButton Icon="@Icons.Material.Filled.Search"
+                                   Color="Color.Primary"
+                                   Size="Size.Small"
+                                   Disabled="(!context.Item.Enabled)"
+                                   Style="max-width: 20px"
+                                   OnClick="@(() => OpenVariableSelectorAsync(context.Item, "bool", "dec"))">
+                    </MudIconButton>
+                    <MudText>@GetSelectedVarText(context.Item.DecInput)</MudText>
+                </MudStack>
             </EditTemplate>
         </PropertyColumn>
         <PropertyColumn Property="x => x.DecEdge" Title="Dec Edge" CellStyle="max-width: 200px">
@@ -93,15 +102,18 @@
                 </MudSelect>
             </EditTemplate>
         </PropertyColumn>
-        <PropertyColumn Property="x => x.ResetInput" Title="Reset Input" CellStyle="max-width: 200px">
+        <PropertyColumn Property="x => x.ResetInput" Title="Reset Var" CellStyle="max-width: 250px;">
             <EditTemplate>
-                <MudSelect T="VarMap" @bind-Value="context.Item.ResetInput" Variant="Variant.Outlined" Dense="true"
-                           Disabled="!context.Item.Enabled">
-                    @foreach (VarMap varMap in Enum.GetValues(typeof(VarMap)))
-                    {
-                        <MudSelectItem T="VarMap" Value="@varMap">@varMap</MudSelectItem>
-                    }
-                </MudSelect>
+                <MudStack Row="true">
+                    <MudIconButton Icon="@Icons.Material.Filled.Search"
+                                   Color="Color.Primary"
+                                   Size="Size.Small"
+                                   Disabled="(!context.Item.Enabled)"
+                                   Style="max-width: 20px"
+                                   OnClick="@(() => OpenVariableSelectorAsync(context.Item, "bool", "reset"))">
+                    </MudIconButton>
+                    <MudText>@GetSelectedVarText(context.Item.ResetInput)</MudText>
+                </MudStack>
             </EditTemplate>
         </PropertyColumn>
         <PropertyColumn Property="x => x.ResetEdge" Title="Reset Edge" CellStyle="max-width: 200px">
@@ -133,8 +145,39 @@
 @code {
     [Parameter, EditorRequired]
     public List<Counter> Counters { get; set; } = null!;
+    [Parameter, EditorRequired] public TDevice Device { get; set; } = default!;
 
-    private int _refreshCounter = 0;
+    private int _refreshCounter;
+    
+    private async Task OpenVariableSelectorAsync(Counter counter, string datatype, string var)
+    {
+        var parameters = new DialogParameters<VarMapSelectionDialog>
+        {
+            { x => x.Device, Device},
+            { x => x.Datatype, datatype}
+        };
+        
+        var dialog = await DialogService.ShowAsync<VarMapSelectionDialog>("Select Variable", parameters);
+        var result = await dialog.Result;
+
+        if (result is { Canceled: false, Data: (DeviceVariable variable) })
+        {
+            switch (var)
+            {
+                case "inc":
+                    counter.IncInput = variable;
+                    break;
+                    
+                case "dec":
+                    counter.DecInput = variable;
+                    break;
+                    
+                case "reset":
+                    counter.ResetInput = variable;
+                    break;
+            }
+        }
+    }
 
     private void OnMinCountChanged(Counter item, int value)
     {
@@ -171,4 +214,16 @@
         item.ResetTime = Math.Clamp(value, min, max);
         _refreshCounter++;
     }
+    
+    private string GetSelectedVarText(DeviceVariable variable)
+    {
+        if(variable.FunctionName.Length == 0)
+            return "Select Variable";
+
+        if (variable.SingleVariable)
+            return $"{variable.FunctionName}.{variable.PropertyName}";
+
+        return $"{variable.FunctionName}{variable.FunctionIndex}.{variable.PropertyName}";
+    }
+    
 }

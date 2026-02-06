@@ -1,21 +1,17 @@
 using System.Text.Json.Serialization;
-using domain.Common;
 using domain.Devices.dingoPdm.Enums;
 using domain.Interfaces;
 using domain.Models;
 
-namespace domain.Devices.Canboard.Functions;
+namespace domain.Devices.dingoPdm.Functions;
 
-public class DigitalOutput(int number, string name) : IDeviceFunction
+public class Keypad : IDeviceFunction
 {
-    [JsonPropertyName("number")] public int Number { get; set; } = number;
-    [JsonPropertyName("name")] public string Name { get; set; } = name;
-    [JsonIgnore] public List<DeviceParameter> Parameters { get; } = [];
+    [JsonIgnore] public const int BaseIndex = 0x3000;
 
-    [JsonIgnore][Plotable(displayName:"State")] public bool State { get; set; }
-    
+    public int Number { get; }
+    public string Name { get; }
     [JsonIgnore] public List<DeviceParameter> Params { get; } = [];
-
     public static int ExtractIndex(byte data, MessageCommand command)
     {
         throw new NotImplementedException();

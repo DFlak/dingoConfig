@@ -13,14 +13,14 @@ public interface IDevice
     TimeSpan CyclicGap {get;}
     TimeSpan CyclicPause {get;}
     public void UpdateIsConnected();
-    void Read(int id, byte[] data, ref ConcurrentDictionary<(int BaseId, int Prefix, int Index), DeviceCanFrame> queue);
+    void Read(int id, byte[] data, ref ConcurrentDictionary<(int BaseId, int Index, int SubIndex), DeviceCanFrame> queue);
     bool InIdRange(int id);
 
     /// <summary>
     /// Get all status message signals exposed by this device for use in CAN input configuration
     /// </summary>
     /// <returns>Enumerable of tuples containing message ID and signal</returns>
-    IEnumerable<(int MessageId, DbcSignal Signal)> GetStatusSignals();
+    IEnumerable<(int MessageId, DbcSignal Signal)> GetStatusSigs();
     
     /// <summary>
     /// Get all cyclic transmit messages

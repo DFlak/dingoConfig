@@ -129,7 +129,7 @@
     [Parameter, EditorRequired] public List<CanInput> CanInputs { get; set; } = null!;
     [Parameter, EditorRequired] public TDevice Device { get; set; } = default!;
 
-    private int _refreshCounter = 0;
+    private int _refreshCounter;
 
     private void OnIdChanged(CanInput item, int value)
     {

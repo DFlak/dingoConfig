@@ -1,7 +1,10 @@
 @using web.Services
 @using domain.Devices.dingoPdm.Functions
 @using domain.Devices.dingoPdm.Enums
+@using domain.Models
+@inject IDialogService DialogService
 @inject NotificationService Notification
+@typeparam TDevice where TDevice : domain.Interfaces.IDeviceConfigurable
 
 <MudDataGrid Items="@Conditions" Dense="true" Hover="true" Striped="false" EditMode="DataGridEditMode.Cell" ReadOnly="false"
              SortMode="SortMode.None" ColumnResizeMode="ResizeMode.Container" Virtualize="true" 
@@ -28,15 +31,18 @@
                 </MudChip>
             </CellTemplate>
         </PropertyColumn>
-        <PropertyColumn Property="x => x.Input" Title="Input Source" CellStyle="max-width: 200px">
+        <PropertyColumn Property="x => x.Input" Title="Variable" CellStyle="max-width: 250px;">
             <EditTemplate>
-                <MudSelect T="VarMap" @bind-Value="context.Item.Input" Variant="Variant.Outlined" Dense="true"
-                           Disabled="!context.Item.Enabled">
-                    @foreach (VarMap varMap in Enum.GetValues(typeof(VarMap)))
-                    {
-                        <MudSelectItem T="VarMap" Value="@varMap">@varMap</MudSelectItem>
-                    }
-                </MudSelect>
+                <MudStack Row="true">
+                    <MudIconButton Icon="@Icons.Material.Filled.Search"
+                                   Color="Color.Primary"
+                                   Size="Size.Small"
+                                   Disabled="(!context.Item.Enabled)"
+                                   Style="max-width: 20px"
+                                   OnClick="@(() => OpenVariableSelectorAsync(context.Item, "bool"))">
+                    </MudIconButton>
+                    <MudText>@GetSelectedVarText(context.Item.Input)</MudText>
+                </MudStack>
             </EditTemplate>
         </PropertyColumn>
         <PropertyColumn Property="x => x.Operator" CellStyle="max-width: 200px">
@@ -64,9 +70,25 @@
 @code {
     [Parameter, EditorRequired]
     public List<Condition> Conditions { get; set; } = null!;
+    [Parameter, EditorRequired] public TDevice Device { get; set; } = default!;
 
     private int _refreshCounter = 0;
 
+    private async Task OpenVariableSelectorAsync(Condition condition, string datatype)
+    {
+        var parameters = new DialogParameters<VarMapSelectionDialog>
+        {
+            { x => x.Device, Device},
+            { x => x.Datatype, datatype}
+        };
+        
+        var dialog = await DialogService.ShowAsync<VarMapSelectionDialog>("Select Variable", parameters);
+        var result = await dialog.Result;
+
+        if (result is { Canceled: false, Data: (DeviceVariable variable) })
+            condition.Input = variable;
+    }
+    
     private void OnArgChanged(Condition item, int value)
     {
         const int min = 0;
@@ -77,5 +99,16 @@
         }
         item.Arg = Math.Clamp(value, min, max);
         _refreshCounter++;
+    }
+    
+    private string GetSelectedVarText(DeviceVariable variable)
+    {
+        if(variable.FunctionName.Length == 0)
+            return "Select Variable";
+
+        if (variable.SingleVariable)
+            return $"{variable.FunctionName}.{variable.PropertyName}";
+
+        return $"{variable.FunctionName}{variable.FunctionIndex}.{variable.PropertyName}";
     }
 }

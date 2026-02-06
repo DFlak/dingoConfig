@@ -1,6 +1,6 @@
 using System.Text.Json.Serialization;
 
-namespace domain.Devices.Keypad.BlinkMarine;
+namespace domain.Devices.Keypad.BlinkMarine.Functions;
 
 public class AnalogInput(int number, string name)
 {

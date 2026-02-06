@@ -32,8 +32,10 @@ public class PdmDevice : IDeviceConfigurable
     [JsonIgnore] protected virtual int NumKeypads => 2;
     [JsonIgnore] protected virtual int KeypadMaxButtons => 20;
     [JsonIgnore] protected virtual int KeypadMaxDials => 4;
+    [JsonIgnore] protected virtual int KeypadMaxAnalogInputs => 4;
     
 
+    [JsonIgnore] public const int BaseIndex = 0x0000;
     [JsonIgnore] protected virtual int PdmType => 0; //0=dingoPDM, 1=dingoPDM-Max
     [JsonIgnore] protected bool PdmTypeOk;
     
@@ -42,6 +44,7 @@ public class PdmDevice : IDeviceConfigurable
     [JsonPropertyName("name")] public string Name { get; set; }
     [JsonPropertyName("baseId")] public int BaseId { get; set; }
     [JsonIgnore] public List<DeviceVariable> VarMap { get; set; } = null!;
+    [JsonIgnore] public List<DeviceParameter> Params { get; set; } = null!;
 
     
     [JsonIgnore][Plotable(displayName:"DevState")] public DeviceState DeviceState { get; private set; }
@@ -68,7 +71,7 @@ public class PdmDevice : IDeviceConfigurable
     
     [JsonIgnore] private DateTime LastRxTime { get; set; }
 
-    [JsonIgnore] private Dictionary<int, List<(DbcSignal Signal, Action<double> SetValue)>> StatusMessageSignals { get; set; } = null!;
+    [JsonIgnore] private Dictionary<int, List<(DbcSignal Signal, Action<double> SetValue)>> StatusSigs { get; set; } = null!;
 
     [JsonIgnore]
     public bool Connected
@@ -92,8 +95,9 @@ public class PdmDevice : IDeviceConfigurable
         BaseId = baseId;
         Guid = Guid.NewGuid();
 
-        InitializeCollections();
-        InitializeVarMap();
+        InitFunctions();
+        InitVarMap();
+        InitParams();
     }
 
     public void SetLogger(ILogger<PdmDevice> logger)
@@ -101,7 +105,7 @@ public class PdmDevice : IDeviceConfigurable
         Logger = logger;
     }
 
-    protected virtual void InitializeCollections()
+    protected virtual void InitFunctions()
     {
         for (var i = 0; i < NumDigitalInputs; i++)
             Inputs.Add(new Input(i + 1, "digitalInput" + (i + 1)));
@@ -128,24 +132,24 @@ public class PdmDevice : IDeviceConfigurable
 
         Wipers = new Wiper("wiper");
 
-        InitializeStatusMessageSignals();
+        InitStatusSigs();
     }
 
-    protected virtual void InitializeStatusMessageSignals()
+    protected virtual void InitStatusSigs()
     {
-        StatusMessageSignals = new Dictionary<int, List<(DbcSignal Signal, Action<double> SetValue)>>();
+        StatusSigs = new Dictionary<int, List<(DbcSignal Signal, Action<double> SetValue)>>();
 
         // Message 0: System status
-        StatusMessageSignals[0] = new List<(DbcSignal, Action<double>)>();
+        StatusSigs[0] = new List<(DbcSignal, Action<double>)>();
         for (var i = 0; i < NumDigitalInputs; i++)
         {
             var inputIndex = i;
-            StatusMessageSignals[0].Add((
+            StatusSigs[0].Add((
                 new DbcSignal { Name = $"Input{inputIndex + 1}.State", StartBit = i, Length = 1 },
                 val => Inputs[inputIndex].State = val != 0
             ));
         }
-        StatusMessageSignals[0].AddRange(new List<(DbcSignal, Action<double>)>
+        StatusSigs[0].AddRange(new List<(DbcSignal, Action<double>)>
         {
             (new DbcSignal { Name = "DeviceState", StartBit = 8, Length = 4 },
                 val => DeviceState = (DeviceState)val),
@@ -160,38 +164,38 @@ public class PdmDevice : IDeviceConfigurable
         });
 
         // Message 1: Output currents 0-3
-        StatusMessageSignals[1] = [];
+        StatusSigs[1] = [];
         for (var i = 0; i < 4 && i < NumOutputs; i++)
         {
             var outputIndex = i;
-            StatusMessageSignals[1].Add((
+            StatusSigs[1].Add((
                 new DbcSignal { Name = $"Output{outputIndex + 1}.Current", StartBit = i * 16, Length = 16, Factor = 0.1, Unit = "A" },
                 val => Outputs[outputIndex].Current = val
             ));
         }
 
         // Message 2: Output currents 4-7
-        StatusMessageSignals[2] = [];
+        StatusSigs[2] = [];
         for (var i = 4; i < NumOutputs; i++)
         {
             var outputIndex = i;
-            StatusMessageSignals[2].Add((
+            StatusSigs[2].Add((
                 new DbcSignal { Name = $"Output{outputIndex + 1}.Current", StartBit = (i - 4) * 16, Length = 16, Factor = 0.1, Unit = "A" },
                 val => Outputs[outputIndex].Current = val
             ));
         }
 
         // Message 3: Output states, wiper, flashers
-        StatusMessageSignals[3] = [];
+        StatusSigs[3] = [];
         for (var i = 0; i < NumOutputs; i++)
         {
             var outputIndex = i;
-            StatusMessageSignals[3].Add((
+            StatusSigs[3].Add((
                 new DbcSignal { Name = $"Output{outputIndex + 1}.State", StartBit = i * 4, Length = 4 },
                 val => Outputs[outputIndex].State = (OutState)val
             ));
         }
-        StatusMessageSignals[3].AddRange(new List<(DbcSignal, Action<double>)>
+        StatusSigs[3].AddRange(new List<(DbcSignal, Action<double>)>
         {
             (new DbcSignal { Name = "WiperSlowState", StartBit = 32, Length = 1 },
                 val => Wipers.SlowState = val != 0),
@@ -205,29 +209,29 @@ public class PdmDevice : IDeviceConfigurable
         for (var i = 0; i < NumFlashers; i++)
         {
             var flasherIndex = i;
-            StatusMessageSignals[3].Add((
+            StatusSigs[3].Add((
                 new DbcSignal { Name = $"Flasher{flasherIndex + 1}", StartBit = 48 + i, Length = 1 },
                 val => Flashers[flasherIndex].Value = val != 0 && Flashers[flasherIndex].Enabled
             ));
         }
 
         // Message 4: Output reset counts
-        StatusMessageSignals[4] = [];
+        StatusSigs[4] = [];
         for (var i = 0; i < NumOutputs; i++)
         {
             var outputIndex = i;
-            StatusMessageSignals[4].Add((
+            StatusSigs[4].Add((
                 new DbcSignal { Name = $"Output{outputIndex + 1}.ResetCount", StartBit = i * 8, Length = 8 },
                 val => Outputs[outputIndex].ResetCount = (int)val
             ));
         }
 
         // Message 5: CAN inputs & virtual inputs
-        StatusMessageSignals[5] = [];
+        StatusSigs[5] = [];
         for (var i = 0; i < NumCanInputs; i++)
         {
             var canInputIndex = i;
-            StatusMessageSignals[5].Add((
+            StatusSigs[5].Add((
                 new DbcSignal { Name = $"CanInput{canInputIndex + 1}", StartBit = i, Length = 1 },
                 val => CanInputs[canInputIndex].Output = val != 0
             ));
@@ -235,18 +239,18 @@ public class PdmDevice : IDeviceConfigurable
         for (var i = 0; i < NumVirtualInputs; i++)
         {
             var virtualInputIndex = i;
-            StatusMessageSignals[5].Add((
+            StatusSigs[5].Add((
                 new DbcSignal { Name = $"VirtualInput{virtualInputIndex + 1}", StartBit = 32 + i, Length = 1 },
                 val => VirtualInputs[virtualInputIndex].Value = val != 0
             ));
         }
 
         // Message 6: Counters & conditions
-        StatusMessageSignals[6] = [];
+        StatusSigs[6] = [];
         for (var i = 0; i < NumCounters; i++)
         {
             var counterIndex = i;
-            StatusMessageSignals[6].Add((
+            StatusSigs[6].Add((
                 new DbcSignal { Name = $"Counter{counterIndex + 1}", StartBit = i * 8, Length = 8 },
                 val => Counters[counterIndex].Value = (int)val
             ));
@@ -254,7 +258,7 @@ public class PdmDevice : IDeviceConfigurable
         for (var i = 0; i < NumConditions; i++)
         {
             var conditionIndex = i;
-            StatusMessageSignals[6].Add((
+            StatusSigs[6].Add((
                 new DbcSignal { Name = $"Condition{conditionIndex + 1}", StartBit = 32 + i, Length = 1 },
                 val => Conditions[conditionIndex].Value = (int)val
             ));
@@ -263,13 +267,13 @@ public class PdmDevice : IDeviceConfigurable
         // Messages 7-14: CAN input values (4 per message)
         for (var msg = 7; msg <= 14; msg++)
         {
-            StatusMessageSignals[msg] = [];
+            StatusSigs[msg] = [];
             for (var i = 0; i < 4; i++)
             {
                 var canInputIndex = (msg - 7) * 4 + i;
                 if (canInputIndex < NumCanInputs)
                 {
-                    StatusMessageSignals[msg].Add((
+                    StatusSigs[msg].Add((
                         new DbcSignal { Name = $"CanInput{canInputIndex + 1}.Value", StartBit = i * 16, Length = 16 },
                         val => CanInputs[canInputIndex].Value = (ushort)val
                     ));
@@ -278,18 +282,18 @@ public class PdmDevice : IDeviceConfigurable
         }
 
         // Message 15: Output duty cycles
-        StatusMessageSignals[15] = [];
+        StatusSigs[15] = [];
         for (var i = 0; i < NumOutputs; i++)
         {
             var outputIndex = i;
-            StatusMessageSignals[15].Add((
+            StatusSigs[15].Add((
                 new DbcSignal { Name = $"Output{outputIndex + 1}.DutyCycle", StartBit = i * 8, Length = 8, Unit = "%" },
                 val => Outputs[outputIndex].CurrentDutyCycle = val
             ));
         }
     }
 
-    private void InitializeVarMap()
+    private void InitVarMap()
     {
         VarMap = [];
         
@@ -301,7 +305,8 @@ public class PdmDevice : IDeviceConfigurable
             FunctionIndex = 0,
             PropertyName = "Value",
             DataType = "bool",
-            VariableIndex = index++
+            VariableIndex = index++,
+            SingleVariable = true
         });
         
         VarMap.Add(new DeviceVariable
@@ -310,7 +315,38 @@ public class PdmDevice : IDeviceConfigurable
             FunctionIndex = 0,
             PropertyName = "Value",
             DataType = "bool",
-            VariableIndex = index++
+            VariableIndex = index++,
+            SingleVariable = true
+        });
+        
+        VarMap.Add(new DeviceVariable
+        {
+            FunctionName = "State",
+            FunctionIndex = 0,
+            PropertyName = "Value",
+            DataType = "int",
+            VariableIndex = index++,
+            SingleVariable = true
+        });
+        
+        VarMap.Add(new DeviceVariable
+        {
+            FunctionName = "Temperature",
+            FunctionIndex = 0,
+            PropertyName = "Value",
+            DataType = "float",
+            VariableIndex = index++,
+            SingleVariable = true
+        });
+        
+        VarMap.Add(new DeviceVariable
+        {
+            FunctionName = "Battery Voltage",
+            FunctionIndex = 0,
+            PropertyName = "Value",
+            DataType = "float",
+            VariableIndex = index++,
+            SingleVariable = true
         });
         
         if (NumDigitalInputs > 0)
@@ -323,7 +359,8 @@ public class PdmDevice : IDeviceConfigurable
                     FunctionIndex = i + 1,
                     PropertyName = "State",
                     DataType = "bool",
-                    VariableIndex = index++
+                    VariableIndex = index++,
+                    SingleVariable = false
                 });
             }
         }
@@ -338,7 +375,8 @@ public class PdmDevice : IDeviceConfigurable
                     FunctionIndex = i + 1,
                     PropertyName = "State",
                     DataType = "bool",
-                    VariableIndex = index++
+                    VariableIndex = index++,
+                    SingleVariable = false
                 });
                 VarMap.Add(new DeviceVariable
                 {
@@ -346,7 +384,8 @@ public class PdmDevice : IDeviceConfigurable
                     FunctionIndex = i + 1,
                     PropertyName = "Value",
                     DataType = "float",
-                    VariableIndex = index++
+                    VariableIndex = index++,
+                    SingleVariable = false
                 });
             }
         }
@@ -361,7 +400,8 @@ public class PdmDevice : IDeviceConfigurable
                     FunctionIndex = i + 1,
                     PropertyName = "State",
                     DataType = "bool",
-                    VariableIndex = index++
+                    VariableIndex = index++,
+                    SingleVariable = false
                 });
             }  
         }
@@ -376,7 +416,8 @@ public class PdmDevice : IDeviceConfigurable
                     FunctionIndex = i + 1,
                     PropertyName = "On",
                     DataType = "bool",
-                    VariableIndex = index++
+                    VariableIndex = index++,
+                    SingleVariable = false
                 });
                 VarMap.Add(new DeviceVariable
                 {
@@ -384,7 +425,8 @@ public class PdmDevice : IDeviceConfigurable
                     FunctionIndex = i + 1,
                     PropertyName = "Current",
                     DataType = "float",
-                    VariableIndex = index++
+                    VariableIndex = index++,
+                    SingleVariable = false
                 });
                 VarMap.Add(new DeviceVariable
                 {
@@ -392,7 +434,8 @@ public class PdmDevice : IDeviceConfigurable
                     FunctionIndex = i + 1,
                     PropertyName = "Overcurrent",
                     DataType = "bool",
-                    VariableIndex = index++
+                    VariableIndex = index++,
+                    SingleVariable = false
                 });
                 VarMap.Add(new DeviceVariable
                 {
@@ -400,7 +443,8 @@ public class PdmDevice : IDeviceConfigurable
                     FunctionIndex = i + 1,
                     PropertyName = "Fault",
                     DataType = "bool",
-                    VariableIndex = index++
+                    VariableIndex = index++,
+                    SingleVariable = false
                 });
             }
         }
@@ -415,7 +459,8 @@ public class PdmDevice : IDeviceConfigurable
                     FunctionIndex = i + 1,
                     PropertyName = "State",
                     DataType = "bool",
-                    VariableIndex = index++
+                    VariableIndex = index++,
+                    SingleVariable = false
                 });
             }
         }
@@ -430,7 +475,8 @@ public class PdmDevice : IDeviceConfigurable
                     FunctionIndex = i + 1,
                     PropertyName = "Value",
                     DataType = "bool",
-                    VariableIndex = index++
+                    VariableIndex = index++,
+                    SingleVariable = false
                 });
             }
         }
@@ -445,7 +491,8 @@ public class PdmDevice : IDeviceConfigurable
                     FunctionIndex = i + 1,
                     PropertyName = "Value",
                     DataType = "int",
-                    VariableIndex = index++
+                    VariableIndex = index++,
+                    SingleVariable = false
                 });
             }
         }
@@ -456,7 +503,8 @@ public class PdmDevice : IDeviceConfigurable
             FunctionIndex = 0,
             PropertyName = "Output",
             DataType = "bool",
-            VariableIndex = index++
+            VariableIndex = index++,
+            SingleVariable = true
         });
         
         VarMap.Add(new DeviceVariable
@@ -465,7 +513,8 @@ public class PdmDevice : IDeviceConfigurable
             FunctionIndex = 0,
             PropertyName = "Output",
             DataType = "bool",
-            VariableIndex = index++
+            VariableIndex = index++,
+            SingleVariable = true
         });
         
         VarMap.Add(new DeviceVariable
@@ -474,7 +523,8 @@ public class PdmDevice : IDeviceConfigurable
             FunctionIndex = 0,
             PropertyName = "Output",
             DataType = "bool",
-            VariableIndex = index++
+            VariableIndex = index++,
+            SingleVariable = true
         });
         
         VarMap.Add(new DeviceVariable
@@ -483,7 +533,8 @@ public class PdmDevice : IDeviceConfigurable
             FunctionIndex = 0,
             PropertyName = "Output",
             DataType = "bool",
-            VariableIndex = index++
+            VariableIndex = index++,
+            SingleVariable = true
         });
         
         VarMap.Add(new DeviceVariable
@@ -492,7 +543,8 @@ public class PdmDevice : IDeviceConfigurable
             FunctionIndex = 0,
             PropertyName = "Output",
             DataType = "bool",
-            VariableIndex = index++
+            VariableIndex = index++,
+            SingleVariable = true
         });
         
         VarMap.Add(new DeviceVariable
@@ -501,7 +553,8 @@ public class PdmDevice : IDeviceConfigurable
             FunctionIndex = 0,
             PropertyName = "Output",
             DataType = "bool",
-            VariableIndex = index++
+            VariableIndex = index++,
+            SingleVariable = true
         });
         
         if (NumKeypads > 0)
@@ -516,9 +569,11 @@ public class PdmDevice : IDeviceConfigurable
                         FunctionIndex = j + 1,
                         PropertyName = "State",
                         DataType = "bool",
-                        VariableIndex = index++
+                        VariableIndex = index++,
+                        SingleVariable = false
                     });
                 }
+                
                 for (var j = 0; j < KeypadMaxDials; j++)
                 {
                     VarMap.Add(new DeviceVariable
@@ -527,11 +582,40 @@ public class PdmDevice : IDeviceConfigurable
                         FunctionIndex = j + 1,
                         PropertyName = "Position",
                         DataType = "int",
-                        VariableIndex = index++
+                        VariableIndex = index++,
+                        SingleVariable = false
+                    });
+                }
+                
+                for (var j = 0; j < KeypadMaxAnalogInputs; j++)
+                {
+                    VarMap.Add(new DeviceVariable
+                    {
+                        FunctionName = $"Keypad{i + 1}.AnalogInput",
+                        FunctionIndex = j + 1,
+                        PropertyName = "Value",
+                        DataType = "float",
+                        VariableIndex = index++,
+                        SingleVariable = false
                     });
                 }
             }
         }
+    }
+
+    private void InitParams()
+    {
+        var allParams = new List<DeviceParameter>();
+        foreach (var input in Inputs) allParams.AddRange(input.Params);
+        foreach (var output in Outputs) allParams.AddRange(output.Params);
+        foreach (var canInput in CanInputs) allParams.AddRange(canInput.Params);
+        foreach (var virtualInput in VirtualInputs) allParams.AddRange(virtualInput.Params);
+        foreach (var flasher in Flashers) allParams.AddRange(flasher.Params);
+        foreach (var counter in Counters) allParams.AddRange(counter.Params);
+        foreach (var condition in Conditions) allParams.AddRange(condition.Params);
+        allParams.AddRange(Wipers.Params);
+        allParams.AddRange(StarterDisable.Params);
+        Params = allParams;
     }
 
     private void Clear()
@@ -565,12 +649,12 @@ public class PdmDevice : IDeviceConfigurable
         return (id >= BaseId - 1) && (id <= BaseId + 31);
     }
     
-    public void Read(int id, byte[] data, ref ConcurrentDictionary<(int BaseId, int Prefix, int Index), DeviceCanFrame> queue)
+    public void Read(int id, byte[] data, ref ConcurrentDictionary<(int BaseId, int Index, int SubIndex), DeviceCanFrame> queue)
     {
         var offset = id - BaseId;
 
         // Use dictionary lookup for status messages 0-15
-        if (StatusMessageSignals.TryGetValue(offset, out var signals))
+        if (StatusSigs.TryGetValue(offset, out var signals))
         {
             foreach (var (signal, setValue) in signals)
             {
@@ -591,9 +675,9 @@ public class PdmDevice : IDeviceConfigurable
         LastRxTime = DateTime.Now;
     }
 
-    public IEnumerable<(int MessageId, DbcSignal Signal)> GetStatusSignals()
+    public IEnumerable<(int MessageId, DbcSignal Signal)> GetStatusSigs()
     {
-        foreach (var kvp in StatusMessageSignals)
+        foreach (var kvp in StatusSigs)
         {
             int messageId = BaseId + kvp.Key;
             foreach (var (signal, _) in kvp.Value)
@@ -618,26 +702,41 @@ public class PdmDevice : IDeviceConfigurable
         }
     }
 
-    protected void ReadSettingsResponse(byte[] data, ConcurrentDictionary<(int BaseId, int Prefix, int Index), DeviceCanFrame> queue)
+    protected void ReadSettingsResponse(byte[] data, ConcurrentDictionary<(int BaseId, int Index, int SubIndex), DeviceCanFrame> queue)
     {
-        //Response is prefix + 128
-        if (data[0] < 128)
-            return;
-            
-        var prefix = (MessagePrefix)(data[0] - 128);
-
-        int index;
+        int index = data[1] << 8 | data[2];
+        int subIndex = data[3];
+        
+        var param = Params.First(p => p.Index == index && p.SubIndex == subIndex);
 
         //Vars used below
-        (int BaseId, int, int) key;
+        (int BaseId, int, int) key = (BaseId, index, subIndex);;
         DeviceCanFrame canFrame;
 
-        switch (prefix)
+        switch ((MessageCommand)data[0])
         {
-            case MessagePrefix.Version:
-                Version = $"v{data[1]}.{data[2]}.{(data[3] << 8) + (data[4])}";
+            case MessageCommand.ParamResponse:
+                var rawValue = DbcSignalCodec.ExtractSignal(data, startBit: 32, length: 32);
 
-                key = (BaseId, (int)MessagePrefix.Version, 0);
+                // Convert to the appropriate type based on param.ValueType
+                object convertedValue = param.ValueType switch
+                {
+                    Type t when t == typeof(bool) => rawValue != 0,
+                    Type t when t == typeof(int) => (int)rawValue,
+                    Type t when t == typeof(uint) => (uint)rawValue,
+                    Type t when t == typeof(float) => (float)rawValue,
+                    Type t when t == typeof(double) => rawValue,
+                    Type t when t.IsEnum => Enum.ToObject(t, (int)rawValue),
+                    _ => rawValue
+                };
+
+                param.SetValue(convertedValue);
+                
+                break;
+            
+            case MessageCommand.Version:
+                Version = $"v{data[1]}.{data[2]}.{(data[3] << 8) + (data[4])}";
+                
                 if (queue.TryGetValue(key, out canFrame!))
                 {
                     canFrame.TimeSentTimer?.Dispose();
@@ -653,237 +752,11 @@ public class PdmDevice : IDeviceConfigurable
 
                 break;
 
-            case MessagePrefix.Can:
-                SleepEnabled = Convert.ToBoolean(data[1] & 0x01);
-                CanFiltersEnabled = Convert.ToBoolean((data[1] >> 1) & 0x01);
-                BaseId = (data[2] << 8) + data[3];
-                BitRate = (CanBitRate)((data[1] & 0xF0)>>4);
-
-                key = (BaseId, (int)MessagePrefix.Can, 0);
-                if (queue.TryGetValue(key, out canFrame!))
-                {
-                    canFrame.TimeSentTimer?.Dispose();
-                    queue.TryRemove(key, out _);
-                }
-
-                break;
-
-            case MessagePrefix.Inputs:
-                index = Input.ExtractIndex(data[1], prefix);
-                
-                if (index >= 0 && index < NumDigitalInputs)
-                {
-                    if (Inputs[index].Receive(data, prefix))
-                    {
-                        key = (BaseId, (int)MessagePrefix.Inputs, index);
-                        if (queue.TryGetValue(key, out canFrame!))
-                        {
-                            canFrame.TimeSentTimer?.Dispose();
-                            queue.TryRemove(key, out _);
-                        }
-                    }
-                }
-
-                break;
-
-            case MessagePrefix.Outputs:
-                index = Output.ExtractIndex(data[1], prefix);
-                
-                if (index >= 0 && index < NumOutputs)
-                {
-                    if (Outputs[index].Receive(data, prefix))
-                    {
-                        key = (BaseId, (int)MessagePrefix.Outputs, index);
-                        if (queue.TryGetValue(key, out canFrame!))
-                        {
-                            canFrame.TimeSentTimer?.Dispose();
-                            queue.TryRemove(key, out _);
-                        }
-                    }
-                }
-
-                break;
-
-            case MessagePrefix.OutputsPwm:
-                index = Output.ExtractIndex(data[1], prefix);
-
-                if (index >= 0 && index < NumOutputs)
-                {
-                    if (Outputs[index].Receive(data, prefix))
-                    {
-                        key = (BaseId, (int)MessagePrefix.OutputsPwm, index);
-                        if (queue.TryGetValue(key, out canFrame!))
-                        {
-                            canFrame.TimeSentTimer?.Dispose();
-                            queue.TryRemove(key, out _);
-                        }
-                    }
-                }
-
-                break;
-
-            case MessagePrefix.VirtualInputs:
-                index = VirtualInput.ExtractIndex(data[2], prefix);
-                
-                if (index >= 0 && index < NumVirtualInputs)
-                {
-                    if (VirtualInputs[index].Receive(data, prefix))
-                    {
-                        key = (BaseId, (int)MessagePrefix.VirtualInputs, index);
-                        if (queue.TryGetValue(key, out canFrame!))
-                        {
-                            canFrame.TimeSentTimer?.Dispose();
-                            queue.TryRemove(key, out _);
-                        }
-                    }
-                }
-
-                break;
-
-            case MessagePrefix.Flashers:
-                index = Flasher.ExtractIndex(data[1], prefix);
-                
-                if (index >= 0 && index < NumFlashers)
-                {
-                    if (Flashers[index].Receive(data, prefix))
-                    {
-                        key = (BaseId, (int)MessagePrefix.Flashers, index);
-                        if (queue.TryGetValue(key, out canFrame!))
-                        {
-                            canFrame.TimeSentTimer?.Dispose();
-                            queue.TryRemove(key, out _);
-                        }
-                    }
-                }
-
-                break;
-
-            case MessagePrefix.Wiper:
-                if (Wipers.Receive(data, prefix))
-                {
-                    key = (BaseId, (int)MessagePrefix.Wiper, 0);
-                    if (queue.TryGetValue(key, out canFrame!))
-                    {
-                        canFrame.TimeSentTimer?.Dispose();
-                        queue.TryRemove(key, out _);
-                    }
-                }
-
-                break;
-
-            case MessagePrefix.WiperSpeed:
-                if (Wipers.Receive(data, prefix))
-                {
-                    key = (BaseId, (int)MessagePrefix.WiperSpeed, 0);
-                    if (queue.TryGetValue(key, out canFrame!))
-                    {
-                        canFrame.TimeSentTimer?.Dispose();
-                        queue.TryRemove(key, out _);
-                    }
-                }
-
-                break;
-
-            case MessagePrefix.WiperDelays:
-                if (Wipers.Receive(data, prefix))
-                {
-                    key = (BaseId, (int)MessagePrefix.WiperDelays, 0);
-                    if (queue.TryGetValue(key, out canFrame!))
-                    {
-                        canFrame.TimeSentTimer?.Dispose();
-                        queue.TryRemove(key, out _);
-                    }
-                }
-
-                break;
-
-            case MessagePrefix.StarterDisable:
-                if (StarterDisable.Receive(data, prefix))
-                {
-                    key = (BaseId, (int)MessagePrefix.StarterDisable, 0);
-                    if (queue.TryGetValue(key, out canFrame!))
-                    {
-                        canFrame.TimeSentTimer?.Dispose();
-                        queue.TryRemove(key, out _);
-                    }
-                }
-
-                break;
-
-            case MessagePrefix.CanInputs:
-                index = CanInput.ExtractIndex(data[1], prefix);
-                if (index >= 0 && index < NumCanInputs)
-                {
-                    if(CanInputs[index].Receive(data, prefix))
-                    {
-                        key = (BaseId, (int)MessagePrefix.CanInputs, index);
-                        if (queue.TryGetValue(key, out canFrame!))
-                        {
-                            canFrame.TimeSentTimer?.Dispose();
-                            queue.TryRemove(key, out _);
-                        }
-                    }
-                }
-
-                break;
-
-            case MessagePrefix.CanInputsId:
-                index = CanInput.ExtractIndex(data[1], prefix);
-                if (index >= 0 && index < NumCanInputs)
-                {
-                    if (CanInputs[index].Receive(data, prefix))
-                    {
-                        key = (BaseId, (int)MessagePrefix.CanInputsId, index);
-                        if (queue.TryGetValue(key, out canFrame!))
-                        {
-                            canFrame.TimeSentTimer?.Dispose();
-                            queue.TryRemove(key, out _);
-                        }
-                    }
-                }
-
-                break;
-
-            case MessagePrefix.Counter:
-				index = Counter.ExtractIndex(data[1], prefix);
-				if (index >= 0 && index < NumCounters)
-				{
-					if (Counters[index].Receive(data, prefix))
-					{
-						key = (BaseId, (int)MessagePrefix.Counter, index);
-						if (queue.TryGetValue(key, out canFrame!))
-						{
-							canFrame.TimeSentTimer?.Dispose();
-							queue.TryRemove(key, out _);
-						}
-					}
-				}
-
-				break;
-
-			case MessagePrefix.Conditions:
-				index = Condition.ExtractIndex(data[1], prefix);
-				if (index >= 0 && index < NumConditions)
-				{
-					if (Conditions[index].Receive(data, prefix))
-					{
-						key = (BaseId, (int)MessagePrefix.Conditions, index);
-						if (queue.TryGetValue(key, out canFrame!))
-						{
-							canFrame.TimeSentTimer?.Dispose();
-							queue.TryRemove(key, out _);
-						}
-					}
-				}
-
-				break;
-
-			case MessagePrefix.BurnSettings:
+			case MessageCommand.BurnSettings:
                 if (data[1] == 1) //Successful burn
                 {
                     Logger.LogInformation("{Name} ID: {BaseId}, Burn Successful", Name, BaseId);
 
-                    key = (BaseId, (int)MessagePrefix.BurnSettings, 0);
                     if (queue.TryGetValue(key, out canFrame!))
                     {
                         canFrame.TimeSentTimer?.Dispose();
@@ -896,12 +769,12 @@ public class PdmDevice : IDeviceConfigurable
                 
                 break;
 
-            case MessagePrefix.Sleep:
+            case MessageCommand.Sleep:
                 if (data[1] == 1) //Successful sleep
                 {
                     Logger.LogInformation("{Name} ID: {BaseId}, Sleep Successful", Name, BaseId);
 
-                    key = (BaseId, (int)MessagePrefix.Sleep, 0);
+                    key = (BaseId, (int)MessageCommand.Sleep, 0);
                     if (queue.TryGetValue(key, out canFrame!))
                     {
                         canFrame.TimeSentTimer?.Dispose();
@@ -942,281 +815,52 @@ public class PdmDevice : IDeviceConfigurable
 
         var msgs = new List<DeviceCanFrame>
         {
-            //Request settings messages
-            //Version
             new DeviceCanFrame
             {
                 DeviceBaseId = BaseId,
-                Sent = false,
-                Received = false,
-                Prefix = (int)MessagePrefix.Version,
-                Index = 0,
-                Frame = new CanFrame(Id: id - 1, Len: 1, Payload: [Convert.ToByte(MessagePrefix.Version), 0, 0, 0, 0, 0, 0, 0]),
-                MsgDescription="Version"
-            },
-            //CAN settings
-            new DeviceCanFrame
-            {
-                DeviceBaseId = BaseId,
-                Sent = false,
-                Received = false,
-                Prefix = (int)MessagePrefix.Can,
-                Index = 0,
-                Frame = new CanFrame(Id: id - 1, Len: 1, Payload: [Convert.ToByte(MessagePrefix.Can), 0, 0, 0, 0, 0, 0, 0]),
-                MsgDescription="CANSettings"
+                Frame = new CanFrame(
+                    Id: id - 1, 
+                    Len: 8, 
+                    Payload: [Convert.ToByte(MessageCommand.ReadAllParams), 0, 0, 0, 0, 0, 0, 0]),
             }
         };
-
-        //Inputs
-        foreach (var function in Inputs)
-        {
-            var msg = function.CreateUploadRequest(id, MessagePrefix.Inputs);
-            if ( msg != null)
-                msgs.Add(msg);
-        }
-
-        //Outputs
-        foreach (var function in Outputs)
-        {
-            var msg = function.CreateUploadRequest(id, MessagePrefix.Outputs);
-            if ( msg != null)
-                msgs.Add(msg);
-        }
-
-        //Outputs PWM
-        foreach (var function in Outputs)
-        {
-            var msg = function.CreateUploadRequest(id, MessagePrefix.OutputsPwm);
-            if ( msg != null)
-                msgs.Add(msg);
-        }
-
-        //Virtual inputs
-        foreach (var function in Inputs)
-        {
-            var msg = function.CreateUploadRequest(id, MessagePrefix.VirtualInputs);
-            if ( msg != null)
-                msgs.Add(msg);
-        }
-
-        //Flashers
-        foreach (var function in Flashers)
-        {
-            var msg = function.CreateUploadRequest(id, MessagePrefix.Flashers);
-            if ( msg != null)
-                msgs.Add(msg);
-        }
-
-        //CAN inputs
-        foreach (var function in CanInputs)
-        {
-            var msg = function.CreateUploadRequest(id, MessagePrefix.CanInputs);
-            if ( msg != null)
-                msgs.Add(msg);
-        }
-
-        //CAN inputs ID
-        foreach (var function in CanInputs)
-        {
-            var msg = function.CreateUploadRequest(id, MessagePrefix.CanInputsId);
-            if ( msg != null)
-                msgs.Add(msg);
-        }
-
-        //Wiper
-        var wiperMsg = Wipers.CreateUploadRequest(id, MessagePrefix.Wiper);
-        if ( wiperMsg != null)
-            msgs.Add(wiperMsg);
-
-        //Wiper speeds
-        var wiperSpeedMsg = Wipers.CreateUploadRequest(id, MessagePrefix.WiperSpeed);
-        if ( wiperSpeedMsg != null)
-            msgs.Add(wiperSpeedMsg);
-
-        //Wiper delays
-        var wiperDelayMsg = Wipers.CreateUploadRequest(id, MessagePrefix.WiperDelays);
-        if ( wiperDelayMsg != null)
-            msgs.Add(wiperDelayMsg);
-
-        //Starter disable
-        var starterDisableMsg = StarterDisable.CreateUploadRequest(id, MessagePrefix.StarterDisable);
-        if ( starterDisableMsg != null)
-            msgs.Add(starterDisableMsg);
-
-		//Counter
-        foreach (var function in Counters)
-        {
-            var msg = function.CreateUploadRequest(id, MessagePrefix.Counter);
-            if ( msg != null)
-                msgs.Add(msg);
-        }
-
-		//Condition
-        foreach (var function in Conditions)
-        {
-            var msg = function.CreateUploadRequest(id, MessagePrefix.Conditions);
-            if ( msg != null)
-                msgs.Add(msg);
-        }
 
 		return msgs;
     }
 
     public List<DeviceCanFrame> GetWriteMsgs()
     {
-        var id = BaseId;
+        var modifiedParams = Params.Where(p => p.IsModified).ToList();
 
-        List<DeviceCanFrame> msgs =
-        [
-            new DeviceCanFrame
+        List<DeviceCanFrame> msgs = [];
+
+        foreach (var parameter in modifiedParams)
+        {
+            msgs.Add(new DeviceCanFrame
             {
                 DeviceBaseId = BaseId,
-                Sent = false,
-                Received = false,
-                Prefix = (int)MessagePrefix.Can,
-                Index = 0,
-                Frame = new CanFrame
-                (
-                    Id: id - 1,
-                    Len: 4,
-                    Payload: [
-                        Convert.ToByte(MessagePrefix.Can), //Byte 0
-                        Convert.ToByte(Convert.ToByte(SleepEnabled) +
-                                       (Convert.ToByte(CanFiltersEnabled) << 1) +
-                                       ((Convert.ToByte(BitRate) & 0x0F) << 4)),
-                        Convert.ToByte((BaseId & 0xFF00) >> 8), //Byte 2
-                        Convert.ToByte(BaseId & 0x00FF), //Byte 3
-                        0, 0, 0, 0
-                    ]
-                ),
-                MsgDescription = "CANSettings"
-            }
-        ];
-
-        //Inputs
-        foreach(var function in Inputs)
-        {
-            var msg = function.CreateDownloadRequest(id, MessagePrefix.Inputs);
-            if ( msg != null)
-                msgs.Add(msg);
+                Frame = ParamCodec.ToFrame(MessageCommand.WriteParam, parameter, BaseId - 1)
+            });
         }
-
-        //Outputs
-        foreach(var function in Outputs)
-        {
-            var msg = function.CreateDownloadRequest(id, MessagePrefix.Outputs);
-            if ( msg != null)
-                msgs.Add(msg);
-        }
-
-        //Outputs PWM
-        foreach(var function in Outputs)
-        {
-            var msg = function.CreateDownloadRequest(id, MessagePrefix.OutputsPwm);
-            if ( msg != null)
-                msgs.Add(msg);
-        }
-
-        //Virtual inputs
-        foreach(var function in VirtualInputs)
-        {
-            var msg = function.CreateDownloadRequest(id, MessagePrefix.VirtualInputs);
-            if ( msg != null)
-                msgs.Add(msg);
-        }
-
-        //Flashers
-        foreach(var function in Flashers)
-        {
-            var msg = function.CreateDownloadRequest(id, MessagePrefix.Flashers);
-            if ( msg != null)
-                msgs.Add(msg);
-        }
-
-        //CAN inputs
-        foreach(var function in CanInputs)
-        {
-            var msg = function.CreateDownloadRequest(id, MessagePrefix.CanInputs);
-            if ( msg != null)
-                msgs.Add(msg);
-        }
-
-        //CAN inputs ID
-        foreach(var function in CanInputs)
-        {
-            var msg = function.CreateDownloadRequest(id, MessagePrefix.CanInputsId);
-            if ( msg != null)
-                msgs.Add(msg);
-        }
-
-        //Wiper
-        var wiperMsg = Wipers.CreateDownloadRequest(id, MessagePrefix.Wiper);
-        if ( wiperMsg != null)
-            msgs.Add(wiperMsg);
-
-        //Wiper speeds
-        var wiperSpeedMsg = Wipers.CreateDownloadRequest(id, MessagePrefix.WiperSpeed);
-        if ( wiperSpeedMsg != null)
-            msgs.Add(wiperSpeedMsg);
-
-        //Wiper delays
-        var wiperDelayMsg = Wipers.CreateDownloadRequest(id, MessagePrefix.WiperDelays);
-        if ( wiperDelayMsg != null)
-            msgs.Add(wiperDelayMsg);
-
-        //Starter disable
-        var starterDisableMsg = StarterDisable.CreateDownloadRequest(id, MessagePrefix.StarterDisable);
-        if ( starterDisableMsg != null)
-            msgs.Add(starterDisableMsg);
-
-		//Counter
-        foreach(var function in Counters)
-        {
-            var msg = function.CreateDownloadRequest(id, MessagePrefix.Counter);
-            if ( msg != null)
-                msgs.Add(msg);
-        }
-
-        foreach(var function in Conditions)
-        {
-            var msg = function.CreateDownloadRequest(id, MessagePrefix.Conditions);
-            if ( msg != null)
-                msgs.Add(msg);
-        }
-
-		return msgs;
+        
+        return msgs;
     }
 
     public List<DeviceCanFrame> GetModifyMsgs(int newId)
     {
-        List<DeviceCanFrame> msgs =
-        [
-            new DeviceCanFrame
+        var modifyParams = Params.Where(p => p is { Index: 0x0010, SubIndex: 1 }).ToList();
+
+        List<DeviceCanFrame> msgs = [];
+
+        foreach (var parameter in modifyParams)
+        {
+            msgs.Add(new DeviceCanFrame
             {
-                DeviceBaseId = newId, //Set msg ID to new ID so response is processed properly
-                Sent = false,
-                Received = false,
-                Prefix = (int)MessagePrefix.Can,
-                Index = 0,
-                Frame = new CanFrame
-                (
-                    Id: BaseId - 1,
-                    Len: 4,
-                    Payload: [
-                        Convert.ToByte(MessagePrefix.Can), //Byte 0
-                        Convert.ToByte(Convert.ToByte(SleepEnabled) +
-                                       (Convert.ToByte(CanFiltersEnabled) << 1) +
-                                       ((Convert.ToByte(BitRate) & 0x0F) << 4)),
-                        Convert.ToByte((newId & 0xFF00) >> 8), //Byte 2
-                        Convert.ToByte(newId & 0x00FF), //Byte 3
-                        0, 0, 0, 0
-                    ]
-                ),
-                MsgDescription = "CANSettings"
-            }
-
-        ];
-
+                DeviceBaseId = newId,
+                Frame = ParamCodec.ToFrame(MessageCommand.WriteParam, parameter, BaseId - 1)
+            });
+        }
+        
         return msgs;
     }
 
@@ -1225,17 +869,12 @@ public class PdmDevice : IDeviceConfigurable
         return new DeviceCanFrame
         {
             DeviceBaseId = BaseId,
-            Sent = false,
-            Received = false,
-            Prefix = (int)MessagePrefix.BurnSettings,
-            Index = 0,
             Frame = new CanFrame
             (
                 Id: BaseId - 1,
-                Len: 4,
-                Payload: [Convert.ToByte(MessagePrefix.BurnSettings), 1, 3, 8, 0, 0, 0, 0]
-            ),
-            MsgDescription = "Burn Settings"
+                Len: 8,
+                Payload: [Convert.ToByte(MessageCommand.BurnSettings), 1, 3, 8, 0, 0, 0, 0]
+            )
         };
     }
 
@@ -1244,18 +883,13 @@ public class PdmDevice : IDeviceConfigurable
         return new DeviceCanFrame
         {
             DeviceBaseId = BaseId,
-            Sent = false,
-            Received = false,
-            Prefix = (int)MessagePrefix.Sleep,
-            Index = 0,
             Frame = new CanFrame
             (
                 Id: BaseId - 1,
-                Len: 5,
-                Payload: [Convert.ToByte(MessagePrefix.Sleep), Convert.ToByte('Q'), Convert.ToByte('U'), Convert.ToByte('I'), Convert.ToByte('T'), 0, 0, 0
+                Len: 8,
+                Payload: [Convert.ToByte(MessageCommand.Sleep), Convert.ToByte('Q'), Convert.ToByte('U'), Convert.ToByte('I'), Convert.ToByte('T'), 0, 0, 0
                 ]
-            ),
-            MsgDescription = "Sleep Request"
+            )
         };
     }
 
@@ -1264,17 +898,12 @@ public class PdmDevice : IDeviceConfigurable
         return new DeviceCanFrame
         {
             DeviceBaseId = BaseId,
-            Sent = false,
-            Received = false,
-            Prefix = (int)MessagePrefix.Version,
-            Index = 0,
             Frame = new CanFrame
             (
                 Id: BaseId - 1,
-                Len: 1,
-                Payload: [Convert.ToByte(MessagePrefix.Version), 0, 0, 0, 0, 0, 0, 0]
-            ),
-            MsgDescription = "Version"
+                Len: 8,
+                Payload: [Convert.ToByte(MessageCommand.Version), 0, 0, 0, 0, 0, 0, 0]
+            )
         };
     }
 
@@ -1283,17 +912,12 @@ public class PdmDevice : IDeviceConfigurable
         return new DeviceCanFrame
         {
             DeviceBaseId = BaseId,
-            Sent = false,
-            Received = false,
-            Prefix = (int)MessagePrefix.Null, //No response = no prefix
-            Index = 0,
             Frame = new CanFrame
             (
                 Id: BaseId - 1,
-                Len: 1,
+                Len: 8,
                 Payload: [Convert.ToByte('!'), 0, 0, 0, 0, 0, 0, 0]
-            ),
-            MsgDescription = "Wakeup"
+            )
         };
     }
 
@@ -1302,20 +926,15 @@ public class PdmDevice : IDeviceConfigurable
         return new DeviceCanFrame
         {
             DeviceBaseId = BaseId,
-            Sent = false,
-            Received = false,
-            Prefix = (int)MessagePrefix.Bootloader,
-            Index = 0,
             Frame = new CanFrame
             (
                 Id: BaseId - 1,
-                Len: 6,
+                Len: 8,
                 Payload: [
-                    Convert.ToByte(MessagePrefix.Bootloader), (byte)'B', (byte)'O', (byte)'O', (byte)'T', (byte)'L', 0,
+                    Convert.ToByte(MessageCommand.Bootloader), (byte)'B', (byte)'O', (byte)'O', (byte)'T', (byte)'L', 0,
                     0
                 ]
-            ),
-            MsgDescription = "Bootloader"
+            )
         };
     }
     
@@ -1323,8 +942,6 @@ public class PdmDevice : IDeviceConfigurable
     {
         return [];
     }
-    
-    public void UpdateName(string newName) =>  Name = newName;
 
     // Collection accessors
     public IReadOnlyList<Input> GetInputs() => Inputs.AsReadOnly();

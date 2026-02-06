@@ -220,10 +220,7 @@
         if(variable.FunctionName.Length == 0)
             return "Select Variable";
 
-        if (variable.FunctionName.Equals("None") ||
-            variable.FunctionName.Equals("Always On") ||
-            variable.FunctionName.Contains("Wiper") ||
-            variable.FunctionName.Contains("Starter"))
+        if (variable.SingleVariable)
             return $"{variable.FunctionName}.{variable.PropertyName}";
 
         return $"{variable.FunctionName}{variable.FunctionIndex}.{variable.PropertyName}";

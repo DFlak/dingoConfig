@@ -1,5 +1,6 @@
 @using web.Components.Devices.Keypad
 @using domain.Devices.Keypad.BlinkMarine.Enums
+@using domain.Devices.Keypad.BlinkMarine.Functions
 @using MudBlazor
 @implements IDisposable
 
@@ -20,7 +21,7 @@
     public int Size { get; set; } = 120;
 
     [Parameter, EditorRequired]
-    public domain.Devices.Keypad.BlinkMarine.Button Button { get; set; } = null!;
+    public Button Button { get; set; } = null!;
 
     private System.Threading.Timer? _blinkTimer;
     private bool _showBlinkColor;

@@ -15,7 +15,7 @@ namespace application.Services;
 public class DeviceManager(ILogger<DeviceManager> logger, ILoggerFactory loggerFactory)
 {
     private readonly Dictionary<Guid, IDevice> _devices = new();
-    private ConcurrentDictionary<(int BaseId, int Prefix, int Index), DeviceCanFrame> _requestQueue = new();
+    private ConcurrentDictionary<(int BaseId, int Index, int SubIndex), DeviceCanFrame> _requestQueue = new();
     private Action<CanFrame>? _transmitCallback;
     private readonly Dictionary<Guid, DeviceUiState> _deviceUiState = new();
 
@@ -305,8 +305,11 @@ public class DeviceManager(ILogger<DeviceManager> logger, ILoggerFactory loggerF
         //Some messages have no response, don't queue
         if (sendOnly) return;
 
+        int index = frame.Frame.Payload[2] << 8 | frame.Frame.Payload[1];
+        int subIndex = frame.Frame.Payload[3];
+        
         //Unique message key, used to find message in transmit queue later
-        var key = (frame.DeviceBaseId, frame.Prefix, frame.Index);
+        var key = (frame.DeviceBaseId, index, subIndex);
 
         if (!_requestQueue.TryAdd(key, frame))
         {
@@ -317,9 +320,6 @@ public class DeviceManager(ILogger<DeviceManager> logger, ILoggerFactory loggerF
 
         // Start timeout timer
         StartMessageTimer(key, frame);
-
-        //logger.LogDebug("Message queued: {Description} (BaseId={BaseId}, Prefix={Prefix})",
-        //    frame.MsgDescription, key.Item1, key.Item2);
     }
 
     private void StartMessageTimer((int, int, int) key, DeviceCanFrame frame)
@@ -340,9 +340,12 @@ public class DeviceManager(ILogger<DeviceManager> logger, ILoggerFactory loggerF
             _requestQueue.TryRemove(key, out _);
             frame.TimeSentTimer?.Dispose();
 
+            int index =  frame.Frame.Payload[2] << 8 | frame.Frame.Payload[1];
+            int subIndex = frame.Frame.Payload[3];
+            
             var device = GetDeviceByBaseId(key.BaseId);
-            logger.LogError("Message failed after {MaxRetries} retries: {Description} on {DeviceName} (ID: {BaseId})",
-                MaxRetries, frame.MsgDescription, device?.Name ?? "Unknown", key.BaseId);
+            logger.LogError("Message failed after {MaxRetries} retries: {Index:X}:{SubIndex} on {DeviceName} (ID: {BaseId})",
+                MaxRetries, index, subIndex, device?.Name ?? "Unknown", key.BaseId);
         }
         else
         {
@@ -354,8 +357,8 @@ public class DeviceManager(ILogger<DeviceManager> logger, ILoggerFactory loggerF
 
             StartMessageTimer(key, frame);
 
-            logger.LogWarning("Message retry {Attempt}/{MaxRetries}: {Description} (BaseId={BaseId})",
-                frame.RxAttempts, MaxRetries, frame.MsgDescription, key.BaseId);
+            logger.LogWarning("Message retry {Attempt}/{MaxRetries}: (BaseId={BaseId})",
+                frame.RxAttempts, MaxRetries, key.BaseId);
         }
     }
 

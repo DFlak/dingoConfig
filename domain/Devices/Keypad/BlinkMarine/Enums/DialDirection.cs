@@ -1,4 +1,4 @@
-namespace domain.Devices.Keypad.Enums;
+namespace domain.Devices.Keypad.BlinkMarine.Enums;
 
 public enum DialDirection
 {

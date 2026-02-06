@@ -1,7 +1,7 @@
 using System.Text.Json.Serialization;
 using domain.Devices.Keypad.Enums;
 
-namespace domain.Devices.Keypad.Grayhill;
+namespace domain.Devices.Keypad.Grayhill.Functions;
 
 public class Button(int number, string name)
 {

@@ -2,6 +2,7 @@ using System.Collections.Concurrent;
 using System.Text.Json.Serialization;
 using domain.Common;
 using domain.Devices.Keypad.Grayhill.Enums;
+using domain.Devices.Keypad.Grayhill.Functions;
 using domain.Interfaces;
 using domain.Models;
 using Microsoft.Extensions.Logging;
@@ -39,7 +40,7 @@ public class GrayhillKeypadDevice : IDevice
 
     [JsonPropertyName("buttons")] public List<Button> Buttons { get; init; } = [];
 
-    [JsonIgnore] public Dictionary<int, List<(DbcSignal Signal, Action<double> SetValue)>> StatusMessageSignals { get; set; } = null!;
+    [JsonIgnore] public Dictionary<int, List<(DbcSignal Signal, Action<double> SetValue)>> StatusSigs { get; set; } = null!;
 
     [JsonConstructor]
     public GrayhillKeypadDevice(string name, int baseId, string model)
@@ -48,8 +49,8 @@ public class GrayhillKeypadDevice : IDevice
         BaseId = baseId;
         NumButtons = GrayhillModels.Lookup(model);
         Guid = Guid.NewGuid();
-        InitializeCollections();
-        InitializeStatusMessageSignals();
+        InitCollections();
+        InitStatusSigs();
     }
 
     public void SetLogger(ILogger<GrayhillKeypadDevice> logger)
@@ -57,22 +58,22 @@ public class GrayhillKeypadDevice : IDevice
         _logger = logger;
     }
 
-    private void InitializeCollections()
+    private void InitCollections()
     {
         for (var i = 0; i < NumButtons; i++)
             Buttons.Add(new Button(i + 1, $"button{i + 1}"));
     }
 
-    private void InitializeStatusMessageSignals()
+    private void InitStatusSigs()
     {
-        StatusMessageSignals = new Dictionary<int, List<(DbcSignal Signal, Action<double> SetValue)>>();
+        StatusSigs = new Dictionary<int, List<(DbcSignal Signal, Action<double> SetValue)>>();
 
         // Button States
-        StatusMessageSignals[0] = [];
+        StatusSigs[0] = [];
         for (var i = 0; i < NumButtons; i++)
         {
             var button = Buttons[i]; // No cast needed - strongly typed!
-            StatusMessageSignals[0].Add((
+            StatusSigs[0].Add((
                 new DbcSignal { Name = $"Button{i + 1}.State", StartBit = i, Length = 1},
                 val => button.State = val != 0
             ));
@@ -101,7 +102,7 @@ public class GrayhillKeypadDevice : IDevice
                id == ((int)MessageId.LedControl + BaseId);
     }
 
-    public void Read(int id, byte[] data, ref ConcurrentDictionary<(int BaseId, int Prefix, int Index), DeviceCanFrame> queue)
+    public void Read(int id, byte[] data, ref ConcurrentDictionary<(int BaseId, int Index, int SubIndex), DeviceCanFrame> queue)
     {
         switch ((MessageId)id - BaseId)
         {
@@ -183,9 +184,9 @@ public class GrayhillKeypadDevice : IDevice
         return new CanFrame((int)MessageId.ButtonState + BaseId, 3, data);
     }
 
-    public IEnumerable<(int MessageId, DbcSignal Signal)> GetStatusSignals()
+    public IEnumerable<(int MessageId, DbcSignal Signal)> GetStatusSigs()
     {
-        foreach (var kvp in StatusMessageSignals)
+        foreach (var kvp in StatusSigs)
         {
             var messageId = BaseId + kvp.Key;
             foreach (var (signal, _) in kvp.Value)

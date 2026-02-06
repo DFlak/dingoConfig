@@ -52,7 +52,7 @@ public class DeviceSignalService(
         };
 
         // Group signals by message ID
-        var signalsByMessage = device.GetStatusSignals()
+        var signalsByMessage = device.GetStatusSigs()
             .GroupBy(tuple => tuple.MessageId)
             .OrderBy(g => g.Key);
 

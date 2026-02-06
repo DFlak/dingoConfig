@@ -45,7 +45,7 @@
                            ExpandedChanged="@((bool expanded) => _outputsPwmExpanded = expanded)">
             @if (_outputsPwmExpanded)
             {
-                <OutputsPwmGrid Outputs="Device.Outputs"/>
+                <OutputsPwmGrid Outputs="Device.Outputs" Device="Device"/>
             }
         </MudExpansionPanel>
 
@@ -54,7 +54,7 @@
                            ExpandedChanged="@((bool expanded) => _inputsExpanded = expanded)">
             @if (_inputsExpanded)
             {
-                <InputsGrid Inputs="Device.Inputs"/>
+                <InputsGrid Inputs="Device.Inputs" Device="Device"/>
             }
         </MudExpansionPanel>
 
@@ -72,7 +72,7 @@
                            ExpandedChanged="@((bool expanded) => _virtualInputsExpanded = expanded)">
             @if (_virtualInputsExpanded)
             {
-                <VirtualInputsGrid VirtualInputs="Device.VirtualInputs"/>
+                <VirtualInputsGrid VirtualInputs="Device.VirtualInputs" Device="Device"/>
             }
         </MudExpansionPanel>
 
@@ -82,7 +82,7 @@
                            ExpandedChanged="@((bool expanded) => _conditionsExpanded = expanded)">
             @if (_conditionsExpanded)
             {
-                <ConditionsGrid Conditions="Device.Conditions"/>
+                <ConditionsGrid Conditions="Device.Conditions" Device="Device"/>
             }
         </MudExpansionPanel>
 
@@ -92,7 +92,7 @@
                            ExpandedChanged="@((bool expanded) => _countersExpanded = expanded)">
             @if (_countersExpanded)
             {
-                <CountersGrid Counters="Device.Counters"/>
+                <CountersGrid Counters="Device.Counters" Device="Device"/>
             }
         </MudExpansionPanel>
 
@@ -102,7 +102,7 @@
                            ExpandedChanged="@((bool expanded) => _flashersExpanded = expanded)">
             @if (_flashersExpanded)
             {
-                <FlashersGrid Flashers="Device.Flashers"/>
+                <FlashersGrid Flashers="Device.Flashers" Device="Device"/>
             }
         </MudExpansionPanel>
 
@@ -112,7 +112,7 @@
                            ExpandedChanged="@((bool expanded) => _wiperExpanded = expanded)">
             @if (_wiperExpanded)
             {
-                <WiperConfig Wiper="Device.Wipers"/>
+                <WiperConfig Wiper="Device.Wipers" Device="Device"/>
             }
         </MudExpansionPanel>
 
@@ -121,7 +121,7 @@
                            ExpandedChanged="@((bool expanded) => _starterDisableExpanded = expanded)">
             @if (_starterDisableExpanded)
             {
-                <StarterDisableConfig StarterDisable="Device.StarterDisable"/>
+                <StarterDisableConfig StarterDisable="Device.StarterDisable" Device="Device"/>
             }
         </MudExpansionPanel>
     </MudExpansionPanels>

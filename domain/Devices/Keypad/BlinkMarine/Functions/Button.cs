@@ -2,7 +2,7 @@ using System.Text.Json.Serialization;
 using domain.Devices.Keypad.BlinkMarine.Enums;
 using domain.Devices.Keypad.Enums;
 
-namespace domain.Devices.Keypad.BlinkMarine;
+namespace domain.Devices.Keypad.BlinkMarine.Functions;
 
 public class Button(int number, string name)
 {

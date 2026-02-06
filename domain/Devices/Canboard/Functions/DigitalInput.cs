@@ -10,25 +10,28 @@ public class DigitalInput(int number, string name) : IDeviceFunction
 {
     [JsonPropertyName("number")] public int Number { get; set; } = number;
     [JsonPropertyName("name")] public string Name { get; set; } = name;
-    
+    [JsonIgnore] public List<DeviceParameter> Parameters { get; } = [];
+
     [JsonIgnore][Plotable(displayName:"State")] public bool State { get; set; }
     
-    public static int ExtractIndex(byte data, MessagePrefix prefix)
+    [JsonIgnore] public List<DeviceParameter> Params { get; } = [];
+    
+    public static int ExtractIndex(byte data, MessageCommand command)
     {
         throw new NotImplementedException();
     }
 
-    public bool Receive(byte[] data, MessagePrefix prefix)
+    public bool Receive(byte[] data, MessageCommand command)
     {
         throw new NotImplementedException();
     }
 
-    public DeviceCanFrame? CreateUploadRequest(int baseId, MessagePrefix prefix)
+    public DeviceCanFrame? CreateUploadRequest(int baseId, MessageCommand command)
     {
         throw new NotImplementedException();
     }
 
-    public DeviceCanFrame? CreateDownloadRequest(int baseId, MessagePrefix prefix)
+    public DeviceCanFrame? CreateDownloadRequest(int baseId, MessageCommand command)
     {
         throw new NotImplementedException();
     }

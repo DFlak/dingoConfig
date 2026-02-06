@@ -69,7 +69,7 @@ public class DbcDevice : IDevice
         }
     }
 
-    public void Read(int id, byte[] data, ref ConcurrentDictionary<(int BaseId, int Prefix, int Index), DeviceCanFrame> queue)
+    public void Read(int id, byte[] data, ref ConcurrentDictionary<(int BaseId, int Index, int SubIndex), DeviceCanFrame> queue)
     {
         if (DbcSignals.Count == 0) return;
 
@@ -145,7 +145,7 @@ public class DbcDevice : IDevice
         MaxId = DbcSignals.Max(p => p.Id);
     }
 
-    public IEnumerable<(int MessageId, DbcSignal Signal)> GetStatusSignals()
+    public IEnumerable<(int MessageId, DbcSignal Signal)> GetStatusSigs()
     {
         // DbcSignals already have Id populated from DBC file
         foreach (var signal in DbcSignals)
