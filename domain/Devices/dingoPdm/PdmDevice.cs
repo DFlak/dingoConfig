@@ -53,9 +53,9 @@ public class PdmDevice : IDeviceConfigurable
     [JsonIgnore][Plotable(displayName:"Temperature", unit:"degC")] public double BoardTempC { get; private set; }
     [JsonIgnore] public string Version { get; private set; } = "v0.0.0";
     
-    [JsonIgnore] public bool SleepEnabled { get; set; }
-    [JsonIgnore] public bool CanFiltersEnabled { get; set; }
-    [JsonIgnore] public CanBitRate BitRate { get; set; }
+    [JsonPropertyName("sleepEnabled")] public bool SleepEnabled { get; set; }
+    [JsonPropertyName("filtersEnabled")] public bool CanFiltersEnabled { get; set; }
+    [JsonPropertyName("bitrate")] public CanBitRate BitRate { get; set; }
     [JsonIgnore] public TimeSpan CyclicGap { get; } =  TimeSpan.FromSeconds(0);
     [JsonIgnore] public TimeSpan CyclicPause { get; } = TimeSpan.FromMilliseconds(0);
     
@@ -704,18 +704,19 @@ public class PdmDevice : IDeviceConfigurable
 
     protected void ReadSettingsResponse(byte[] data, ConcurrentDictionary<(int BaseId, int Index, int SubIndex), DeviceCanFrame> queue)
     {
-        int index = data[1] << 8 | data[2];
-        int subIndex = data[3];
-        
-        var param = Params.First(p => p.Index == index && p.SubIndex == subIndex);
-
-        //Vars used below
-        (int BaseId, int, int) key = (BaseId, index, subIndex);;
         DeviceCanFrame canFrame;
-
+        (int BaseId, int, int) key;
+        
         switch ((MessageCommand)data[0])
         {
             case MessageCommand.ParamResponse:
+                if (data.Length != 8) return;
+                
+                int index = data[2] << 8 | data[1];
+                int subIndex = data[3];
+        
+                var param = Params.First(p => p.Index == index && p.SubIndex == subIndex);
+                
                 var rawValue = DbcSignalCodec.ExtractSignal(data, startBit: 32, length: 32);
 
                 // Convert to the appropriate type based on param.ValueType
@@ -732,11 +733,29 @@ public class PdmDevice : IDeviceConfigurable
 
                 param.SetValue(convertedValue);
                 
+                key = (BaseId, index, subIndex);
+                if (queue.TryGetValue(key, out canFrame!))
+                {
+                    canFrame.TimeSentTimer?.Dispose();
+                    queue.TryRemove(key, out _);
+                }
+                
+                break;
+            
+            case MessageCommand.ReadAllParams:
+                if (data.Length != 8) return;
+
+                if (ExtractSignalInt(data, startBit: 32, length: 32) == 0xFFFFFFFF)
+                {
+                    //End of params, apply temporary params
+                }
+
                 break;
             
             case MessageCommand.Version:
                 Version = $"v{data[1]}.{data[2]}.{(data[3] << 8) + (data[4])}";
                 
+                key = (BaseId, (int)MessageCommand.Version, 0);
                 if (queue.TryGetValue(key, out canFrame!))
                 {
                     canFrame.TimeSentTimer?.Dispose();
@@ -757,6 +776,7 @@ public class PdmDevice : IDeviceConfigurable
                 {
                     Logger.LogInformation("{Name} ID: {BaseId}, Burn Successful", Name, BaseId);
 
+                    key = (BaseId, (int)MessageCommand.BurnSettings, 0);
                     if (queue.TryGetValue(key, out canFrame!))
                     {
                         canFrame.TimeSentTimer?.Dispose();
@@ -815,9 +835,10 @@ public class PdmDevice : IDeviceConfigurable
 
         var msgs = new List<DeviceCanFrame>
         {
-            new DeviceCanFrame
+            new()
             {
                 DeviceBaseId = BaseId,
+                SendOnly = true,
                 Frame = new CanFrame(
                     Id: id - 1, 
                     Len: 8, 
@@ -856,6 +877,7 @@ public class PdmDevice : IDeviceConfigurable
         {
             msgs.Add(new DeviceCanFrame
             {
+                SendOnly = true,
                 DeviceBaseId = newId,
                 Frame = ParamCodec.ToFrame(MessageCommand.WriteParam, parameter, BaseId - 1)
             });
@@ -882,6 +904,7 @@ public class PdmDevice : IDeviceConfigurable
     {
         return new DeviceCanFrame
         {
+            SendOnly = true,
             DeviceBaseId = BaseId,
             Frame = new CanFrame
             (
@@ -911,6 +934,7 @@ public class PdmDevice : IDeviceConfigurable
     {
         return new DeviceCanFrame
         {
+            SendOnly = true,
             DeviceBaseId = BaseId,
             Frame = new CanFrame
             (
@@ -925,6 +949,7 @@ public class PdmDevice : IDeviceConfigurable
     {
         return new DeviceCanFrame
         {
+            SendOnly = true,
             DeviceBaseId = BaseId,
             Frame = new CanFrame
             (

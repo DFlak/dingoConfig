@@ -165,15 +165,15 @@
             switch (var)
             {
                 case "inc":
-                    counter.IncInput = variable;
+                    counter.IncInput = variable.VariableIndex;
                     break;
                     
                 case "dec":
-                    counter.DecInput = variable;
+                    counter.DecInput = variable.VariableIndex;
                     break;
                     
                 case "reset":
-                    counter.ResetInput = variable;
+                    counter.ResetInput = variable.VariableIndex;
                     break;
             }
         }
@@ -215,8 +215,12 @@
         _refreshCounter++;
     }
     
-    private string GetSelectedVarText(DeviceVariable variable)
+    private string GetSelectedVarText(int index)
     {
+        var variable = Device.VarMap.Find(p => p.VariableIndex == index);
+
+        if (variable == null) return "Not found";
+        
         if(variable.FunctionName.Length == 0)
             return "Select Variable";
 

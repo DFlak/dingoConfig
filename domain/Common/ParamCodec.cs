@@ -3,7 +3,7 @@ using domain.Models;
 
 namespace domain.Common;
 
-public abstract class ParamCodec
+public static class ParamCodec
 {
     public static CanFrame ToFrame(MessageCommand cmd, DeviceParameter param, int baseId)
     {
@@ -18,8 +18,7 @@ public abstract class ParamCodec
         DbcSignalCodec.InsertSignal(payload, param.SubIndex, 24, 8);
         
         //Value
-        var val = param.GetValue();
-        DbcSignalCodec.InsertSignal(payload, (double)val, 32, 32);
+        DbcSignalCodec.InsertSignal(payload, Convert.ToDouble(param.GetValue()), 32, 32);
         
         return new CanFrame
         (

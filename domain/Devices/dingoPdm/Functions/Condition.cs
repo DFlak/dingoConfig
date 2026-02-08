@@ -12,7 +12,7 @@ public class Condition : IDeviceFunction
     [JsonPropertyName("name")] public string Name {get; set; }
     [JsonPropertyName("number")] public int Number {get;}
     [JsonPropertyName("enabled")] public bool Enabled {get; set; }
-    [JsonPropertyName("input")] public DeviceVariable Input { get; set; } = new();
+    [JsonPropertyName("input")] public int Input { get; set; }
     [JsonPropertyName("operator")] public Operator Operator {get; set;}
     [JsonPropertyName("arg")] public int Arg {get; set;}
 
@@ -43,8 +43,8 @@ public class Condition : IDeviceFunction
             new DeviceParameter
             {
                 ParentName = Name, Name = "input", Index = BaseIndex + (Number - 1), SubIndex = subIndex++,
-                GetValue = () => Input.VariableIndex, SetValue = val => Input.VariableIndex = (int)val,
-                ValueType = Input.VariableIndex.GetType(),
+                GetValue = () => Input, SetValue = val => Input = (int)val,
+                ValueType = Input.GetType(),
                 DefaultValue = 0
             },
             new DeviceParameter

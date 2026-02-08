@@ -13,15 +13,15 @@ public class Wiper : IDeviceFunction
     [JsonIgnore] public int Number => 1; // Singleton function
     [JsonPropertyName("enabled")] public bool Enabled {get; set;}
     [JsonPropertyName("mode")] public WiperMode Mode { get; set; }
-    [JsonPropertyName("slowInput")] public DeviceVariable SlowInput { get; set; } = new();
-    [JsonPropertyName("fastInput")] public DeviceVariable FastInput { get; set; } = new();
-    [JsonPropertyName("interInput")] public DeviceVariable InterInput { get; set; } = new();
-    [JsonPropertyName("onInput")] public DeviceVariable OnInput { get; set; } = new();
-    [JsonPropertyName("speedInput")] public DeviceVariable SpeedInput { get; set; } = new();
-    [JsonPropertyName("parkInput")] public DeviceVariable ParkInput { get; set; } = new();
+    [JsonPropertyName("slowInput")] public int SlowInput { get; set; }
+    [JsonPropertyName("fastInput")] public int FastInput { get; set; }
+    [JsonPropertyName("interInput")] public int InterInput { get; set; }
+    [JsonPropertyName("onInput")] public int OnInput { get; set; }
+    [JsonPropertyName("speedInput")] public int SpeedInput { get; set; }
+    [JsonPropertyName("parkInput")] public int ParkInput { get; set; }
     [JsonPropertyName("parkStopLevel")] public bool ParkStopLevel { get; set; }
-    [JsonPropertyName("swipeInput")] public DeviceVariable SwipeInput { get; set; } = new();
-    [JsonPropertyName("washInput")] public DeviceVariable WashInput { get; set; } = new();
+    [JsonPropertyName("swipeInput")] public int SwipeInput { get; set; }
+    [JsonPropertyName("washInput")] public int WashInput { get; set; }
     [JsonPropertyName("washWipeCycles")] public int WashWipeCycles { get; set; }
     [JsonPropertyName("speedMap")] public WiperSpeed[] SpeedMap { get; set; } = new WiperSpeed[8];
     [JsonPropertyName("intermitTime")] public double[] IntermitTime { get; set; } = new double[6];
@@ -62,43 +62,43 @@ public class Wiper : IDeviceFunction
             new DeviceParameter
             {
                 ParentName = Name, Name = "slowInput", Index = BaseIndex + (Number - 1), SubIndex = subIndex++,
-                GetValue = () => SlowInput.VariableIndex, SetValue = val => SlowInput.VariableIndex = (int)val,
-                ValueType = SlowInput.VariableIndex.GetType(),
+                GetValue = () => SlowInput, SetValue = val => SlowInput = (int)val,
+                ValueType = SlowInput.GetType(),
                 DefaultValue = 0
             },
             new DeviceParameter
             {
                 ParentName = Name, Name = "fastInput", Index = BaseIndex + (Number - 1), SubIndex = subIndex++,
-                GetValue = () => FastInput.VariableIndex, SetValue = val => FastInput.VariableIndex = (int)val,
-                ValueType = FastInput.VariableIndex.GetType(),
+                GetValue = () => FastInput, SetValue = val => FastInput = (int)val,
+                ValueType = FastInput.GetType(),
                 DefaultValue = 0
             },
             new DeviceParameter
             {
                 ParentName = Name, Name = "interInput", Index = BaseIndex + (Number - 1), SubIndex = subIndex++,
-                GetValue = () => InterInput.VariableIndex, SetValue = val => InterInput.VariableIndex = (int)val,
-                ValueType = InterInput.VariableIndex.GetType(),
+                GetValue = () => InterInput, SetValue = val => InterInput = (int)val,
+                ValueType = InterInput.GetType(),
                 DefaultValue = 0
             },
             new DeviceParameter
             {
                 ParentName = Name, Name = "onInput", Index = BaseIndex + (Number - 1), SubIndex = subIndex++,
-                GetValue = () => OnInput.VariableIndex, SetValue = val => OnInput.VariableIndex = (int)val,
-                ValueType = OnInput.VariableIndex.GetType(),
+                GetValue = () => OnInput, SetValue = val => OnInput = (int)val,
+                ValueType = OnInput.GetType(),
                 DefaultValue = 0
             },
             new DeviceParameter
             {
                 ParentName = Name, Name = "speedInput", Index = BaseIndex + (Number - 1), SubIndex = subIndex++,
-                GetValue = () => SpeedInput.VariableIndex, SetValue = val => SpeedInput.VariableIndex = (int)val,
-                ValueType = SpeedInput.VariableIndex.GetType(),
+                GetValue = () => SpeedInput, SetValue = val => SpeedInput = (int)val,
+                ValueType = SpeedInput.GetType(),
                 DefaultValue = 0
             },
             new DeviceParameter
             {
                 ParentName = Name, Name = "parkInput", Index = BaseIndex + (Number - 1), SubIndex = subIndex++,
-                GetValue = () => ParkInput.VariableIndex, SetValue = val => ParkInput.VariableIndex = (int)val,
-                ValueType = ParkInput.VariableIndex.GetType(),
+                GetValue = () => ParkInput, SetValue = val => ParkInput = (int)val,
+                ValueType = ParkInput.GetType(),
                 DefaultValue = 0
             },
             new DeviceParameter
@@ -111,15 +111,15 @@ public class Wiper : IDeviceFunction
             new DeviceParameter
             {
                 ParentName = Name, Name = "swipeInput", Index = BaseIndex + (Number - 1), SubIndex = subIndex++,
-                GetValue = () => SwipeInput.VariableIndex, SetValue = val => SwipeInput.VariableIndex = (int)val,
-                ValueType = SwipeInput.VariableIndex.GetType(),
+                GetValue = () => SwipeInput, SetValue = val => SwipeInput = (int)val,
+                ValueType = SwipeInput.GetType(),
                 DefaultValue = 0
             },
             new DeviceParameter
             {
                 ParentName = Name, Name = "washInput", Index = BaseIndex + (Number - 1), SubIndex = subIndex++,
-                GetValue = () => WashInput.VariableIndex, SetValue = val => WashInput.VariableIndex = (int)val,
-                ValueType = WashInput.VariableIndex.GetType(),
+                GetValue = () => WashInput, SetValue = val => WashInput = (int)val,
+                ValueType = WashInput.GetType(),
                 DefaultValue = 0
             },
             new DeviceParameter

@@ -12,9 +12,9 @@ public class Counter : IDeviceFunction
     [JsonPropertyName("name")] public string Name {get; set; }
     [JsonPropertyName("number")] public int Number {get;}
     [JsonPropertyName("enabled")] public bool Enabled {get; set;}
-    [JsonPropertyName("incInput")] public DeviceVariable IncInput { get; set; } = new();
-    [JsonPropertyName("decInput")] public DeviceVariable DecInput { get; set; } = new();
-    [JsonPropertyName("resetInput")] public  DeviceVariable ResetInput { get; set; } = new();
+    [JsonPropertyName("incInput")] public int IncInput { get; set; }
+    [JsonPropertyName("decInput")] public int DecInput { get; set; }
+    [JsonPropertyName("resetInput")] public  int ResetInput { get; set; }
     [JsonPropertyName("minCount")] public int  MinCount {get; set;}
     [JsonPropertyName("maxCount")] public int  MaxCount {get; set;}
     [JsonPropertyName("incEdge")] public InputEdge IncEdge {get; set;}
@@ -51,22 +51,22 @@ public class Counter : IDeviceFunction
             new DeviceParameter
             {
                 ParentName = Name, Name = "incInput", Index = BaseIndex + (Number - 1), SubIndex = subIndex++,
-                GetValue = () => IncInput.VariableIndex, SetValue = val => IncInput.VariableIndex = (int)val,
-                ValueType = IncInput.VariableIndex.GetType(),
+                GetValue = () => IncInput, SetValue = val => IncInput = (int)val,
+                ValueType = IncInput.GetType(),
                 DefaultValue = 0
             },
             new DeviceParameter
             {
                 ParentName = Name, Name = "decInput", Index = BaseIndex + (Number - 1), SubIndex = subIndex++,
-                GetValue = () => DecInput.VariableIndex, SetValue = val => DecInput.VariableIndex = (int)val,
-                ValueType = DecInput.VariableIndex.GetType(),
+                GetValue = () => DecInput, SetValue = val => DecInput = (int)val,
+                ValueType = DecInput.GetType(),
                 DefaultValue = 0
             },
             new DeviceParameter
             {
                 ParentName = Name, Name = "resetInput", Index = BaseIndex + (Number - 1), SubIndex = subIndex++,
-                GetValue = () => ResetInput.VariableIndex, SetValue = val => ResetInput.VariableIndex = (int)val,
-                ValueType = ResetInput.VariableIndex.GetType(),
+                GetValue = () => ResetInput, SetValue = val => ResetInput = (int)val,
+                ValueType = ResetInput.GetType(),
                 DefaultValue = 0
             },
             new DeviceParameter

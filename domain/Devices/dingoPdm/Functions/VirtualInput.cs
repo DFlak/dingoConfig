@@ -14,13 +14,13 @@ public class VirtualInput : IDeviceFunction
     [JsonPropertyName("number")] public int Number {get; }
     [JsonPropertyName("enabled")] public bool Enabled {get; set;}
     [JsonPropertyName("not0")] public bool Not0 {get; set;}
-    [JsonPropertyName("var0")] public DeviceVariable Var0 { get; set; } = new();
+    [JsonPropertyName("var0")] public int Var0 { get; set; }
     [JsonPropertyName("cond0")] public Conditional Cond0 { get; set; }
     [JsonPropertyName("not1")] public bool Not1 {get; set;}
-    [JsonPropertyName("var1")] public DeviceVariable Var1 { get; set; } = new();
+    [JsonPropertyName("var1")] public int Var1 { get; set; }
     [JsonPropertyName("cond1")] public Conditional Cond1 { get; set; }
     [JsonPropertyName("not2")] public bool Not2 {get; set;}
-    [JsonPropertyName("var2")] public DeviceVariable Var2 { get; set; } = new();
+    [JsonPropertyName("var2")] public int Var2 { get; set; }
     [JsonPropertyName("cond2")] public Conditional Cond2 { get; set; }
     [JsonPropertyName("mode")] public InputMode Mode {get; set;}
 
@@ -58,8 +58,8 @@ public class VirtualInput : IDeviceFunction
             new DeviceParameter
             {
                 ParentName = Name, Name = "var0", Index = BaseIndex + (Number - 1), SubIndex = subIndex++,
-                GetValue = () => Var0.VariableIndex, SetValue = val => Var0.VariableIndex = (int)val,
-                ValueType = Var0.VariableIndex.GetType(),
+                GetValue = () => Var0, SetValue = val => Var0 = (int)val,
+                ValueType = Var0.GetType(),
                 DefaultValue = 0
             },
             new DeviceParameter
@@ -79,8 +79,8 @@ public class VirtualInput : IDeviceFunction
             new DeviceParameter
             {
                 ParentName = Name, Name = "var1", Index = BaseIndex + (Number - 1), SubIndex = subIndex++,
-                GetValue = () => Var1.VariableIndex, SetValue = val => Var1.VariableIndex = (int)val,
-                ValueType = Var1.VariableIndex.GetType(),
+                GetValue = () => Var1, SetValue = val => Var1 = (int)val,
+                ValueType = Var1.GetType(),
                 DefaultValue = 0
             },
             new DeviceParameter
@@ -100,8 +100,8 @@ public class VirtualInput : IDeviceFunction
             new DeviceParameter
             {
                 ParentName = Name, Name = "var2", Index = BaseIndex + (Number - 1), SubIndex = subIndex++,
-                GetValue = () => Var2.VariableIndex, SetValue = val => Var2.VariableIndex = (int)val,
-                ValueType = Var2.VariableIndex.GetType(),
+                GetValue = () => Var2, SetValue = val => Var2 = (int)val,
+                ValueType = Var2.GetType(),
                 DefaultValue = 0
             },
             new DeviceParameter

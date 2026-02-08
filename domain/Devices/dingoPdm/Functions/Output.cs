@@ -23,11 +23,11 @@ public class Output : IDeviceFunction
     [JsonPropertyName("resetTime")] public int ResetTime { get; set; }  //seconds
     [JsonPropertyName("inrushCurrentLimit")] public double InrushCurrentLimit { get; set; }
     [JsonPropertyName("inrushTime")] public int InrushTime { get; set; }
-    [JsonPropertyName("input")] public DeviceVariable Input { get; set; } = new();
+    [JsonPropertyName("input")] public int Input { get; set; }
     [JsonPropertyName("pwmEnabled")] public bool PwmEnabled { get; set; }
     [JsonPropertyName("softStartEnabled")] public bool SoftStartEnabled { get; set; }
     [JsonPropertyName("variableDutyCycle")] public bool VariableDutyCycle { get; set; }
-    [JsonPropertyName("dutyCycleInput")] public DeviceVariable DutyCycleInput { get; set; } = new();
+    [JsonPropertyName("dutyCycleInput")] public int DutyCycleInput { get; set; }
     [JsonPropertyName("fixedDutyCycle")] public int FixedDutyCycle { get; set; }
     [JsonPropertyName("frequency")] public int Frequency { get; set; }
     [JsonPropertyName("softStartRampTime")] public int SoftStartRampTime { get; set; }
@@ -74,8 +74,8 @@ public class Output : IDeviceFunction
             new DeviceParameter
             {
                 ParentName = Name, Name = "input", Index = BaseIndex + (Number - 1), SubIndex = subIndex++,
-                GetValue = () => Input.VariableIndex, SetValue = val => Input.VariableIndex = (int)val,
-                ValueType = Input.VariableIndex.GetType(),
+                GetValue = () => Input, SetValue = val => Input = (int)val,
+                ValueType = Input.GetType(),
                 DefaultValue = 0
             },
             new DeviceParameter
@@ -144,8 +144,8 @@ public class Output : IDeviceFunction
             new DeviceParameter
             {
                 ParentName = Name, Name = "dutyCycleInput", Index = BaseIndex + (Number - 1), SubIndex = subIndex++,
-                GetValue = () => DutyCycleInput.VariableIndex, SetValue = val => DutyCycleInput.VariableIndex = (int)val,
-                ValueType = DutyCycleInput.VariableIndex.GetType(),
+                GetValue = () => DutyCycleInput, SetValue = val => DutyCycleInput = (int)val,
+                ValueType = DutyCycleInput.GetType(),
                 DefaultValue = 0
             },
             new DeviceParameter

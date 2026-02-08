@@ -10,7 +10,7 @@ public class StarterDisable : IDeviceFunction
     [JsonPropertyName("name")] public string Name {get; set;}
     [JsonIgnore] public int Number => 1;
     [JsonPropertyName("enabled")] public bool Enabled {get; set;}
-    [JsonPropertyName("input")] public DeviceVariable Input {get; set;} = new();
+    [JsonPropertyName("input")] public int Input {get; set;}
     [JsonPropertyName("outputsDisabled")] public List<bool> OutputsDisabled {get; set;}
 
     [JsonIgnore] public List<DeviceParameter> Params { get; }
@@ -38,8 +38,8 @@ public class StarterDisable : IDeviceFunction
             new DeviceParameter
             {
                 ParentName = Name, Name = "input", Index = BaseIndex + (Number - 1), SubIndex = subIndex++,
-                GetValue = () => Input.VariableIndex, SetValue = val => Input.VariableIndex = (int)val,
-                ValueType = Input.VariableIndex.GetType(),
+                GetValue = () => Input, SetValue = val => Input = (int)val,
+                ValueType = Input.GetType(),
                 DefaultValue = 0
             }
         };

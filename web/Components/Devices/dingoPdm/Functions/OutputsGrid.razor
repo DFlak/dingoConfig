@@ -130,7 +130,7 @@
         var result = await dialog.Result;
 
         if (result is { Canceled: false, Data: (DeviceVariable variable) })
-            output.Input = variable;
+            output.Input = variable.VariableIndex;
     }
 
     private void OnCurrentLimitChanged(Output item, double value)
@@ -215,8 +215,12 @@
         _refreshCounter++;
     }
 
-    private string GetSelectedVarText(DeviceVariable variable)
+    private string GetSelectedVarText(int index)
     {
+        var variable = Device.VarMap.Find(p => p.VariableIndex == index);
+
+        if (variable == null) return "Not found";
+        
         if(variable.FunctionName.Length == 0)
             return "Select Variable";
 
@@ -225,5 +229,4 @@
 
         return $"{variable.FunctionName}{variable.FunctionIndex}.{variable.PropertyName}";
     }
-
 }

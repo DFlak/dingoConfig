@@ -275,9 +275,10 @@ public class DeviceManager(ILogger<DeviceManager> logger, ILoggerFactory loggerF
         {
             var devMsg = new DeviceCanFrame()
             {
+                SendOnly = true,
                 Frame = msg
             };
-            QueueMessage(devMsg, sendOnly: true);
+            QueueMessage(devMsg);
             Thread.Sleep(device.CyclicPause);
         }
     }
@@ -289,7 +290,7 @@ public class DeviceManager(ILogger<DeviceManager> logger, ILoggerFactory loggerF
     /// <summary>
     /// Queue a message for transmission
     /// </summary>
-    private void QueueMessage(DeviceCanFrame frame, bool sendOnly = false)
+    private void QueueMessage(DeviceCanFrame frame)
     {
         // Queue for transmission
         if (_transmitCallback != null)
@@ -303,7 +304,7 @@ public class DeviceManager(ILogger<DeviceManager> logger, ILoggerFactory loggerF
         }
 
         //Some messages have no response, don't queue
-        if (sendOnly) return;
+        if (frame.SendOnly) return;
 
         int index = frame.Frame.Payload[2] << 8 | frame.Frame.Payload[1];
         int subIndex = frame.Frame.Payload[3];
@@ -429,7 +430,7 @@ public class DeviceManager(ILogger<DeviceManager> logger, ILoggerFactory loggerF
         var modifyMsgs = configurable.GetModifyMsgs(newId);
         foreach (var msg in modifyMsgs)
         {
-            QueueMessage(msg, true);
+            QueueMessage(msg);
             Thread.Sleep(1); //Slow down to give device time to respond
         }
 
@@ -513,7 +514,7 @@ public class DeviceManager(ILogger<DeviceManager> logger, ILoggerFactory loggerF
             return false;
 
         var wakeupMsg = configurable.GetWakeupMsg();
-        QueueMessage(wakeupMsg, true);
+        QueueMessage(wakeupMsg);
 
         logger.LogInformation("Wake up for {DeviceName} (Guid: {Guid})", device.Name, deviceId);
         return true;
@@ -532,7 +533,7 @@ public class DeviceManager(ILogger<DeviceManager> logger, ILoggerFactory loggerF
             return false;
 
         var bootloaderMsg = configurable.GetBootloaderMsg();
-        QueueMessage(bootloaderMsg, true);
+        QueueMessage(bootloaderMsg);
 
         logger.LogInformation("Enter bootloader on {DeviceName} (Guid: {Guid})", device.Name, deviceId);
         return true;
