@@ -73,6 +73,8 @@ public class PdmDevice : IDeviceConfigurable
 
     [JsonIgnore] private Dictionary<int, List<(DbcSignal Signal, Action<double> SetValue)>> StatusSigs { get; set; } = null!;
 
+    [JsonIgnore] private Dictionary<(int Index, int SubIndex), object> TempParamValues { get; set; } = new();
+
     [JsonIgnore]
     public bool Connected
     {
@@ -706,21 +708,22 @@ public class PdmDevice : IDeviceConfigurable
     {
         DeviceCanFrame canFrame;
         (int BaseId, int, int) key;
-        
+
         switch ((MessageCommand)data[0])
         {
-            case MessageCommand.ParamResponse:
+            case MessageCommand.Read:
+            case MessageCommand.Write:
                 if (data.Length != 8) return;
-                
+
                 int index = data[2] << 8 | data[1];
                 int subIndex = data[3];
-        
-                var param = Params.First(p => p.Index == index && p.SubIndex == subIndex);
-                
+
+                var matchingParam = Params.First(p => p.Index == index && p.SubIndex == subIndex);
+
                 var rawValue = DbcSignalCodec.ExtractSignal(data, startBit: 32, length: 32);
 
                 // Convert to the appropriate type based on param.ValueType
-                object convertedValue = param.ValueType switch
+                object convertedValue = matchingParam.ValueType switch
                 {
                     Type t when t == typeof(bool) => rawValue != 0,
                     Type t when t == typeof(int) => (int)rawValue,
@@ -730,8 +733,27 @@ public class PdmDevice : IDeviceConfigurable
                     Type t when t.IsEnum => Enum.ToObject(t, (int)rawValue),
                     _ => rawValue
                 };
+                
+                matchingParam.SetValue(convertedValue);
 
-                param.SetValue(convertedValue);
+                key = (BaseId, index, subIndex);
+                if (queue.TryGetValue(key, out canFrame!))
+                {
+                    canFrame.TimeSentTimer?.Dispose();
+                    queue.TryRemove(key, out _);
+                }
+
+                break;
+
+            case MessageCommand.ReadAll:
+                if (data.Length != 8) return;
+
+                int index = data[2] << 8 | data[1];
+                int subIndex = data[3];
+                
+                TempParamValues.Clear();
+                foreach (var param in Params)
+                    TempParamValues[(param.Index, param.SubIndex)] = param.DefaultValue;
                 
                 key = (BaseId, index, subIndex);
                 if (queue.TryGetValue(key, out canFrame!))
@@ -740,16 +762,91 @@ public class PdmDevice : IDeviceConfigurable
                     queue.TryRemove(key, out _);
                 }
                 
+                Logger.LogInformation("{Name} ID: {BaseId}, Read All Started", Name, BaseId);
+
                 break;
-            
-            case MessageCommand.ReadAllParams:
+                
+            case MessageCommand.ReadAllRsp:
                 if (data.Length != 8) return;
 
-                if (ExtractSignalInt(data, startBit: 32, length: 32) == 0xFFFFFFFF)
+                int index = data[2] << 8 | data[1];
+                int subIndex = data[3];
+                
+                var matchingParam = Params.First(p => p.Index == index && p.SubIndex == subIndex);
+
+                var rawValue = DbcSignalCodec.ExtractSignal(data, startBit: 32, length: 32);
+
+                // Convert to the appropriate type based on param.ValueType
+                object convertedValue = matchingParam.ValueType switch
                 {
-                    //End of params, apply temporary params
+                    Type t when t == typeof(bool) => rawValue != 0,
+                    Type t when t == typeof(int) => (int)rawValue,
+                    Type t when t == typeof(uint) => (uint)rawValue,
+                    Type t when t == typeof(float) => (float)rawValue,
+                    Type t when t == typeof(double) => rawValue,
+                    Type t when t.IsEnum => Enum.ToObject(t, (int)rawValue),
+                    _ => rawValue
+                };
+                
+                TempParamValues[(index, subIndex)] = convertedValue;
+                
+                break;
+            
+            case MessageCommand.ReadAllComplete:
+                if (data.Length != 8) return;
+
+                var readAllValue = ExtractSignalInt(data, startBit: 32, length: 32);
+
+                if (readAllValue == 0xFFFFFFFF)
+                {
+                    // End of params, apply all temporary values to actual properties
+                    foreach (var param in Params)
+                    {
+                        var paramKey = (param.Index, param.SubIndex);
+                        if (TempParamValues.TryGetValue(paramKey, out var value))
+                        {
+                            param.SetValue(value);
+                        }
+                    }
+
+                    TempParamValues.Clear();
+                    Logger.LogInformation("{Name} ID: {BaseId}, Read All Complete", Name, BaseId);
                 }
 
+                break;
+            
+            case MessageCommand.WriteAll:
+                if (data.Length != 8) return;
+
+                int index = data[2] << 8 | data[1];
+                int subIndex = data[3];
+
+                key = (BaseId, index, subIndex);
+                if (queue.TryGetValue(key, out canFrame!))
+                {
+                    canFrame.TimeSentTimer?.Dispose();
+                    queue.TryRemove(key, out _);
+                }
+                
+                Logger.LogInformation("{Name} ID: {BaseId}, Write All Started", Name, BaseId);
+                
+                //Write all modified values
+                var modifiedParams = Params.Where(p => p.IsModified).ToList();
+                List<DeviceCanFrame> msgs = [];
+
+                foreach (var parameter in modifiedParams)
+                {
+                    msgs.Add(new DeviceCanFrame
+                    {
+                        DeviceBaseId = BaseId,
+                        Frame = ParamCodec.ToFrame(MessageCommand.WriteParam, parameter, BaseId - 1)
+                    });
+                }
+                
+                break;
+            
+            case MessageCommand.WriteAllComplete:
+                Logger.LogInformation("{Name} ID: {BaseId}, Write All Completed", Name, BaseId);
                 break;
             
             case MessageCommand.Version:
@@ -842,7 +939,7 @@ public class PdmDevice : IDeviceConfigurable
                 Frame = new CanFrame(
                     Id: id - 1, 
                     Len: 8, 
-                    Payload: [Convert.ToByte(MessageCommand.ReadAllParams), 0, 0, 0, 0, 0, 0, 0]),
+                    Payload: [Convert.ToByte(MessageCommand.ReadAll), 0, 0, 0, 0, 0, 0, 0]),
             }
         };
 
