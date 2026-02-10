@@ -181,7 +181,7 @@ public class CanboardDevice : IDevice
         return (id >= BaseId) && (id <= BaseId + 2);
     }
 
-    public void Read(int id, byte[] data, ref ConcurrentDictionary<(int BaseId, int Index, int SubIndex), DeviceCanFrame> queue)
+    public void Read(int id, byte[] data, ref ConcurrentDictionary<(int BaseId, int Index, int SubIndex), DeviceCanFrame> queue, List<DeviceCanFrame> outgoing)
     {
         var offset = id - BaseId;
         if (StatusSigs.TryGetValue(offset, out var signals))

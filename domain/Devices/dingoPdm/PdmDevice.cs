@@ -653,7 +653,9 @@ public class PdmDevice : IDeviceConfigurable
         return (id >= BaseId - 1) && (id <= BaseId + 31);
     }
     
-    public void Read(int id, byte[] data, ref ConcurrentDictionary<(int BaseId, int Index, int SubIndex), DeviceCanFrame> queue)
+    public void Read(int id, byte[] data, 
+            ref ConcurrentDictionary<(int BaseId, int Index, int SubIndex), DeviceCanFrame> queue, 
+            List<DeviceCanFrame> outgoing)
     {
         var offset = id - BaseId;
 
@@ -671,7 +673,7 @@ public class PdmDevice : IDeviceConfigurable
         {
             switch (offset)
             {
-                case 30: ReadSettingsResponse(data, queue); break;
+                case 30: ReadParamResponse(data, queue, outgoing); break;
                 case 31: ReadInfoWarnErrorMessage(data); break;
             }
         }
@@ -706,7 +708,9 @@ public class PdmDevice : IDeviceConfigurable
         }
     }
 
-    protected void ReadSettingsResponse(byte[] data, ConcurrentDictionary<(int BaseId, int Index, int SubIndex), DeviceCanFrame> queue)
+    protected void ReadParamResponse(byte[] data, 
+                    ConcurrentDictionary<(int BaseId, int Index, int SubIndex), DeviceCanFrame> queue, 
+                    List<DeviceCanFrame> outgoing)
     {
         DeviceCanFrame canFrame;
         int index, subIndex;
@@ -825,9 +829,18 @@ public class PdmDevice : IDeviceConfigurable
                 else
                 {
                     TempParamValues.Clear();
-                    Logger.LogWarning("{Name} ID: {BaseId}, Read All Incomplete {fromPdm} vs {received}", Name, BaseId, readAllCount, _readAllCount);
-                    
-                    //TODO: Trigger a resend of ReadAll
+                    Logger.LogWarning("{Name} ID: {BaseId}, Read All Incomplete {fromPdm} vs {received}", 
+                                        Name, BaseId, readAllCount, _readAllCount);
+
+                    outgoing.Add(new DeviceCanFrame
+                    {
+                        DeviceBaseId = BaseId,
+                        SendOnly = true,
+                        Frame = new CanFrame(
+                            Id: BaseId - 1,
+                            Len: 8,
+                            Payload: [Convert.ToByte(MessageCommand.ReadAll), 0, 0, 0, 0, 0, 0, 0])
+                    });
                 }
 
                 break;
@@ -857,39 +870,56 @@ public class PdmDevice : IDeviceConfigurable
                     msgs.Add(new DeviceCanFrame
                     {
                         DeviceBaseId = BaseId,
+                        SendOnly = true,
                         Frame = ParamCodec.ToFrame(MessageCommand.WriteAllVal, parameter, BaseId - 1)
                     });
                 }
-                
+
                 //Write all complete, with num params
                 msgs.Add(new DeviceCanFrame
                 {
                     DeviceBaseId = BaseId,
+                    SendOnly = true,
                     Frame = new CanFrame(
                         Id: BaseId - 1,
                         Len: 8,
-                        Payload:[   Convert.ToByte(MessageCommand.WriteAllComplete), 
-                                    Convert.ToByte((_writeAllCount >> 8) & 0xFF), 
+                        Payload:[   Convert.ToByte(MessageCommand.WriteAllComplete),
+                                    Convert.ToByte((_writeAllCount >> 8) & 0xFF),
                                     Convert.ToByte(_writeAllCount & 0xFF), 0, 0, 0, 0, 0])
                 });
-                
-                //TODO: Add msgs to QueueMessage in DeviceManager
+
+                outgoing.AddRange(msgs);
                 
                 break;
             
             case MessageCommand.WriteAllComplete:
+                if (data.Length != 8) return;
                 
                 var writeAllCount = data[2] << 8 | data[1];
 
                 if (writeAllCount == _writeAllCount)
+                {
                     Logger.LogInformation("{Name} ID: {BaseId}, Write All Completed", Name, BaseId);
+                }
                 else
-                    Logger.LogWarning("{Name} ID: {BaseId}, Write All Incomplete {fromPdm} vs {received}", Name, BaseId, writeAllCount, _writeAllCount);
+                {
+                    Logger.LogWarning("{Name} ID: {BaseId}, Write All Incomplete {fromPdm} vs {received}", 
+                                        Name, BaseId, writeAllCount, _writeAllCount);
 
-                //TODO: Trigger a resend of WriteAll
+                    outgoing.Add(new DeviceCanFrame
+                    {
+                        DeviceBaseId = BaseId,
+                        Frame = new CanFrame(
+                            Id: BaseId - 1,
+                            Len: 8,
+                            Payload: [Convert.ToByte(MessageCommand.WriteAll), 0, 0, 0, 0, 0, 0, 0])
+                    });
+                }
                 break;
             
             case MessageCommand.Version:
+                if (data.Length != 8) return;
+                
                 Version = $"v{data[1]}.{data[2]}.{(data[3] << 8) + (data[4])}";
                 
                 key = (BaseId, (int)MessageCommand.Version, 0);
@@ -903,17 +933,20 @@ public class PdmDevice : IDeviceConfigurable
                 
                 if (!CheckVersion(data[1], data[2], (data[3] << 8) + (data[4])))
                 {
-                    Logger.LogError("{Name} ID: {BaseId}, Firmware needs to be updated. V{MinMajorVersion}.{MinMinorVersion}.{MinBuildVersion} or greater", Name, BaseId, MinMajorVersion, MinMinorVersion, MinBuildVersion);
+                    Logger.LogError("{Name} ID: {BaseId}, Firmware needs to be updated. V{MinMajorVersion}.{MinMinorVersion}.{MinBuildVersion} or greater", 
+                                        Name, BaseId, MinMajorVersion, MinMinorVersion, MinBuildVersion);
                 }
 
                 break;
 
-			case MessageCommand.BurnSettings:
+			case MessageCommand.BurnParams:
+                if (data.Length != 8) return;
+                
                 if (data[1] == 1) //Successful burn
                 {
                     Logger.LogInformation("{Name} ID: {BaseId}, Burn Successful", Name, BaseId);
 
-                    key = (BaseId, (int)MessageCommand.BurnSettings, 0);
+                    key = (BaseId, (int)MessageCommand.BurnParams, 0);
                     if (queue.TryGetValue(key, out canFrame!))
                     {
                         canFrame.TimeSentTimer?.Dispose();
@@ -927,6 +960,8 @@ public class PdmDevice : IDeviceConfigurable
                 break;
 
             case MessageCommand.Sleep:
+                if (data.Length != 8) return;
+                
                 if (data[1] == 1) //Successful sleep
                 {
                     Logger.LogInformation("{Name} ID: {BaseId}, Sleep Successful", Name, BaseId);
@@ -955,13 +990,16 @@ public class PdmDevice : IDeviceConfigurable
         switch (type)
         {
             case MessageType.Info:
-                Logger.LogInformation("{Name} ID: {BaseId}, Src: {MessageSrc} {I} {I1} {I2}", Name, BaseId, src, (data[3] << 8) + data[2], (data[5] << 8) + data[4], (data[7] << 8) + data[6]);
+                Logger.LogInformation("{Name} ID: {BaseId}, Src: {MessageSrc} {I} {I1} {I2}", 
+                    Name, BaseId, src, (data[3] << 8) + data[2], (data[5] << 8) + data[4], (data[7] << 8) + data[6]);
                 break;
             case MessageType.Warning:
-                Logger.LogWarning("{Name} ID: {BaseId}, Src: {MessageSrc} {I} {I1} {I2}", Name, BaseId, src, (data[3] << 8) + data[2], (data[5] << 8) + data[4], (data[7] << 8) + data[6]);
+                Logger.LogWarning("{Name} ID: {BaseId}, Src: {MessageSrc} {I} {I1} {I2}", 
+                    Name, BaseId, src, (data[3] << 8) + data[2], (data[5] << 8) + data[4], (data[7] << 8) + data[6]);
                 break;
             case MessageType.Error:
-                Logger.LogError("{Name} ID: {BaseId}, Src: {MessageSrc} {I} {I1} {I2}", Name, BaseId, src, (data[3] << 8) + data[2], (data[5] << 8) + data[4], (data[7] << 8) + data[6]);
+                Logger.LogError("{Name} ID: {BaseId}, Src: {MessageSrc} {I} {I1} {I2}", 
+                    Name, BaseId, src, (data[3] << 8) + data[2], (data[5] << 8) + data[4], (data[7] << 8) + data[6]);
                 break;
         }
     }
@@ -1034,7 +1072,7 @@ public class PdmDevice : IDeviceConfigurable
             (
                 Id: BaseId - 1,
                 Len: 8,
-                Payload: [Convert.ToByte(MessageCommand.BurnSettings), 1, 3, 8, 0, 0, 0, 0]
+                Payload: [Convert.ToByte(MessageCommand.BurnParams), 1, 3, 8, 0, 0, 0, 0]
             )
         };
     }
@@ -1049,7 +1087,8 @@ public class PdmDevice : IDeviceConfigurable
             (
                 Id: BaseId - 1,
                 Len: 8,
-                Payload: [Convert.ToByte(MessageCommand.Sleep), Convert.ToByte('Q'), Convert.ToByte('U'), Convert.ToByte('I'), Convert.ToByte('T'), 0, 0, 0
+                Payload: [Convert.ToByte(MessageCommand.Sleep), Convert.ToByte('Q'), Convert.ToByte('U'), 
+                            Convert.ToByte('I'), Convert.ToByte('T'), 0, 0, 0
                 ]
             )
         };

@@ -205,7 +205,12 @@ public class DeviceManager(ILogger<DeviceManager> logger, ILoggerFactory loggerF
         {
             if (device.InIdRange(frame.Id))
             {
-                device.Read(frame.Id, frame.Payload, ref _requestQueue);
+                var outgoing = new List<DeviceCanFrame>();
+                device.Read(frame.Id, frame.Payload, ref _requestQueue, outgoing);
+                foreach (var msg in outgoing)
+                {
+                    QueueMessage(msg);
+                }
             }
         }
     }

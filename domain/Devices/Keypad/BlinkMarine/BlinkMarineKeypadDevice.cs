@@ -186,7 +186,7 @@ public class BlinkMarineKeypadDevice : IDevice
                id == ((int)MessageId.Heartbeat + BaseId);
     }
 
-    public void Read(int id, byte[] data, ref ConcurrentDictionary<(int BaseId, int Index, int SubIndex), DeviceCanFrame> queue)
+    public void Read(int id, byte[] data, ref ConcurrentDictionary<(int BaseId, int Index, int SubIndex), DeviceCanFrame> queue, List<DeviceCanFrame> outgoing)
     {
         switch ((MessageId)id - BaseId)
         {

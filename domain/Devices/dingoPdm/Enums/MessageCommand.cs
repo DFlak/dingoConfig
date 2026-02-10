@@ -14,7 +14,7 @@ public enum MessageCommand
     WriteAllVal = 21,
     WriteAllComplete = 22,
 
-    BurnSettings = 30,
+    BurnParams = 30,
     Version = 31,
     Sleep = 32,
     Bootloader = 33
