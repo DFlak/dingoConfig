@@ -835,7 +835,6 @@ public class PdmDevice : IDeviceConfigurable
                     outgoing.Add(new DeviceCanFrame
                     {
                         DeviceBaseId = BaseId,
-                        SendOnly = true,
                         Frame = new CanFrame(
                             Id: BaseId - 1,
                             Len: 8,
@@ -870,7 +869,6 @@ public class PdmDevice : IDeviceConfigurable
                     msgs.Add(new DeviceCanFrame
                     {
                         DeviceBaseId = BaseId,
-                        SendOnly = true,
                         Frame = ParamCodec.ToFrame(MessageCommand.WriteAllVal, parameter, BaseId - 1)
                     });
                 }
