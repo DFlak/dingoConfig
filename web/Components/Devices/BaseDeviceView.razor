@@ -137,7 +137,7 @@
         try
         {
             DeviceManager.ReadDeviceConfig(Device.Guid);
-            Notification.NewInfo($"Device read initiated: {DeviceName}");
+            Notification.NewInfo($"Device read: {DeviceName}");
         }
         catch (Exception ex)
         {
@@ -150,7 +150,7 @@
         try
         {
             DeviceManager.WriteDeviceConfig(Device.Guid);
-            Notification.NewSuccess($"Device write initiated: {DeviceName}");
+            Notification.NewSuccess($"Device write: {DeviceName}");
         }
         catch (Exception ex)
         {
@@ -193,7 +193,7 @@
         try
         {
             if (DeviceManager.RequestWakeup(Device.Guid))
-                Notification.NewSuccess($"Wakeup command sent: {DeviceName}");
+                Notification.NewSuccess($"Wakeup sent: {DeviceName}");
             else
                 Notification.NewError($"Failed to send wakeup: {DeviceName}");
         }
@@ -208,13 +208,13 @@
         try
         {
             if (DeviceManager.RequestBootloader(Device.Guid))
-                Notification.NewSuccess($"Bootloader command sent: {DeviceName}");
+                Notification.NewSuccess($"Bootloader sent: {DeviceName}");
             else
-                Notification.NewError($"Failed to send bootloader command: {DeviceName}");
+                Notification.NewError($"Failed to send bootloader: {DeviceName}");
         }
         catch (Exception ex)
         {
-            Notification.NewError($"Error sending bootloader command: {DeviceName}", ex);
+            Notification.NewError($"Error sending bootloader: {DeviceName}", ex);
         }
     }
 

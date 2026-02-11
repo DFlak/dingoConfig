@@ -723,6 +723,7 @@ public class PdmDevice : IDeviceConfigurable
         {
             case MessageCommand.Read:
             case MessageCommand.Write:
+            case MessageCommand.WriteAllVal:
                 if (data.Length != 8) return;
 
                 index = data[2] << 8 | data[1];
@@ -882,8 +883,9 @@ public class PdmDevice : IDeviceConfigurable
                         Id: BaseId - 1,
                         Len: 8,
                         Payload:[   Convert.ToByte(MessageCommand.WriteAllComplete),
+                                    Convert.ToByte(_writeAllCount & 0xFF),
                                     Convert.ToByte((_writeAllCount >> 8) & 0xFF),
-                                    Convert.ToByte(_writeAllCount & 0xFF), 0, 0, 0, 0, 0])
+                                    0, 0, 0, 0, 0])
                 });
 
                 outgoing.AddRange(msgs);
@@ -1008,6 +1010,7 @@ public class PdmDevice : IDeviceConfigurable
 
         List<DeviceCanFrame>  msgs =
         [
+            GetVersionMsg(),
             new()
             {
                 DeviceBaseId = BaseId,
