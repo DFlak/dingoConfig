@@ -21,7 +21,7 @@ jobs:
       - name: Get version
         id: get_version
         run: |
-          VERSION=$(grep -oP '(?<=<Version>)[^<]+' api/api.csproj)
+          VERSION=$(grep -oP '(?<=<Version>)[^<]+' web/web.csproj)
           echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "Current version: $VERSION"
 
@@ -35,7 +35,7 @@ jobs:
 
       - name: Build Windows x64
         run: |
-          dotnet publish api/api.csproj \
+          dotnet publish web/web.csproj \
             -c Release \
             -r win-x64 \
             --self-contained true \
@@ -43,7 +43,7 @@ jobs:
 
       - name: Build Windows ARM64
         run: |
-          dotnet publish api/api.csproj \
+          dotnet publish web/web.csproj \
             -c Release \
             -r win-arm64 \
             --self-contained true \
@@ -51,7 +51,7 @@ jobs:
 
       - name: Build Linux x64
         run: |
-          dotnet publish api/api.csproj \
+          dotnet publish web/web.csproj \
             -c Release \
             -r linux-x64 \
             -p:DefineConstants=LINUX \
@@ -60,7 +60,7 @@ jobs:
 
       - name: Build Linux ARM32
         run: |
-          dotnet publish api/api.csproj \
+          dotnet publish web/web.csproj \
             -c Release \
             -r linux-arm \
             -p:DefineConstants=LINUX \
@@ -69,7 +69,7 @@ jobs:
 
       - name: Build Linux ARM64
         run: |
-          dotnet publish api/api.csproj \
+          dotnet publish web/web.csproj \
             -c Release \
             -r linux-arm64 \
             -p:DefineConstants=LINUX \
@@ -78,7 +78,7 @@ jobs:
 
       - name: Build macOS x64
         run: |
-          dotnet publish api/api.csproj \
+          dotnet publish web/web.csproj \
             -c Release \
             -r osx-x64 \
             --self-contained true \
@@ -86,7 +86,7 @@ jobs:
 
       - name: Build macOS ARM64
         run: |
-          dotnet publish api/api.csproj \
+          dotnet publish web/web.csproj \
             -c Release \
             -r osx-arm64 \
             --self-contained true \

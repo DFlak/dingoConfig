@@ -26,8 +26,8 @@ jobs:
       - name: Check if version release exists
         id: check_version
         run: |
-          # Extract current version from api.csproj
-          CURRENT_VERSION=$(grep -oP '(?<=<Version>)[^<]+' api/api.csproj)
+          # Extract current version from web.csproj
+          CURRENT_VERSION=$(grep -oP '(?<=<Version>)[^<]+' web/web.csproj)
           echo "Current version: $CURRENT_VERSION"
 
           # Check if a tag with this version already exists
@@ -72,7 +72,7 @@ jobs:
 
       - name: Build Windows x64
         run: |
-          dotnet publish api/api.csproj \
+          dotnet publish web/web.csproj \
             -c Release \
             -r win-x64 \
             --self-contained true \
@@ -80,7 +80,7 @@ jobs:
 
       - name: Build Windows ARM64
         run: |
-          dotnet publish api/api.csproj \
+          dotnet publish web/web.csproj \
             -c Release \
             -r win-arm64 \
             --self-contained true \
@@ -88,7 +88,7 @@ jobs:
 
       - name: Build Linux x64
         run: |
-          dotnet publish api/api.csproj \
+          dotnet publish web/web.csproj \
             -c Release \
             -r linux-x64 \
             -p:DefineConstants=LINUX \
@@ -97,7 +97,7 @@ jobs:
 
       - name: Build Linux ARM32
         run: |
-          dotnet publish api/api.csproj \
+          dotnet publish web/web.csproj \
             -c Release \
             -r linux-arm \
             -p:DefineConstants=LINUX \
@@ -106,7 +106,7 @@ jobs:
 
       - name: Build Linux ARM64
         run: |
-          dotnet publish api/api.csproj \
+          dotnet publish web/web.csproj \
             -c Release \
             -r linux-arm64 \
             -p:DefineConstants=LINUX \
@@ -115,7 +115,7 @@ jobs:
 
       - name: Build macOS x64
         run: |
-          dotnet publish api/api.csproj \
+          dotnet publish web/web.csproj \
             -c Release \
             -r osx-x64 \
             --self-contained true \
@@ -123,7 +123,7 @@ jobs:
 
       - name: Build macOS ARM64
         run: |
-          dotnet publish api/api.csproj \
+          dotnet publish web/web.csproj \
             -c Release \
             -r osx-arm64 \
             --self-contained true \
