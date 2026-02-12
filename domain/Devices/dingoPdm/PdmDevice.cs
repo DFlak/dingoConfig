@@ -3,6 +3,7 @@ using System.Text.Json.Serialization;
 using domain.Common;
 using domain.Devices.dingoPdm.Enums;
 using domain.Devices.dingoPdm.Functions;
+using domain.Devices.dingoPdm.Functions.Keypad;
 using domain.Enums;
 using domain.Interfaces;
 using domain.Models;
@@ -70,6 +71,7 @@ public class PdmDevice : IDeviceConfigurable
     [JsonPropertyName("starterDisable")] public StarterDisable StarterDisable { get; protected set; } = null!;
     [JsonPropertyName("counters")] public List<Counter> Counters { get; init; } = [];
     [JsonPropertyName("conditions")] public List<Condition> Conditions { get; init; } = [];
+    [JsonPropertyName("keypads")] public List<Keypad> Keypads { get; init; } = [];
     
     [JsonIgnore] private DateTime LastRxTime { get; set; }
 
@@ -140,6 +142,9 @@ public class PdmDevice : IDeviceConfigurable
         StarterDisable = new StarterDisable("starterDisable", NumOutputs);
 
         Wipers = new Wiper("wiper");
+        
+        for (var i = 0; i < NumKeypads; i++)
+            Keypads.Add(new Functions.Keypad.Keypad(i + 1, "keypad" + (i + 1)));
 
         InitStatusSigs();
     }
@@ -625,6 +630,7 @@ public class PdmDevice : IDeviceConfigurable
         foreach (var condition in Conditions) allParams.AddRange(condition.Params);
         allParams.AddRange(Wipers.Params);
         allParams.AddRange(StarterDisable.Params);
+        foreach (var keypad in Keypads) allParams.AddRange(keypad.Params);
         Params = allParams;
     }
 
@@ -1166,7 +1172,8 @@ public class PdmDevice : IDeviceConfigurable
     public IReadOnlyList<Condition> GetConditions() => Conditions.AsReadOnly();
     public Wiper GetWipers() => Wipers;
     public StarterDisable GetStarterDisable() => StarterDisable;
-
+    public IReadOnlyList<Keypad> GetKeypads() => Keypads.AsReadOnly();
+    
     protected bool CheckVersion(int major, int minor, int build)
     {
         if (major > MinMajorVersion)
