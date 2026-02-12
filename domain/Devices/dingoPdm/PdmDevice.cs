@@ -25,6 +25,7 @@ public class PdmDevice : IDeviceConfigurable
     [JsonIgnore] protected virtual int NumDigitalInputs => 2;
     [JsonIgnore] protected virtual int NumOutputs => 8;
     [JsonIgnore] protected virtual int NumCanInputs => 32;
+    [JsonIgnore] protected virtual int NumCanOutputs => 32;
     [JsonIgnore] protected virtual int NumVirtualInputs => 16;
     [JsonIgnore] protected virtual int NumFlashers => 4;
     [JsonIgnore] protected virtual int NumCounters => 4;
@@ -62,6 +63,7 @@ public class PdmDevice : IDeviceConfigurable
     [JsonPropertyName("inputs")] public List<Input> Inputs { get; init; } = [];
     [JsonPropertyName("outputs")] public List<Output> Outputs { get; init; } = [];
     [JsonPropertyName("canInputs")] public List<CanInput> CanInputs { get; init; } = [];
+    [JsonPropertyName("canOutputs")] public List<CanOutput> CanOutputs { get; init; } = [];
     [JsonPropertyName("virtualInputs")] public List<VirtualInput> VirtualInputs { get; init; } = [];
     [JsonPropertyName("wipers")] public Wiper Wipers { get; protected set; } = null!;
     [JsonPropertyName("flashers")] public List<Flasher> Flashers { get; init; } = [];
@@ -119,6 +121,9 @@ public class PdmDevice : IDeviceConfigurable
 
         for (var i = 0; i < NumCanInputs; i++)
             CanInputs.Add(new CanInput(i + 1, "canInput" + (i + 1)));
+        
+        for (var i = 0; i < NumCanOutputs; i++)
+            CanOutputs.Add(new CanOutput(i + 1, "canOutput" + (i + 1)));
 
         for (var i = 0; i < NumVirtualInputs; i++)
             VirtualInputs.Add(new VirtualInput(i + 1, "virtualInput" + (i + 1)));
@@ -613,6 +618,7 @@ public class PdmDevice : IDeviceConfigurable
         foreach (var input in Inputs) allParams.AddRange(input.Params);
         foreach (var output in Outputs) allParams.AddRange(output.Params);
         foreach (var canInput in CanInputs) allParams.AddRange(canInput.Params);
+        foreach (var canOutput in CanOutputs) allParams.AddRange(canOutput.Params);
         foreach (var virtualInput in VirtualInputs) allParams.AddRange(virtualInput.Params);
         foreach (var flasher in Flashers) allParams.AddRange(flasher.Params);
         foreach (var counter in Counters) allParams.AddRange(counter.Params);
@@ -714,7 +720,7 @@ public class PdmDevice : IDeviceConfigurable
     {
         DeviceCanFrame canFrame;
         int index, subIndex;
-        DeviceParameter matchingParam;
+        DeviceParameter? matchingParam;
         double rawValue;
         object convertedValue;
         (int BaseId, int, int) key;
@@ -729,7 +735,8 @@ public class PdmDevice : IDeviceConfigurable
                 index = data[2] << 8 | data[1];
                 subIndex = data[3];
 
-                matchingParam = Params.First(p => p.Index == index && p.SubIndex == subIndex);
+                matchingParam = Params.FirstOrDefault(p => p.Index == index && p.SubIndex == subIndex);
+                if (matchingParam is null) break;
 
                 rawValue = DbcSignalCodec.ExtractSignal(data, startBit: 32, length: 32);
 
@@ -785,7 +792,8 @@ public class PdmDevice : IDeviceConfigurable
                 index = data[2] << 8 | data[1];
                 subIndex = data[3];
                 
-                matchingParam = Params.First(p => p.Index == index && p.SubIndex == subIndex);
+                matchingParam = Params.FirstOrDefault(p => p.Index == index && p.SubIndex == subIndex);
+                if (matchingParam is null) break;
 
                 rawValue = DbcSignalCodec.ExtractSignal(data, startBit: 32, length: 32);
 
@@ -1151,6 +1159,7 @@ public class PdmDevice : IDeviceConfigurable
     public IReadOnlyList<Input> GetInputs() => Inputs.AsReadOnly();
     public IReadOnlyList<Output> GetOutputs() => Outputs.AsReadOnly();
     public IReadOnlyList<CanInput> GetCanInputs() => CanInputs.AsReadOnly();
+    public IReadOnlyList<CanOutput> GetCanOutputs() => CanOutputs.AsReadOnly();
     public IReadOnlyList<VirtualInput> GetVirtualInputs() => VirtualInputs.AsReadOnly();
     public IReadOnlyList<Flasher> GetFlashers() => Flashers.AsReadOnly();
     public IReadOnlyList<Counter> GetCounters() => Counters.AsReadOnly();

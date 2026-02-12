@@ -1,15 +1,13 @@
 @using web.Services
 @using application.Models
-@using domain.Devices.dingoPdm
 @using domain.Devices.dingoPdm.Functions
-@using domain.Devices.dingoPdm.Enums
 @inject NotificationService Notification
 @inject IDialogService DialogService
 @inject application.Services.DeviceSignalService SignalService
 @typeparam TDevice where TDevice : domain.Interfaces.IDevice
 
 <MudPaper MaxHeight="400">
-    <MudDataGrid Items="@CanInputs" Dense="true" Hover="true" Striped="false" EditMode="DataGridEditMode.Cell"
+    <MudDataGrid Items="@CanOutputs" Dense="true" Hover="true" Striped="false" EditMode="DataGridEditMode.Cell"
                  ReadOnly="false"
                  SortMode="SortMode.None" ColumnResizeMode="ResizeMode.Container" Virtualize="true"
                  FixedHeader="true" HorizontalScrollbar="true" Style="max-height: 400px;">
@@ -36,16 +34,6 @@
                                    OnClick="@(() => OpenSignalSelectorAsync(context.Item))"/>
                 </EditTemplate>
             </TemplateColumn>
-            <PropertyColumn Property="x => x.Output" Title="Value" Editable="false" CellStyle="max-width: 100px">
-                <CellTemplate>
-                    <MudChip T="string"
-                             Variant="Variant.Outlined"
-                             Color="@(context.Item.Output ? Color.Success : Color.Default)"
-                             Size="Size.Small" Style="min-width: 50px;">
-                        @context.Item.Value
-                    </MudChip>
-                </CellTemplate>
-            </PropertyColumn>
             <TemplateColumn Title="CAN ID" Resizable="true" CellStyle="max-width: 100px">
                 <EditTemplate>
                     <MudNumericField @key="@($"id-{context.Item.Number}-{_refreshCounter}")"
@@ -95,45 +83,23 @@
                     <MudCheckBox @bind-Value="context.Item.Signed" Dense="true"/>
                 </EditTemplate>
             </PropertyColumn>
-            <PropertyColumn Property="x => x.Operator" CellStyle="max-width: 200px">
+            <PropertyColumn Property="x => x.ByteOrder" CellStyle="max-width: 200px">
                 <EditTemplate>
-                    <MudSelect T="Operator" @bind-Value="context.Item.Operator" Variant="Variant.Outlined" Dense="true"
-                               Disabled="!context.Item.Enabled">
-                        @foreach (Operator op in Enum.GetValues(typeof(Operator)))
-                        {
-                            <MudSelectItem T="Operator" Value="@op">@op</MudSelectItem>
-                        }
-                    </MudSelect>
-                </EditTemplate>
-            </PropertyColumn>
-            <PropertyColumn Property="x => x.Operand" Title="Operand" Resizable="true" CellStyle="max-width: 100px">
-                <EditTemplate>
-                    <MudNumericField Value="@context.Item.Operand"
-                                     Disabled="!context.Item.Enabled"/>
-                </EditTemplate>
-            </PropertyColumn>
-            <PropertyColumn Property="x => x.Mode" CellStyle="max-width: 200px">
-                <EditTemplate>
-                    <MudSelect T="domain.Enums.InputMode" @bind-Value="context.Item.Mode" Variant="Variant.Outlined"
+                    <MudSelect T="domain.Enums.ByteOrder" @bind-Value="context.Item.ByteOrder" Variant="Variant.Outlined"
                                Disabled="!context.Item.Enabled" Dense="true">
-                        @foreach (domain.Enums.InputMode mode in Enum.GetValues(typeof(domain.Enums.InputMode)))
+                        @foreach (domain.Enums.ByteOrder order in Enum.GetValues(typeof(domain.Enums.ByteOrder)))
                         {
-                            <MudSelectItem T="domain.Enums.InputMode" Value="@mode">@mode</MudSelectItem>
+                            <MudSelectItem T="domain.Enums.ByteOrder" Value="@order">@order</MudSelectItem>
                         }
                     </MudSelect>
                 </EditTemplate>
             </PropertyColumn>
-            <PropertyColumn Property="x => x.TimeoutEnabled" Title="Timeout En" CellStyle="max-width: 100px">
+            <TemplateColumn Title="Interval (ms)" Resizable="true" CellStyle="max-width: 150px">
                 <EditTemplate>
-                    <MudCheckBox @bind-Value="context.Item.TimeoutEnabled" Dense="true" Disabled="!context.Item.Enabled"/>
-                </EditTemplate>
-            </PropertyColumn>
-            <TemplateColumn Title="Timeout (s)" Resizable="true" CellStyle="max-width: 150px">
-                <EditTemplate>
-                    <MudNumericField @key="@($"timeout-{context.Item.Number}-{_refreshCounter}")"
-                                     Value="@context.Item.Timeout"
+                    <MudNumericField @key="@($"interval-{context.Item.Number}-{_refreshCounter}")"
+                                     Value="@context.Item.Interval"
                                      Disabled="!context.Item.Enabled"
-                                     ValueChanged="@((int val) => OnTimeoutChanged(context.Item, val))"/>
+                                     ValueChanged="@((int val) => OnIntervalChanged(context.Item, val))"/>
                 </EditTemplate>
             </TemplateColumn>
         </Columns>
@@ -141,12 +107,12 @@
 </MudPaper>
 
 @code {
-    [Parameter, EditorRequired] public List<CanInput> CanInputs { get; set; } = null!;
+    [Parameter, EditorRequired] public List<CanOutput> CanOutputs { get; set; } = null!;
     [Parameter, EditorRequired] public TDevice Device { get; set; } = default!;
 
     private int _refreshCounter;
 
-    private void OnIdChanged(CanInput item, int value)
+    private void OnIdChanged(CanOutput item, int value)
     {
         const int min = 0;
         const int max = 536870912;
@@ -159,7 +125,7 @@
         _refreshCounter++;
     }
 
-    private void OnBitLengthChanged(CanInput item, int value)
+    private void OnBitLengthChanged(CanOutput item, int value)
     {
         const int min = 1;
         const int max = 64;
@@ -172,7 +138,7 @@
         _refreshCounter++;
     }
 
-    private void OnStartBitChanged(CanInput item, int value)
+    private void OnStartBitChanged(CanOutput item, int value)
     {
         const int min = 0;
         const int max = 64;
@@ -185,20 +151,20 @@
         _refreshCounter++;
     }
 
-    private void OnTimeoutChanged(CanInput item, int value)
+    private void OnIntervalChanged(CanOutput item, int value)
     {
         const int min = 0;
-        const int max = 25;
+        const int max = 60000;
         if (value < min || value > max)
         {
-            Notification.NewWarning($"{item.Name}.Timeout must be {min} to {max}");
+            Notification.NewWarning($"{item.Name}.Interval must be {min} to {max}");
         }
 
-        item.Timeout = Math.Clamp(value, min, max);
+        item.Interval = Math.Clamp(value, min, max);
         _refreshCounter++;
     }
 
-    private async Task OpenSignalSelectorAsync(CanInput canInput)
+    private async Task OpenSignalSelectorAsync(CanOutput canOutput)
     {
         var parameters = new DialogParameters<DbcSignalSelectionDialog>
         {
@@ -210,21 +176,21 @@
 
         if (result is not null && !result.Canceled && result.Data is (DeviceSignalNode deviceNode, SignalNode signalNode))
         {
-            MapSignalToCanInput(canInput, deviceNode, signalNode);
+            MapSignalToCanOutput(canOutput, deviceNode, signalNode);
         }
     }
 
-    private void MapSignalToCanInput(CanInput canInput, DeviceSignalNode deviceNode, SignalNode signalNode)
+    private void MapSignalToCanOutput(CanOutput canOutput, DeviceSignalNode deviceNode, SignalNode signalNode)
     {
         var signal = signalNode.Signal;
 
-        canInput.Id = signal.Id;
-        canInput.StartBit = signal.StartBit;
-        canInput.BitLength = signal.Length;
-        canInput.Factor = signal.Factor;
-        canInput.Offset = signal.Offset;
-        canInput.Signed = signal.IsSigned;
-        canInput.Name = $"{deviceNode.DeviceName}.{signal.Name}";
+        canOutput.Id = signal.Id;
+        canOutput.StartBit = signal.StartBit;
+        canOutput.BitLength = signal.Length;
+        canOutput.Factor = signal.Factor;
+        canOutput.Offset = signal.Offset;
+        canOutput.Signed = signal.IsSigned;
+        canOutput.Name = $"{deviceNode.DeviceName}.{signal.Name}";
         
         // Trigger UI refresh
         _refreshCounter++;

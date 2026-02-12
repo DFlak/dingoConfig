@@ -1,21 +1,17 @@
 using System.Text.Json.Serialization;
-using domain.Common;
-using domain.Devices.dingoPdm.Enums;
 using domain.Enums;
 using domain.Interfaces;
 using domain.Models;
-using ByteOrder = domain.Enums.ByteOrder;
 
 namespace domain.Devices.dingoPdm.Functions;
 
-public class CanInput : IDeviceFunction
+public class CanOutput : IDeviceFunction
 {
-    [JsonIgnore] public const int BaseIndex = 0x1300;
+    [JsonIgnore] public const int BaseIndex = 0x2000;
     [JsonPropertyName("name")] public string Name {get; set; }
     [JsonPropertyName("number")] public int Number {get;}
     [JsonPropertyName("enabled")] public bool Enabled {get; set;}
-    [JsonPropertyName("timeoutEnabled")] public bool TimeoutEnabled {get; set;}
-    [JsonPropertyName("timeout")] public int Timeout {get; set;}
+    [JsonPropertyName("input")] public int Input {get; set;}
     [JsonPropertyName("ide")] public bool Ide {get; set;}
     [JsonPropertyName("sid")] public int Sid {get; set;}
     [JsonPropertyName("eid")] public int Eid {get; set;}
@@ -25,10 +21,8 @@ public class CanInput : IDeviceFunction
     [JsonPropertyName("offset")] public double Offset {get; set;}
     [JsonPropertyName("byteOrder")] public ByteOrder ByteOrder {get; set;}
     [JsonPropertyName("signed")] public bool Signed {get; set;}
-    [JsonPropertyName("operator")] public Operator Operator {get; set;}
-    [JsonPropertyName("operand")] public double Operand {get; set;}
-    [JsonPropertyName("mode")] public InputMode Mode {get; set;}
-
+    [JsonPropertyName("interval")] public int Interval {get; set;}
+    
     [JsonPropertyName("id")]
     public int Id
     {
@@ -46,12 +40,8 @@ public class CanInput : IDeviceFunction
 
     [JsonIgnore] public List<DeviceParameter> Params { get; }
 
-    [JsonIgnore][Plotable(displayName:"State")] public bool Output { get; set; }
-    [JsonIgnore][Plotable(displayName:"Value")] public int Value {get; set;}
-    
-
     [JsonConstructor]
-    public CanInput(int number, string name)
+    public CanOutput(int number, string name)
     {
         Number = number;
         Name = name;
@@ -73,17 +63,10 @@ public class CanInput : IDeviceFunction
             },
             new DeviceParameter
             {
-                ParentName = Name, Name = "timeoutEnabled", Index = BaseIndex + (Number - 1), SubIndex = subIndex++,
-                GetValue = () => TimeoutEnabled, SetValue = val => TimeoutEnabled = (bool)val,
-                ValueType = TimeoutEnabled.GetType(),
+                ParentName = Name, Name = "input", Index = BaseIndex + (Number - 1), SubIndex = subIndex++,
+                GetValue = () => Input, SetValue = val => Input = (int)val,
+                ValueType = Input.GetType(),
                 DefaultValue = false
-            },
-            new DeviceParameter
-            {
-                ParentName = Name, Name = "timeout", Index = BaseIndex + (Number - 1), SubIndex = subIndex++,
-                GetValue = () => Timeout, SetValue = val => Timeout = (int)val,
-                ValueType = Timeout.GetType(),
-                DefaultValue = 0
             },
             new DeviceParameter
             {
@@ -97,78 +80,64 @@ public class CanInput : IDeviceFunction
                 ParentName = Name, Name = "sid", Index = BaseIndex + (Number - 1), SubIndex = subIndex++,
                 GetValue = () => Sid, SetValue = val => Sid = (int)val,
                 ValueType = Sid.GetType(),
-                DefaultValue = 0
+                DefaultValue = false
             },
             new DeviceParameter
             {
                 ParentName = Name, Name = "eid", Index = BaseIndex + (Number - 1), SubIndex = subIndex++,
                 GetValue = () => Eid, SetValue = val => Eid = (int)val,
                 ValueType = Eid.GetType(),
-                DefaultValue = 0
+                DefaultValue = false
             },
             new DeviceParameter
             {
                 ParentName = Name, Name = "startBit", Index = BaseIndex + (Number - 1), SubIndex = subIndex++,
                 GetValue = () => StartBit, SetValue = val => StartBit = (int)val,
                 ValueType = StartBit.GetType(),
-                DefaultValue = 0
+                DefaultValue = false
             },
             new DeviceParameter
             {
                 ParentName = Name, Name = "bitLength", Index = BaseIndex + (Number - 1), SubIndex = subIndex++,
                 GetValue = () => BitLength, SetValue = val => BitLength = (int)val,
                 ValueType = BitLength.GetType(),
-                DefaultValue = 0
+                DefaultValue = false
             },
             new DeviceParameter
             {
                 ParentName = Name, Name = "factor", Index = BaseIndex + (Number - 1), SubIndex = subIndex++,
                 GetValue = () => Factor, SetValue = val => Factor = (double)val,
                 ValueType = Factor.GetType(),
-                DefaultValue = 0
+                DefaultValue = false
             },
             new DeviceParameter
             {
                 ParentName = Name, Name = "offset", Index = BaseIndex + (Number - 1), SubIndex = subIndex++,
                 GetValue = () => Offset, SetValue = val => Offset = (double)val,
                 ValueType = Offset.GetType(),
-                DefaultValue = 0
+                DefaultValue = false
             },
             new DeviceParameter
             {
                 ParentName = Name, Name = "byteOrder", Index = BaseIndex + (Number - 1), SubIndex = subIndex++,
                 GetValue = () => ByteOrder, SetValue = val => ByteOrder = (ByteOrder)val,
                 ValueType = ByteOrder.GetType(),
-                DefaultValue = 0
+                DefaultValue = false
             },
             new DeviceParameter
             {
                 ParentName = Name, Name = "signed", Index = BaseIndex + (Number - 1), SubIndex = subIndex++,
                 GetValue = () => Signed, SetValue = val => Signed = (bool)val,
                 ValueType = Signed.GetType(),
-                DefaultValue = 0
+                DefaultValue = false
             },
             new DeviceParameter
             {
-                ParentName = Name, Name = "operator", Index = BaseIndex + (Number - 1), SubIndex = subIndex++,
-                GetValue = () => Operator, SetValue = val => Operator = (Operator)val,
-                ValueType = Operator.GetType(),
-                DefaultValue = Operator.Equal
+                ParentName = Name, Name = "interval", Index = BaseIndex + (Number - 1), SubIndex = subIndex++,
+                GetValue = () => Interval, SetValue = val => Interval = (int)val,
+                ValueType = Interval.GetType(),
+                DefaultValue = false
             },
-            new DeviceParameter
-            {
-                ParentName = Name, Name = "operand", Index = BaseIndex + (Number - 1), SubIndex = subIndex++,
-                GetValue = () => Operand, SetValue = val => Operand = (double)val,
-                ValueType = Operand.GetType(),
-                DefaultValue = 0
-            },
-            new DeviceParameter
-            {
-                ParentName = Name, Name = "mode", Index = BaseIndex + (Number - 1), SubIndex = subIndex++,
-                GetValue = () => Mode, SetValue = val => Mode = (InputMode)val,
-                ValueType = Mode.GetType(),
-                DefaultValue = InputMode.Momentary
-            }
         ];
     }
 }
