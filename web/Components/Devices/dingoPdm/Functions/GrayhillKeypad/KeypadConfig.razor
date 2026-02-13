@@ -1,0 +1,7 @@
+@using domain.Devices.dingoPdm.Functions.Keypad
+<h3>KeypadConfig</h3>
+
+@code {
+    [Parameter, EditorRequired]
+    public KeypadMaster Keypad { get; set; } = null!;
+}

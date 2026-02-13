@@ -1,0 +1,7 @@
+@using domain.Devices.dingoPdm.Functions.Keypad
+<h3>DialsGrid</h3>
+
+@code {
+    [Parameter, EditorRequired]
+    public List<Dial> Dials { get; set; } = null!;
+}

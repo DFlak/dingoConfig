@@ -1,0 +1,59 @@
+@using domain.Devices.dingoPdm.Functions.Keypad
+
+<MudDataGrid Items="@Buttons" Dense="true" Hover="true" Striped="false" EditMode="DataGridEditMode.Cell" ReadOnly="false"
+             SortMode="SortMode.None" ColumnResizeMode="ResizeMode.Container" Virtualize="true" 
+             FixedHeader="true" HorizontalScrollbar="true" Style="max-height: 400px;">
+    <Columns>
+        <PropertyColumn Property="x => x.Number" Title="#" StickyLeft="true" Editable="false" CellStyle="max-width: 100px"/>
+        <PropertyColumn Property="x => x.Enabled" CellStyle="max-width: 100px">
+            <EditTemplate>
+                <MudCheckBox @bind-Value="context.Item.Enabled" Dense="true" />
+            </EditTemplate>
+        </PropertyColumn>
+        <PropertyColumn Property="x => x.Name" CellStyle="max-width: 200px">
+            <EditTemplate>
+                <MudTextField @bind-Value="context.Item.Name" Variant="Variant.Outlined" Margin="Margin.Dense" />
+            </EditTemplate>
+        </PropertyColumn>
+        <PropertyColumn Property="x => x.Mode" CellStyle="max-width: 200px">
+            <EditTemplate>
+                <MudSelect T="domain.Enums.InputMode" @bind-Value="context.Item.Mode" Variant="Variant.Outlined" Dense="true"
+                           Disabled="!context.Item.Enabled">
+                    @foreach (domain.Enums.InputMode mode in Enum.GetValues(typeof(domain.Enums.InputMode)))
+                    {
+                        <MudSelectItem T="domain.Enums.InputMode" Value="@mode">@mode</MudSelectItem>
+                    }
+                </MudSelect>
+            </EditTemplate>
+        </PropertyColumn>
+        <PropertyColumn Property="x => x.Colors[0]" CellStyle="max-width: 100px">
+            <EditTemplate>
+                <MudCheckBox @bind-Value="context.Item.Invert" Dense="true" Disabled="!context.Item.Enabled"/>
+            </EditTemplate>
+        </PropertyColumn>
+        <PropertyColumn Property="x => x.Pull" CellStyle="max-width: 200px">
+            <EditTemplate>
+                <MudSelect T="InputPull" @bind-Value="context.Item.Pull" Variant="Variant.Outlined" Dense="true"
+                           Disabled="!context.Item.Enabled">
+                    @foreach (InputPull pull in Enum.GetValues(typeof(InputPull)))
+                    {
+                        <MudSelectItem T="InputPull" Value="@pull">@pull</MudSelectItem>
+                    }
+                </MudSelect>
+            </EditTemplate>
+        </PropertyColumn>
+        <TemplateColumn Title="Debounce (ms)" Resizable="true" CellStyle="max-width: 100px">
+            <EditTemplate>
+                <MudNumericField @key="@($"debounce-{context.Item.Number}-{_refreshCounter}")"
+                                 Value="@context.Item.DebounceTime"
+                                 Disabled="!context.Item.Enabled"
+                                 ValueChanged="@((int val) => OnDebounceChanged(context.Item, val))"/>
+            </EditTemplate>
+        </TemplateColumn>
+    </Columns>
+</MudDataGrid>
+
+@code {
+    [Parameter, EditorRequired]
+    public List<Button> Buttons { get; set; } = null!;
+}

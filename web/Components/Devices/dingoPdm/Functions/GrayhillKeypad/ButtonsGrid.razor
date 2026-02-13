@@ -1,0 +1,8 @@
+@using domain.Devices.dingoPdm.Functions.Keypad
+
+<h3>ButtonsGrid</h3>
+
+@code {
+    [Parameter, EditorRequired]
+    public List<Button> Buttons { get; set; } = null!;
+}

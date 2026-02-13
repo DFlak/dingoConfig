@@ -35,7 +35,6 @@ public class PdmDevice : IDeviceConfigurable
     [JsonIgnore] protected virtual int KeypadMaxButtons => 20;
     [JsonIgnore] protected virtual int KeypadMaxDials => 4;
     [JsonIgnore] protected virtual int KeypadMaxAnalogInputs => 4;
-    
 
     [JsonIgnore] public const int BaseIndex = 0x0000;
     [JsonIgnore] protected virtual int PdmType => 0; //0=dingoPDM, 1=dingoPDM-Max
@@ -71,7 +70,7 @@ public class PdmDevice : IDeviceConfigurable
     [JsonPropertyName("starterDisable")] public StarterDisable StarterDisable { get; protected set; } = null!;
     [JsonPropertyName("counters")] public List<Counter> Counters { get; init; } = [];
     [JsonPropertyName("conditions")] public List<Condition> Conditions { get; init; } = [];
-    [JsonPropertyName("keypads")] public List<Keypad> Keypads { get; init; } = [];
+    [JsonPropertyName("keypads")] public List<KeypadMaster> Keypads { get; init; } = [];
     
     [JsonIgnore] private DateTime LastRxTime { get; set; }
 
@@ -144,7 +143,7 @@ public class PdmDevice : IDeviceConfigurable
         Wipers = new Wiper("wiper");
         
         for (var i = 0; i < NumKeypads; i++)
-            Keypads.Add(new Functions.Keypad.Keypad(i + 1, "keypad" + (i + 1)));
+            Keypads.Add(new KeypadMaster(i + 1, "keypad" + (i + 1), KeypadMaxButtons, KeypadMaxDials));
 
         InitStatusSigs();
     }
@@ -1161,6 +1160,16 @@ public class PdmDevice : IDeviceConfigurable
         return [];
     }
 
+    public bool SetKeypad(int index, int id, KeypadModel model)
+    {
+        if (index > NumKeypads - 1) return false;
+        
+        Keypads[index].Id = id;
+        Keypads[index].Model = model;
+        
+        return true;
+    }
+
     // Collection accessors
     public IReadOnlyList<Input> GetInputs() => Inputs.AsReadOnly();
     public IReadOnlyList<Output> GetOutputs() => Outputs.AsReadOnly();
@@ -1172,7 +1181,7 @@ public class PdmDevice : IDeviceConfigurable
     public IReadOnlyList<Condition> GetConditions() => Conditions.AsReadOnly();
     public Wiper GetWipers() => Wipers;
     public StarterDisable GetStarterDisable() => StarterDisable;
-    public IReadOnlyList<Keypad> GetKeypads() => Keypads.AsReadOnly();
+    public IReadOnlyList<KeypadMaster> GetKeypads() => Keypads.AsReadOnly();
     
     protected bool CheckVersion(int major, int minor, int build)
     {

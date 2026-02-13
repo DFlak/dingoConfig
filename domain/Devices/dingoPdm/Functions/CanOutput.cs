@@ -66,63 +66,63 @@ public class CanOutput : IDeviceFunction
                 ParentName = Name, Name = "input", Index = BaseIndex + (Number - 1), SubIndex = subIndex++,
                 GetValue = () => Input, SetValue = val => Input = (int)val,
                 ValueType = Input.GetType(),
-                DefaultValue = false
+                DefaultValue = 0
             },
             new DeviceParameter
             {
                 ParentName = Name, Name = "ide", Index = BaseIndex + (Number - 1), SubIndex = subIndex++,
                 GetValue = () => Ide, SetValue = val => Ide = (bool)val,
                 ValueType = Ide.GetType(),
-                DefaultValue = false
+                DefaultValue = 0
             },
             new DeviceParameter
             {
                 ParentName = Name, Name = "sid", Index = BaseIndex + (Number - 1), SubIndex = subIndex++,
                 GetValue = () => Sid, SetValue = val => Sid = (int)val,
                 ValueType = Sid.GetType(),
-                DefaultValue = false
+                DefaultValue = 0
             },
             new DeviceParameter
             {
                 ParentName = Name, Name = "eid", Index = BaseIndex + (Number - 1), SubIndex = subIndex++,
                 GetValue = () => Eid, SetValue = val => Eid = (int)val,
                 ValueType = Eid.GetType(),
-                DefaultValue = false
+                DefaultValue = 0
             },
             new DeviceParameter
             {
                 ParentName = Name, Name = "startBit", Index = BaseIndex + (Number - 1), SubIndex = subIndex++,
                 GetValue = () => StartBit, SetValue = val => StartBit = (int)val,
                 ValueType = StartBit.GetType(),
-                DefaultValue = false
+                DefaultValue = 0
             },
             new DeviceParameter
             {
                 ParentName = Name, Name = "bitLength", Index = BaseIndex + (Number - 1), SubIndex = subIndex++,
                 GetValue = () => BitLength, SetValue = val => BitLength = (int)val,
                 ValueType = BitLength.GetType(),
-                DefaultValue = false
+                DefaultValue = 0
             },
             new DeviceParameter
             {
                 ParentName = Name, Name = "factor", Index = BaseIndex + (Number - 1), SubIndex = subIndex++,
                 GetValue = () => Factor, SetValue = val => Factor = (double)val,
                 ValueType = Factor.GetType(),
-                DefaultValue = false
+                DefaultValue = 1.0
             },
             new DeviceParameter
             {
                 ParentName = Name, Name = "offset", Index = BaseIndex + (Number - 1), SubIndex = subIndex++,
                 GetValue = () => Offset, SetValue = val => Offset = (double)val,
                 ValueType = Offset.GetType(),
-                DefaultValue = false
+                DefaultValue = 0.0
             },
             new DeviceParameter
             {
                 ParentName = Name, Name = "byteOrder", Index = BaseIndex + (Number - 1), SubIndex = subIndex++,
                 GetValue = () => ByteOrder, SetValue = val => ByteOrder = (ByteOrder)val,
                 ValueType = ByteOrder.GetType(),
-                DefaultValue = false
+                DefaultValue = ByteOrder.LittleEndian
             },
             new DeviceParameter
             {
@@ -136,7 +136,7 @@ public class CanOutput : IDeviceFunction
                 ParentName = Name, Name = "interval", Index = BaseIndex + (Number - 1), SubIndex = subIndex++,
                 GetValue = () => Interval, SetValue = val => Interval = (int)val,
                 ValueType = Interval.GetType(),
-                DefaultValue = false
+                DefaultValue = 1000
             },
         ];
     }
