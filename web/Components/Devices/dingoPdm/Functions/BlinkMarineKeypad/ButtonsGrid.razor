@@ -1,4 +1,9 @@
 @using domain.Devices.dingoPdm.Functions.Keypad
+@using domain.Devices.dingoPdm
+@using domain.Models
+@using domain.Devices.Keypad.BlinkMarine.Enums
+@inject IDialogService DialogService
+@typeparam TDevice where TDevice : PdmDevice
 
 <MudDataGrid Items="@Buttons" Dense="true" Hover="true" Striped="false" EditMode="DataGridEditMode.Cell" ReadOnly="false"
              SortMode="SortMode.None" ColumnResizeMode="ResizeMode.Container" Virtualize="true" 
@@ -15,39 +20,56 @@
                 <MudTextField @bind-Value="context.Item.Name" Variant="Variant.Outlined" Margin="Margin.Dense" />
             </EditTemplate>
         </PropertyColumn>
-        <PropertyColumn Property="x => x.Mode" CellStyle="max-width: 200px">
+        
+        @for (var i = 0; i < 4; i++)
+        {
+            var index = i;
+            var title = $"Color {index}"; 
+            <TemplateColumn Title="Color" Resizable="true" CellStyle="max-width: 200px">
+                <EditTemplate>
+                    <MudSelect T="ButtonColor" Value="@_colors[i]" Variant="Variant.Outlined" Dense="true" Disabled="!context.Item.Enabled" 
+                               ValueChanged="@((ButtonColor val) => OnColorChanged(context.Item.Colors[index], val))">
+                        @foreach (ButtonColor color in Enum.GetValues(typeof(ButtonColor)))
+                        {
+                            <MudSelectItem T="ButtonColor" Value="@color">@color</MudSelectItem>
+                        }
+                    </MudSelect>
+                </EditTemplate>
+            </TemplateColumn>
+
+            title = $"Blink Color {index}";
+            <TemplateColumn Title=@title Resizable="true" CellStyle="max-width: 200px">
+                <EditTemplate>
+                    <MudSelect T="ButtonColor" Value="@_blinkColors[index]" Variant="Variant.Outlined" Dense="true" Disabled="!context.Item.Enabled" 
+                               ValueChanged="@((ButtonColor val) => OnColorChanged(context.Item.BlinkColors[index], val))">
+                        @foreach (ButtonColor color in Enum.GetValues(typeof(ButtonColor)))
+                        {
+                            <MudSelectItem T="ButtonColor" Value="@color">@color</MudSelectItem>
+                        }
+                    </MudSelect>
+                </EditTemplate>
+            </TemplateColumn>
+        }
+        <TemplateColumn Title="Fault Color" Resizable="true" CellStyle="max-width: 200px">
             <EditTemplate>
-                <MudSelect T="domain.Enums.InputMode" @bind-Value="context.Item.Mode" Variant="Variant.Outlined" Dense="true"
-                           Disabled="!context.Item.Enabled">
-                    @foreach (domain.Enums.InputMode mode in Enum.GetValues(typeof(domain.Enums.InputMode)))
+                <MudSelect T="ButtonColor" Value="@_faultColor" Variant="Variant.Outlined" Dense="true" Disabled="!context.Item.Enabled" 
+                           ValueChanged="@((ButtonColor val) => OnColorChanged(context.Item.FaultColor, val))">
+                    @foreach (ButtonColor color in Enum.GetValues(typeof(ButtonColor)))
                     {
-                        <MudSelectItem T="domain.Enums.InputMode" Value="@mode">@mode</MudSelectItem>
+                        <MudSelectItem T="ButtonColor" Value="@color">@color</MudSelectItem>
                     }
                 </MudSelect>
             </EditTemplate>
-        </PropertyColumn>
-        <PropertyColumn Property="x => x.Colors[0]" CellStyle="max-width: 100px">
+        </TemplateColumn>
+        <TemplateColumn Title="Fault Blink" Resizable="true" CellStyle="max-width: 200px">
             <EditTemplate>
-                <MudCheckBox @bind-Value="context.Item.Invert" Dense="true" Disabled="!context.Item.Enabled"/>
-            </EditTemplate>
-        </PropertyColumn>
-        <PropertyColumn Property="x => x.Pull" CellStyle="max-width: 200px">
-            <EditTemplate>
-                <MudSelect T="InputPull" @bind-Value="context.Item.Pull" Variant="Variant.Outlined" Dense="true"
-                           Disabled="!context.Item.Enabled">
-                    @foreach (InputPull pull in Enum.GetValues(typeof(InputPull)))
+                <MudSelect T="ButtonColor" Value="@_faultBlinkColor" Variant="Variant.Outlined" Dense="true" Disabled="!context.Item.Enabled" 
+                           ValueChanged="@((ButtonColor val) => OnColorChanged(context.Item.FaultBlinkColor, val))">
+                    @foreach (ButtonColor color in Enum.GetValues(typeof(ButtonColor)))
                     {
-                        <MudSelectItem T="InputPull" Value="@pull">@pull</MudSelectItem>
+                        <MudSelectItem T="ButtonColor" Value="@color">@color</MudSelectItem>
                     }
                 </MudSelect>
-            </EditTemplate>
-        </PropertyColumn>
-        <TemplateColumn Title="Debounce (ms)" Resizable="true" CellStyle="max-width: 100px">
-            <EditTemplate>
-                <MudNumericField @key="@($"debounce-{context.Item.Number}-{_refreshCounter}")"
-                                 Value="@context.Item.DebounceTime"
-                                 Disabled="!context.Item.Enabled"
-                                 ValueChanged="@((int val) => OnDebounceChanged(context.Item, val))"/>
             </EditTemplate>
         </TemplateColumn>
     </Columns>
@@ -56,4 +78,16 @@
 @code {
     [Parameter, EditorRequired]
     public List<Button> Buttons { get; set; } = null!;
+    [Parameter, EditorRequired] public TDevice Device { get; set; } = default!;
+    
+    ButtonColor[] _colors = new ButtonColor[4];
+    ButtonColor[] _blinkColors = new ButtonColor[4];
+    ButtonColor _faultColor;
+    ButtonColor _faultBlinkColor;
+
+    private void OnColorChanged(int item, ButtonColor val)
+    {
+        item = (int)val;
+    }
+
 }

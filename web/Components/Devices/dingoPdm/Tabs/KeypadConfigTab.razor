@@ -1,0 +1,117 @@
+@using domain.Devices.dingoPdm.Functions.Keypad
+@using domain.Devices.dingoPdm
+@using domain.Models
+@inject IDialogService DialogService
+@typeparam TDevice where TDevice : PdmDevice
+
+<div style="overflow-y: auto; height: calc(100vh - 250px); padding: 24px; scrollbar-width: auto; scrollbar-color: #888 transparent;">
+    
+    <MudDataGrid Items="@Keypad.Buttons" Dense="true" Hover="true" Striped="false" EditMode="DataGridEditMode.Cell" ReadOnly="false"
+                 SortMode="SortMode.None" ColumnResizeMode="ResizeMode.Container" Virtualize="true"
+                 FixedHeader="true" HorizontalScrollbar="true" Style="max-height: 400px;">
+        <Columns>
+            <PropertyColumn Property="x => x.Number" Title="#" StickyLeft="true" Editable="false" CellStyle="max-width: 100px"/>
+            <PropertyColumn Property="x => x.Enabled" CellStyle="max-width: 100px">
+                <EditTemplate>
+                    <MudCheckBox @bind-Value="context.Item.Enabled" Dense="true"/>
+                </EditTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.Name" CellStyle="max-width: 200px">
+                <EditTemplate>
+                    <MudTextField @bind-Value="context.Item.Name" Variant="Variant.Outlined" Margin="Margin.Dense"/>
+                </EditTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.Mode" CellStyle="max-width: 200px">
+                <EditTemplate>
+                    <MudSelect T="domain.Enums.InputMode" @bind-Value="context.Item.Mode" Variant="Variant.Outlined" Dense="true"
+                               Disabled="!context.Item.Enabled">
+                        @foreach (domain.Enums.InputMode mode in Enum.GetValues(typeof(domain.Enums.InputMode)))
+                        {
+                            <MudSelectItem T="domain.Enums.InputMode" Value="@mode">@mode</MudSelectItem>
+                        }
+                    </MudSelect>
+                </EditTemplate>
+            </PropertyColumn>
+            @for (var i = 0; i < 4; i++)
+            {
+                var index = i;
+                var title = $"Var {index}";
+                <PropertyColumn Property="x => x.Vars[index]" Title=@title CellStyle="max-width: 250px;">
+                    <EditTemplate>
+                        <MudStack Row="true">
+                            <MudIconButton Icon="@Icons.Material.Filled.Search"
+                                           Color="Color.Primary"
+                                           Size="Size.Small"
+                                           Disabled="(!context.Item.Enabled)"
+                                           Style="max-width: 20px"
+                                           OnClick="@(() => OpenVariableSelectorAsync(context.Item, "bool", context.Item.Vars[index]))">
+                            </MudIconButton>
+                            <MudText>@GetSelectedVarText(context.Item.Vars[index])</MudText>
+                        </MudStack>
+                    </EditTemplate>
+                </PropertyColumn>
+            }
+            <PropertyColumn Property="x => x.FaultVar" Title="Fault Var" CellStyle="max-width: 250px;">
+                <EditTemplate>
+                    <MudStack Row="true">
+                        <MudIconButton Icon="@Icons.Material.Filled.Search"
+                                       Color="Color.Primary"
+                                       Size="Size.Small"
+                                       Disabled="(!context.Item.Enabled)"
+                                       Style="max-width: 20px"
+                                       OnClick="@(() => OpenVariableSelectorAsync(context.Item, "bool", context.Item.FaultVar))">
+                        </MudIconButton>
+                        <MudText>@GetSelectedVarText(context.Item.FaultVar)</MudText>
+                    </MudStack>
+                </EditTemplate>
+            </PropertyColumn>
+        </Columns>
+    </MudDataGrid>
+
+    @if (Keypad.IsBlinkMarine())
+    {
+        <BlinkMarineKeypad.ButtonsGrid TDevice="TDevice" Device="Device" Buttons="Keypad.Buttons"/>
+        <BlinkMarineKeypad.DialsGrid TDevice="TDevice" Device="Device" Dials="Keypad.Dials"/>
+    }
+    @if (Keypad.IsGrayhill())
+    {
+        <GrayhillKeypad.ButtonsGrid TDevice="TDevice" Device="Device" Buttons="Keypad.Buttons"/>
+    }
+
+</div>
+
+@code {
+    [Parameter, EditorRequired]
+    public KeypadMaster Keypad { get; set; } = null!;
+    [Parameter, EditorRequired] public TDevice Device { get; set; } = default!;
+    
+    private async Task OpenVariableSelectorAsync(Button button, string datatype, int varIndex)
+    {
+        var parameters = new DialogParameters<VarMapSelectionDialog>
+        {
+            { x => x.Device, Device},
+            { x => x.Datatype, datatype}
+        };
+        
+        var dialog = await DialogService.ShowAsync<VarMapSelectionDialog>("Select Variable", parameters);
+        var result = await dialog.Result;
+
+        if (result is { Canceled: false, Data: (DeviceVariable variable) })
+            varIndex = variable.VariableIndex;
+    }
+    
+    private string GetSelectedVarText(int index)
+    {
+        var variable = Device.VarMap.Find(p => p.VariableIndex == index);
+
+        if (variable == null) return "Not found";
+        
+        if(variable.FunctionName.Length == 0)
+            return "Select Variable";
+
+        if (variable.SingleVariable)
+            return $"{variable.FunctionName}.{variable.PropertyName}";
+
+        return $"{variable.FunctionName}{variable.FunctionIndex}.{variable.PropertyName}";
+    }
+}

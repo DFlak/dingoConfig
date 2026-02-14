@@ -1,7 +1,11 @@
 @using domain.Devices.dingoPdm.Functions.Keypad
+@using domain.Devices.dingoPdm
+@typeparam TDevice where TDevice : PdmDevice
+
 <h3>DialsGrid</h3>
 
 @code {
     [Parameter, EditorRequired]
     public List<Dial> Dials { get; set; } = null!;
+    [Parameter, EditorRequired] public TDevice Device { get; set; } = default!;
 }
