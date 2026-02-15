@@ -3,14 +3,12 @@ using System.Text.Json.Serialization;
 using domain.Common;
 using domain.Devices.Keypad.BlinkMarine.Enums;
 using domain.Devices.Keypad.BlinkMarine.Functions;
-using domain.Devices.Keypad.Enums;
-using domain.Interfaces;
 using domain.Models;
 using Microsoft.Extensions.Logging;
 
 namespace domain.Devices.Keypad.BlinkMarine;
 
-public class BlinkMarineKeypadDevice : IDevice
+public class BlinkMarineKeypadDevice : IKeypadDevice
 {
     [JsonIgnore] private ILogger<BlinkMarineKeypadDevice>? _logger;
 

@@ -1,9 +1,10 @@
 @using domain.Devices.dingoPdm.Functions
 @using domain.Models
 @using web.Services
-@inject IDialogService DialogService
+@using web.Components.Devices.dingoPdm
 @inject NotificationService Notification
 @typeparam TDevice where TDevice : domain.Interfaces.IDeviceConfigurable
+@inherits PdmFunctionComponentBase<TDevice>
 
 <MudCard Outlined="true" Class="mb-2">
     <MudCardContent>
@@ -26,7 +27,7 @@
                                            Size="Size.Small"
                                            Disabled="(!StarterDisable.Enabled)"
                                            Style="max-width: 20px"
-                                           OnClick="@(() => OpenVariableSelectorAsync(StarterDisable, "bool"))">
+                                           OnClick="@(() => OpenVariableSelectorAsync("bool", v => StarterDisable.Input = v))">
                             </MudIconButton>
                             <MudText>@GetSelectedVarText(StarterDisable.Input)</MudText>
                         </MudStack>
@@ -58,35 +59,5 @@
 
 @code {
     [Parameter, EditorRequired] public StarterDisable StarterDisable { get; set; } = null!;
-    [Parameter, EditorRequired] public TDevice Device { get; set; } = default!;
     
-    private async Task OpenVariableSelectorAsync(StarterDisable disable, string datatype)
-    {
-        var parameters = new DialogParameters<VarMapSelectionDialog>
-        {
-            { x => x.Device, Device},
-            { x => x.Datatype, datatype}
-        };
-        
-        var dialog = await DialogService.ShowAsync<VarMapSelectionDialog>("Select Variable", parameters);
-        var result = await dialog.Result;
-
-        if (result is { Canceled: false, Data: (DeviceVariable variable) })
-            disable.Input = variable.VariableIndex;
-    }
-    
-    private string GetSelectedVarText(int index)
-    {
-        var variable = Device.VarMap.Find(p => p.VariableIndex == index);
-
-        if (variable == null) return "Not found";
-        
-        if(variable.FunctionName.Length == 0)
-            return "Select Variable";
-
-        if (variable.SingleVariable)
-            return $"{variable.FunctionName}.{variable.PropertyName}";
-
-        return $"{variable.FunctionName}{variable.FunctionIndex}.{variable.PropertyName}";
-    }
 }

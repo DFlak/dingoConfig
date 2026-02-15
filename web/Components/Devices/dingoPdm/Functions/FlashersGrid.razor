@@ -1,10 +1,11 @@
 @using web.Services
+@using web.Components.Devices.dingoPdm
 @using domain.Devices.dingoPdm.Functions
 @using domain.Devices.dingoPdm.Enums
 @using domain.Models
-@inject IDialogService DialogService
 @inject NotificationService Notification
 @typeparam TDevice where TDevice : domain.Interfaces.IDeviceConfigurable
+@inherits PdmFunctionComponentBase<TDevice>
 
 <MudDataGrid Items="@Flashers" Dense="true" Hover="true" Striped="false" EditMode="DataGridEditMode.Cell" ReadOnly="false"
              SortMode="SortMode.None" ColumnResizeMode="ResizeMode.Container" Virtualize="true" 
@@ -44,7 +45,7 @@
                                    Size="Size.Small"
                                    Disabled="(!context.Item.Enabled)"
                                    Style="max-width: 20px"
-                                   OnClick="@(() => OpenVariableSelectorAsync(context.Item, "bool"))">
+                                   OnClick="@(() => OpenVariableSelectorAsync("bool", v => context.Item.Input = v))">
                     </MudIconButton>
                     <MudText>@GetSelectedVarText(context.Item.Input)</MudText>
                 </MudStack>
@@ -72,24 +73,8 @@
 @code {
     [Parameter, EditorRequired]
     public List<Flasher> Flashers { get; set; } = null!;
-    [Parameter, EditorRequired] public TDevice Device { get; set; } = default!;
-    
+
     private int _refreshCounter;
-
-    private async Task OpenVariableSelectorAsync(Flasher flasher, string datatype)
-    {
-        var parameters = new DialogParameters<VarMapSelectionDialog>
-        {
-            { x => x.Device, Device},
-            { x => x.Datatype, datatype}
-        };
-        
-        var dialog = await DialogService.ShowAsync<VarMapSelectionDialog>("Select Variable", parameters);
-        var result = await dialog.Result;
-
-        if (result is { Canceled: false, Data: (DeviceVariable variable) })
-            flasher.Input = variable.VariableIndex;
-    }
     
     private void OnTimeChanged(Flasher item, int value)
     {
@@ -114,19 +99,5 @@
         item.OffTime = Math.Clamp(value, min, max);
         _refreshCounter++;
     }
-    
-    private string GetSelectedVarText(int index)
-    {
-        var variable = Device.VarMap.Find(p => p.VariableIndex == index);
 
-        if (variable == null) return "Not found";
-        
-        if(variable.FunctionName.Length == 0)
-            return "Select Variable";
-
-        if (variable.SingleVariable)
-            return $"{variable.FunctionName}.{variable.PropertyName}";
-
-        return $"{variable.FunctionName}{variable.FunctionIndex}.{variable.PropertyName}";
-    }
 }

@@ -9,7 +9,7 @@ using Microsoft.Extensions.Logging;
 
 namespace domain.Devices.Keypad.Grayhill;
 
-public class GrayhillKeypadDevice : IDevice
+public class GrayhillKeypadDevice : IKeypadDevice
 {
     [JsonIgnore] private ILogger<GrayhillKeypadDevice>? _logger;
 
@@ -34,6 +34,7 @@ public class GrayhillKeypadDevice : IDevice
         }
     }
 
+    [JsonPropertyName("model")] public string Model { get; set; }
     [JsonPropertyName("numButtons")] public int NumButtons { get; set; }
     [JsonIgnore] public int BacklightBrightness { get; set; }
     [JsonIgnore] public int IndicatorBrightness { get; set; }
@@ -47,6 +48,7 @@ public class GrayhillKeypadDevice : IDevice
     {
         Name = name;
         BaseId = baseId;
+        Model = model;
         NumButtons = GrayhillModels.Lookup(model);
         Guid = Guid.NewGuid();
         InitCollections();

@@ -1,10 +1,11 @@
 @using web.Services
+@using web.Components.Devices.dingoPdm
 @using domain.Devices.dingoPdm.Functions
 @using domain.Devices.dingoPdm.Enums
 @using domain.Models
-@inject IDialogService DialogService
 @inject NotificationService Notification
 @typeparam TDevice where TDevice : domain.Interfaces.IDeviceConfigurable
+@inherits PdmFunctionComponentBase<TDevice>
 
 <MudCard Outlined="true" Class="mb-2">
     <MudCardContent>
@@ -66,7 +67,7 @@
                                            Size="Size.Small"
                                            Disabled="(!Wiper.Enabled)"
                                            Style="max-width: 20px"
-                                           OnClick="@(() => OpenVariableSelectorAsync(Wiper, "bool", "park"))">
+                                           OnClick="@(() => OpenVariableSelectorAsync("bool", v => Wiper.ParkInput = v))">
                             </MudIconButton>
                             <MudText>@GetSelectedVarText(Wiper.ParkInput)</MudText>
                         </MudStack>
@@ -86,7 +87,7 @@
                                            Size="Size.Small"
                                            Disabled="(!Wiper.Enabled || _slowInputDisabled)"
                                            Style="max-width: 20px"
-                                           OnClick="@(() => OpenVariableSelectorAsync(Wiper, "bool", "slow"))">
+                                           OnClick="@(() => OpenVariableSelectorAsync("bool", v => Wiper.SlowInput = v))">
                             </MudIconButton>
                             <MudText>@GetSelectedVarText(Wiper.SlowInput)</MudText>
                         </MudStack>
@@ -96,7 +97,7 @@
                                            Size="Size.Small"
                                            Disabled="(!Wiper.Enabled || _fastInputDisabled)"
                                            Style="max-width: 20px"
-                                           OnClick="@(() => OpenVariableSelectorAsync(Wiper, "bool", "fast"))">
+                                           OnClick="@(() => OpenVariableSelectorAsync("bool", v => Wiper.FastInput = v))">
                             </MudIconButton>
                             <MudText>@GetSelectedVarText(Wiper.FastInput)</MudText>
                         </MudStack>
@@ -106,7 +107,7 @@
                                            Size="Size.Small"
                                            Disabled="(!Wiper.Enabled || _interInputDisabled)"
                                            Style="max-width: 20px"
-                                           OnClick="@(() => OpenVariableSelectorAsync(Wiper, "bool", "inter"))">
+                                           OnClick="@(() => OpenVariableSelectorAsync("bool", v => Wiper.InterInput = v))">
                             </MudIconButton>
                             <MudText>@GetSelectedVarText(Wiper.InterInput)</MudText>
                         </MudStack>
@@ -116,7 +117,7 @@
                                            Size="Size.Small"
                                            Disabled="(!Wiper.Enabled || _onInputDisabled)"
                                            Style="max-width: 20px"
-                                           OnClick="@(() => OpenVariableSelectorAsync(Wiper, "bool", "on"))">
+                                           OnClick="@(() => OpenVariableSelectorAsync("bool", v => Wiper.OnInput = v))">
                             </MudIconButton>
                             <MudText>@GetSelectedVarText(Wiper.OnInput)</MudText>
                         </MudStack>
@@ -126,7 +127,7 @@
                                            Size="Size.Small"
                                            Disabled="(!Wiper.Enabled || _speedInputDisabled)"
                                            Style="max-width: 20px"
-                                           OnClick="@(() => OpenVariableSelectorAsync(Wiper, "int", "speed"))">
+                                           OnClick="@(() => OpenVariableSelectorAsync("int", v => Wiper.SpeedInput = v))">
                             </MudIconButton>
                             <MudText>@GetSelectedVarText(Wiper.SpeedInput)</MudText>
                         </MudStack>
@@ -146,7 +147,7 @@
                                            Size="Size.Small"
                                            Disabled="(!Wiper.Enabled)"
                                            Style="max-width: 20px"
-                                           OnClick="@(() => OpenVariableSelectorAsync(Wiper, "bool", "swipe"))">
+                                           OnClick="@(() => OpenVariableSelectorAsync("bool", v => Wiper.SwipeInput = v))">
                             </MudIconButton>
                             <MudText>@GetSelectedVarText(Wiper.SwipeInput)</MudText>
                         </MudStack>
@@ -156,7 +157,7 @@
                                            Size="Size.Small"
                                            Disabled="(!Wiper.Enabled)"
                                            Style="max-width: 20px"
-                                           OnClick="@(() => OpenVariableSelectorAsync(Wiper, "bool", "wash"))">
+                                           OnClick="@(() => OpenVariableSelectorAsync("bool", v => Wiper.WashInput = v))">
                             </MudIconButton>
                             <MudText>@GetSelectedVarText(Wiper.WashInput)</MudText>
                         </MudStack>
@@ -255,7 +256,6 @@
 
 @code {
     [Parameter, EditorRequired] public Wiper Wiper { get; set; } = null!;
-    [Parameter, EditorRequired] public TDevice Device { get; set; } = default!;
     
     private bool _slowInputDisabled;
     private bool _fastInputDisabled;
@@ -264,56 +264,6 @@
     private bool _speedInputDisabled;
 
     private int _refreshCounter;
-    
-    private async Task OpenVariableSelectorAsync(Wiper wiper, string datatype, string var)
-    {
-        var parameters = new DialogParameters<VarMapSelectionDialog>
-        {
-            { x => x.Device, Device},
-            { x => x.Datatype, datatype}
-        };
-        
-        var dialog = await DialogService.ShowAsync<VarMapSelectionDialog>("Select Variable", parameters);
-        var result = await dialog.Result;
-
-        if (result is { Canceled: false, Data: (DeviceVariable variable) })
-        {
-            switch (var)
-            {
-                case "park":
-                    wiper.ParkInput = variable.VariableIndex;
-                    break;
-                    
-                case "slow":
-                    wiper.SlowInput = variable.VariableIndex;
-                    break;
-                    
-                case "fast":
-                    wiper.FastInput = variable.VariableIndex;
-                    break;
-                    
-                case "inter":
-                    wiper.InterInput = variable.VariableIndex;
-                    break;
-                    
-                case "on":
-                    wiper.OnInput = variable.VariableIndex;
-                    break;
-                    
-                case "speed":
-                    wiper.SpeedInput = variable.VariableIndex;
-                    break;
-                    
-                case "swipe":
-                    wiper.SwipeInput = variable.VariableIndex;
-                    break;
-                    
-                case "wash":
-                    wiper.WashInput = variable.VariableIndex;
-                    break;
-            }
-        }
-    }
     
     protected override void OnParametersSet()
     {
@@ -383,20 +333,5 @@
         }
         wiper.WashWipeCycles = Math.Clamp(value, min, max);
         _refreshCounter++;
-    }
-    
-    private string GetSelectedVarText(int index)
-    {
-        var variable = Device.VarMap.Find(p => p.VariableIndex == index);
-
-        if (variable == null) return "Not found";
-        
-        if(variable.FunctionName.Length == 0)
-            return "Select Variable";
-
-        if (variable.SingleVariable)
-            return $"{variable.FunctionName}.{variable.PropertyName}";
-
-        return $"{variable.FunctionName}{variable.FunctionIndex}.{variable.PropertyName}";
     }
 }

@@ -2,9 +2,10 @@
 @using domain.Devices.dingoPdm.Enums
 @using domain.Models
 @using web.Services
-@inject IDialogService DialogService
+@using web.Components.Devices.dingoPdm
 @inject NotificationService Notification
 @typeparam TDevice where TDevice : domain.Interfaces.IDeviceConfigurable
+@inherits PdmFunctionComponentBase<TDevice>
 
 <MudDataGrid Items="@VirtualInputs" Dense="true" Hover="true" Striped="false" EditMode="DataGridEditMode.Cell" ReadOnly="false"
              SortMode="SortMode.None" ColumnResizeMode="ResizeMode.Container" Virtualize="true" 
@@ -55,7 +56,7 @@
                                    Size="Size.Small"
                                    Disabled="(!context.Item.Enabled)"
                                    Style="max-width: 20px"
-                                   OnClick="@(() => OpenVariableSelectorAsync(context.Item, "bool", "var0"))">
+                                   OnClick="@(() => OpenVariableSelectorAsync("bool", v => context.Item.Var0 = v))">
                     </MudIconButton>
                     <MudText>@GetSelectedVarText(context.Item.Var0)</MudText>
                 </MudStack>
@@ -85,7 +86,7 @@
                                    Size="Size.Small"
                                    Disabled="(!context.Item.Enabled)"
                                    Style="max-width: 20px"
-                                   OnClick="@(() => OpenVariableSelectorAsync(context.Item, "bool", "var1"))">
+                                   OnClick="@(() => OpenVariableSelectorAsync("bool", v => context.Item.Var1 = v))">
                     </MudIconButton>
                     <MudText>@GetSelectedVarText(context.Item.Var1)</MudText>
                 </MudStack>
@@ -115,7 +116,7 @@
                                    Size="Size.Small"
                                    Disabled="(!context.Item.Enabled)"
                                    Style="max-width: 20px"
-                                   OnClick="@(() => OpenVariableSelectorAsync(context.Item, "bool", "var2"))">
+                                   OnClick="@(() => OpenVariableSelectorAsync("bool", v => context.Item.Var2 = v))">
                     </MudIconButton>
                     <MudText>@GetSelectedVarText(context.Item.Var2)</MudText>
                 </MudStack>
@@ -138,50 +139,5 @@
 @code {
     [Parameter, EditorRequired]
     public List<VirtualInput> VirtualInputs { get; set; } = null!;
-    [Parameter, EditorRequired] public TDevice Device { get; set; } = default!;
     
-    private async Task OpenVariableSelectorAsync(VirtualInput input, string datatype, string var)
-    {
-        var parameters = new DialogParameters<VarMapSelectionDialog>
-        {
-            { x => x.Device, Device},
-            { x => x.Datatype, datatype}
-        };
-        
-        var dialog = await DialogService.ShowAsync<VarMapSelectionDialog>("Select Variable", parameters);
-        var result = await dialog.Result;
-
-        if (result is { Canceled: false, Data: (DeviceVariable variable) })
-        {
-            switch (var)
-            {
-                case "var0":
-                    input.Var0 = variable.VariableIndex;
-                    break;
-                    
-                case "var1":
-                    input.Var1 = variable.VariableIndex;
-                    break;
-                    
-                case "var2":
-                    input.Var2 = variable.VariableIndex;
-                    break;
-            }
-        }
-    }
-    
-    private string GetSelectedVarText(int index)
-    {
-        var variable = Device.VarMap.Find(p => p.VariableIndex == index);
-
-        if (variable == null) return "Not found";
-        
-        if(variable.FunctionName.Length == 0)
-            return "Select Variable";
-
-        if (variable.SingleVariable)
-            return $"{variable.FunctionName}.{variable.PropertyName}";
-
-        return $"{variable.FunctionName}{variable.FunctionIndex}.{variable.PropertyName}";
-    }
 }

@@ -12,9 +12,11 @@ public enum KeypadModel
     Blink15Key = 7,
     Blink13Key2Dial = 8,
     BlinkRacepad = 9,
+    Blink1Key = 10,
     
     Grayhill6Key = 20,
     Grayhill8Key = 21,
-    Grayhill15Key = 22,
-    Grayhill20Key = 23
+    Grayhill12Key = 22,
+    Grayhill15Key = 23,
+    Grayhill20Key = 24
 }

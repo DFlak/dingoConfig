@@ -13,7 +13,7 @@
         </div>
     </div>
 
-    <MudTextField Class="centered-input" @bind-Value="Button.Name" Style="@($"width: {Size}px;")"></MudTextField>
+    <MudText Align="Align.Center" Style="@($"width: {Size}px;")">@Button.Name</MudText>
 </MudStack>
 
 @code {
@@ -22,6 +22,9 @@
 
     [Parameter, EditorRequired]
     public Button Button { get; set; } = null!;
+    
+    [Parameter, EditorRequired]
+    public bool Enabled { get; set; }
 
     private System.Threading.Timer? _blinkTimer;
     private bool _showBlinkColor;
@@ -72,10 +75,10 @@
     private void SetRingColor()
     {
         //Testing
-        Button.IndicatorColor = ButtonColor.Off;
-        Button.IndicatorBrightness = 63;
-        Button.BacklightBrightness = 50;
-        Button.BlinkColor = ButtonColor.Orange;
+        //Button.IndicatorColor = ButtonColor.Off;
+        //Button.IndicatorBrightness = 63;
+        //Button.BacklightBrightness = 50;
+        //Button.BlinkColor = ButtonColor.Orange;
         
         _indicatorColor = System.Drawing.Color.Black;
         if (Button.IndicatorColor != ButtonColor.Off)

@@ -6,6 +6,6 @@
 
 @code {
     [Parameter, EditorRequired]
-    public List<Dial> Dials { get; set; } = null!;
+    public IEnumerable<Dial> Dials { get; set; } = null!;
     [Parameter, EditorRequired] public TDevice Device { get; set; } = default!;
 }

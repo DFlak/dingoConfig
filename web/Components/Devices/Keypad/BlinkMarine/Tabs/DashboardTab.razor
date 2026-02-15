@@ -1,28 +1,44 @@
+@using domain.Devices.dingoPdm.Enums
 @using domain.Devices.Keypad.BlinkMarine
+@using domain.Devices.Keypad.BlinkMarine.Functions
 
 <div
     style="overflow-y: auto; height: calc(100vh - 250px); padding: 24px; scrollbar-width: auto; scrollbar-color: #888 transparent;">
-
-    <MudText Typo="Typo.h6" Class="mb-2">Buttons</MudText>
-
-    <MudGrid>
-        @foreach (var button in Device.Buttons)
+    <MudStack Row="true">
+        <MudText Typo="Typo.h6" Class="mb-2">@Device.Model.ToUpper()</MudText>
+        @if (Device.IsSim)
         {
-            <MudItem>
-                <MudCard>
-                    <MudCardContent>
-                        <RingButton Button="@button" Size="80"/>
-                    </MudCardContent>
-                </MudCard>
-            </MudItem>
+            <MudChip T="string" Variant="Variant.Outlined"
+                     Color="@Color.Tertiary" Size="Size.Small">
+                Simulated
+            </MudChip>
+        }
+    </MudStack>
+    <MudDivider Vertical="false"/>
+    <MudText Typo="Typo.h6" Class="mb-2">Buttons</MudText>
+    <MudGrid>
+        @foreach (var row in GetButtonRows())
+        {
+            @foreach (var button in row)
+            {
+                <MudItem>
+                    <MudCard>
+                        <MudCardContent>
+                            <RingButton Button="@button" Size="80" Enabled="Device.IsSim"/>
+                        </MudCardContent>
+                    </MudCard>
+                </MudItem>
+            }
+
+            <MudFlexBreak/>
         }
     </MudGrid>
 
     @if (Device.NumDials > 0)
     {
-    <MudDivider Class="my-4"/>
+        <MudDivider Class="my-4"/>
 
-    <MudGrid>
+        <MudGrid>
             <MudItem xs="12" Class="mt-4">
                 <MudText Typo="Typo.h6">Dials</MudText>
                 <MudTable Items="@Device.Dials" Dense="true" Hover="true">
@@ -40,13 +56,13 @@
                     </RowTemplate>
                 </MudTable>
             </MudItem>
-    </MudGrid>
+        </MudGrid>
     }
-    
+
     @if (Device.NumAnalogInputs > 0)
     {
         <MudDivider Class="my-4"/>
-        
+
         <MudGrid>
             <MudItem xs="12" Class="mt-4">
                 <MudText Typo="Typo.h6">Analog Inputs</MudText>
@@ -69,4 +85,34 @@
 
 @code {
     [Parameter] public BlinkMarineKeypadDevice Device { get; set; } = default!;
+
+    private IEnumerable<IEnumerable<Button>> GetButtonRows()
+    {
+        var perRow = GetButtonsPerRow();
+        return Device.Buttons
+            .Select((btn, i) => (btn, i))
+            .GroupBy(x => x.i / perRow)
+            .Select(g => g.Select(x => x.btn));
+    }
+
+    private int GetButtonsPerRow()
+    {
+        return Device.Model switch
+        {
+            "pkp1600" => 6,
+            "pkp2200" => 2,
+            "pkp2300" => 3,
+            "pkp2400" => 4,
+            "pkp2500" => 5,
+            "pkp2600" => 6,
+            "pkp3500" => 5,
+            "pkp1100" => 1,
+            "pkp1200" => 2,
+            "pkp1500" => 5,
+            "pkp3500mt" => 5,
+            "racepad" => 8,
+            _ => 1
+        };
+    }
+
 }
