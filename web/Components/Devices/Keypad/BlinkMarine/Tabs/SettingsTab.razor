@@ -9,26 +9,28 @@
     style="overflow-y: auto; height: calc(100vh - 250px); padding: 24px; scrollbar-width: auto; scrollbar-color: #888 transparent;">
 
     <MudExpansionPanels MultiExpansion="true">
-        <MudExpansionPanel Text="Device">
+        <MudExpansionPanel Text="Device" Expanded="true">
             <MudStack>
                 <MudSwitch @bind-Value="@Device.IsSim"
                            Color="Color.Success"
+                           Style="max-width: 150px"
                            Label="Simulated"/>        
-            </MudStack>
-            
-            <MudSelect T="BacklightColor" @bind-Value="Device.BacklightColor" Variant="Variant.Outlined" Dense="true">
-                @foreach (BacklightColor backlight in Enum.GetValues(typeof(BacklightColor)))
-                {
-                    <MudSelectItem T="BacklightColor" Value="@backlight">@backlight</MudSelectItem>
-                }
-            </MudSelect>
-            
-            <MudNumericField Value="Device.BacklightBrightness"
-                             ValueChanged="@((int val) => OnBacklightBrightnessChanged(val))"/>
-            
+                
+                <MudSelect T="BacklightColor" @bind-Value="Device.BacklightColor" Style="max-width: 200px" Label="Backlight Color" Variant="Variant.Outlined" Dense="true">
+                    @foreach (BacklightColor backlight in Enum.GetValues(typeof(BacklightColor)))
+                    {
+                        <MudSelectItem T="BacklightColor" Value="@backlight">@backlight</MudSelectItem>
+                    }
+                </MudSelect>
+                
+                <MudNumericField Value="Device.BacklightBrightness"
+                                 Label="Backlight Brightness (0-63)"
+                                 Style="max-width: 200px"
+                                 ValueChanged="@((int val) => OnBacklightBrightnessChanged(val))"/>
+            </MudStack>            
         </MudExpansionPanel>
         
-        <MudExpansionPanel Text="Buttons">
+        <MudExpansionPanel Text="Buttons" Expanded="true">
             <MudDataGrid Items="@Device.Buttons" Dense="true" Hover="true" Striped="false" EditMode="DataGridEditMode.Cell" ReadOnly="false"
              SortMode="SortMode.None" ColumnResizeMode="ResizeMode.Container" Virtualize="false" 
              FixedHeader="true" HorizontalScrollbar="true" Style="max-height: 400px;">
@@ -73,7 +75,7 @@
 
         @if (Device.NumDials > 0)
         {
-            <MudExpansionPanel Text="Dials">
+            <MudExpansionPanel Text="Dials" Expanded="true">
                 <MudStack>
 
                 </MudStack>
@@ -82,7 +84,7 @@
 
         @if (Device.NumDials > 0)
         {
-            <MudExpansionPanel Text="Analog Inputs">
+            <MudExpansionPanel Text="Analog Inputs" Expanded="true">
                 <MudStack>
 
                 </MudStack>

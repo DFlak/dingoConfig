@@ -5,7 +5,7 @@
     style="overflow-y: auto; height: calc(100vh - 250px); padding: 24px; scrollbar-width: auto; scrollbar-color: #888 transparent;">
 
     <MudExpansionPanels MultiExpansion="true">
-        <MudExpansionPanel Text="Device">
+        <MudExpansionPanel Text="Device" Expanded="true">
             <MudStack>
                 <MudSwitch @bind-Value="@Device.IsSim"
                            Color="Color.Success"
@@ -13,7 +13,7 @@
             </MudStack>
         </MudExpansionPanel>
         
-        <MudExpansionPanel Text="Buttons">
+        <MudExpansionPanel Text="Buttons" Expanded="true">
             <MudDataGrid Items="@Device.Buttons" Dense="true" Hover="true" Striped="false" EditMode="DataGridEditMode.Cell" ReadOnly="false"
              SortMode="SortMode.None" ColumnResizeMode="ResizeMode.Container" Virtualize="false" 
              FixedHeader="true" HorizontalScrollbar="true" Style="max-height: 400px;">
