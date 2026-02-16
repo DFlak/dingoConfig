@@ -1,0 +1,123 @@
+@using domain.Devices.Keypad.BlinkMarine.Enums
+@using domain.Devices.Keypad.BlinkMarine.Functions
+
+<MudStack Spacing="1" AlignItems="AlignItems.Center" Style="display: inline-flex;">
+    <div class="dial-ring-wrapper"
+         style="width: @(Size)px; height: @(Size)px; position: relative;"
+         @onwheel="HandleWheel"
+         @onwheel:preventDefault="true">
+
+        @* 16 square LEDs positioned clockface-style *@
+        @for (var i = 0; i < Dial.Leds.Length; i++)
+        {
+            var index = i;
+            var ledOn = Dial.Leds[index];
+            <div class="dial-ring-led @(ledOn ? "dial-led-on" : "")"
+                 style="@GetLedStyle(index)"></div>
+        }
+
+        @* Central rotatable knob *@
+        <div class="dial-knob" style="@GetKnobStyle()">
+            <div class="dial-indicator" style="transform: rotate(@(KnobAngle.ToString("F1"))deg);">
+                <div class="dial-indicator-dot"></div>
+            </div>
+        </div>
+    </div>
+
+    <MudText Align="Align.Center" Style="@($"width: {Size}px;")">@Dial.Name</MudText>
+</MudStack>
+
+@code {
+    [Parameter]
+    public int Size { get; set; } = 160;
+
+    [Parameter, EditorRequired]
+    public Dial Dial { get; set; } = null!;
+
+    [Parameter, EditorRequired]
+    public bool Enabled { get; set; }
+
+    // 32 ticks = one full revolution
+    private double KnobAngle => ((Dial.Position % 32 + 32) % 32) * (360.0 / 32);
+
+    private string GetLedStyle(int index)
+    {
+        var angleRad = (index * (360.0 / Dial.Leds.Length) - 90.0) * Math.PI / 180.0;
+        var radius = Size * 0.40;
+        var ledSize = Size * 0.09;
+        var cx = Size / 2.0 + radius * Math.Cos(angleRad) - ledSize / 2.0;
+        var cy = Size / 2.0 + radius * Math.Sin(angleRad) - ledSize / 2.0;
+        return $"position: absolute; width: {ledSize:F1}px; height: {ledSize:F1}px; left: {cx:F1}px; top: {cy:F1}px; border-radius: 2px;";
+    }
+
+    private string GetKnobStyle()
+    {
+        var knobSize = Size * 0.58;
+        var offset = (Size - knobSize) / 2.0;
+        return $"position: absolute; width: {knobSize:F1}px; height: {knobSize:F1}px; " +
+               $"left: {offset:F1}px; top: {offset:F1}px; " +
+               $"cursor: {(Enabled ? "ew-resize" : "default")};";
+    }
+
+    private void HandleWheel(WheelEventArgs e)
+    {
+        //if (!Enabled) return;
+        if (e.DeltaY < 0)
+        {
+            Dial.Position++;
+            Dial.Direction = DialDirection.Clockwise;
+        }
+        else
+        {
+            Dial.Position--;
+            Dial.Direction = DialDirection.CounterClockwise;
+        }
+    }
+}
+
+<style>
+    .dial-ring-wrapper {
+        margin: 4px;
+    }
+
+    .dial-ring-led {
+        background-color: #0d2a47;
+        transition: background-color 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    .dial-ring-led.dial-led-on {
+        background-color: #1e90ff;
+        box-shadow: 0 0 6px #1e90ff, 0 0 12px rgba(30, 144, 255, 0.4);
+    }
+
+    .dial-knob {
+        border-radius: 50%;
+        background: radial-gradient(circle at 35% 35%, #555555, #1a1a1a);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.6), inset 0 1px 1px rgba(255, 255, 255, 0.08);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        user-select: none;
+    }
+
+    .dial-indicator {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        top: 0;
+        left: 0;
+        display: flex;
+        align-items: flex-start;
+        justify-content: center;
+        pointer-events: none;
+    }
+
+    .dial-indicator-dot {
+        width: 5px;
+        height: 5px;
+        border-radius: 50%;
+        background-color: rgba(255, 255, 255, 0.85);
+        margin-top: 12%;
+        pointer-events: none;
+    }
+</style>

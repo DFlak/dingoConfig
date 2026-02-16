@@ -14,10 +14,10 @@ public class Dial(int number, string name)
     [JsonPropertyName("maxLed")] public int MaxLed { get; set; }
     [JsonPropertyName("ledOffset")] public int LedOffset { get; set; }
     [JsonIgnore] public int Position { get; set; }  // Ticks
-    [JsonIgnore] public int Delta { get; set; }   
+    [JsonIgnore] public int Delta { get; set; }
     [JsonIgnore] public DialDirection Direction { get; set; }
     [JsonIgnore] public int Counter { get; set; }
-    [JsonIgnore] public bool[] Leds { get; set; } = new bool[8];
+    [JsonIgnore] public bool[] Leds { get; set; } = new bool[16];
     [JsonIgnore] public bool RingLed {get; set;}
     [JsonIgnore] public bool RingLedBlink {get; set;}
 }

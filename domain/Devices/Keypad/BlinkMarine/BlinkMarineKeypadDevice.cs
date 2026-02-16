@@ -338,8 +338,8 @@ public class BlinkMarineKeypadDevice : IKeypadDevice
         if (Model == "racepad")
         {
             for (var i = 0; i < NumDials; i++)
-                for (var j = 0; j < 8; j++)
-                    Dials[i].Leds[j] = DbcSignalCodec.ExtractSignalInt(data, (i * 8) + j, 1) != 0;
+                for (var j = 0; j < Dials[i].Leds.Length; j++)
+                    Dials[i].Leds[j] = DbcSignalCodec.ExtractSignalInt(data, (i * Dials[i].Leds.Length) + j, 1) != 0;
 
             return;
         }
