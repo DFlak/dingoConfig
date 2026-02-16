@@ -1,8 +1,6 @@
 @using domain.Devices.dingoPdm.Functions.Keypad
 @using domain.Devices.dingoPdm
-@using domain.Models
 @using domain.Devices.Keypad.BlinkMarine.Enums
-@inject IDialogService DialogService
 @typeparam TDevice where TDevice : PdmDevice
 
 <MudDataGrid Items="@Buttons" Dense="true" Hover="true" Striped="false" EditMode="DataGridEditMode.Cell" ReadOnly="false"

@@ -265,12 +265,30 @@
             Keypad.NumButtons = functions.numButtons;
             Keypad.NumDials = functions.numDials;
             _selectedType = "Blink Marine";
+
+            var bmDev = (BlinkMarineKeypadDevice)dev;
+            for (var i = 0; i < Keypad.NumButtons; i++)
+            {
+                Keypad.Buttons[i].Name = bmDev.Buttons[i].Name;
+            }
+            
+            for (var i = 0; i < Keypad.NumDials; i++)
+            {
+                Keypad.Dials[i].Name = bmDev.Dials[i].Name;
+            }
+
         }
         if (Keypad.IsGrayhill())
         {
             Keypad.NumButtons = GrayhillModels.Lookup(dev.Model);
             Keypad.NumDials = 0;
             _selectedType = "Grayhill";
+            
+            var ghDev = (GrayhillKeypadDevice)dev;
+            for (var i = 0; i < Keypad.NumButtons; i++)
+            {
+                Keypad.Buttons[i].Name = ghDev.Buttons[i].Name;
+            }
         }
     }
 
