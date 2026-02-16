@@ -1,8 +1,6 @@
-@using web.Components.Devices.Keypad
 @using domain.Devices.Keypad.BlinkMarine.Enums
 @using domain.Devices.Keypad.BlinkMarine.Functions
 @using domain.Devices.Keypad.Enums
-@using MudBlazor
 @implements IDisposable
 
 <MudStack Spacing="1" AlignItems="AlignItems.Center" Style="display: inline-flex;">
@@ -37,7 +35,7 @@
     [Parameter, EditorRequired]
     public int BacklightBrightness { get; set; }
 
-    private System.Threading.Timer? _blinkTimer;
+    private Timer? _blinkTimer;
     private bool _showBlinkColor;
     private bool _isBlinking;
 
@@ -63,7 +61,7 @@
     private void StartBlinkTimer()
     {
         _isBlinking = true;
-        _blinkTimer = new System.Threading.Timer(_ =>
+        _blinkTimer = new Timer(_ =>
         {
             _showBlinkColor = !_showBlinkColor;
             InvokeAsync(StateHasChanged);
@@ -196,9 +194,5 @@
         display: flex;
         align-items: center;
         justify-content: center;
-    }
-
-    .centered-input .mud-input-slot {
-        text-align: center !important;
     }
 </style>

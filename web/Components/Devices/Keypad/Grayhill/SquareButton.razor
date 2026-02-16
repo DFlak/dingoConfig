@@ -1,10 +1,15 @@
+@using domain.Devices.Keypad.Enums
 @using domain.Devices.Keypad.Grayhill.Functions
 @using MudBlazor
 
 <MudStack Spacing="1" AlignItems="AlignItems.Center" Style="display: inline-flex;">
     <div class="square-button-container @(Button.State ? "pressed" : "")"
          style="width: @(Size)px; height: @(Size)px; cursor: @(Enabled ? "pointer" : "not-allowed");"
-         @onclick="HandleClick">
+         @onmousedown="HandleButtonDown"
+         @ontouchstart="HandleButtonDown"
+         @onmouseup="HandleButtonUp"
+         @onmouseleave="HandleButtonUp"
+         @ontouchend="HandleButtonUp">
         <div class="led-row">
             @for (var i = 0; i < Button.Led.Length; i++)
             {
@@ -30,10 +35,25 @@
     [Parameter, EditorRequired]
     public bool Enabled { get; set; }
 
-    private void HandleClick()
+    private void HandleButtonDown()
     {
         if (!Enabled) return;
-        Button.State = !Button.State;
+        Button.State = Button.Mode switch
+        {
+            ButtonMode.Momentary => true,
+            ButtonMode.Latching => !Button.State,
+            _ => Button.State
+        };
+    }
+    
+    private void HandleButtonUp()
+    {
+        if (!Enabled) return;
+        Button.State = Button.Mode switch
+        {
+            ButtonMode.Momentary => false,
+            _ => Button.State
+        };
     }
 }
 
