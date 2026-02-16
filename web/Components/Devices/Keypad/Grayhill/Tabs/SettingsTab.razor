@@ -1,5 +1,80 @@
-<h3>GrayhillSettingsTab</h3>
+@using domain.Devices.Keypad.Enums
+@using domain.Devices.Keypad.Grayhill
+
+<div
+    style="overflow-y: auto; height: calc(100vh - 250px); padding: 24px; scrollbar-width: auto; scrollbar-color: #888 transparent;">
+
+    <MudExpansionPanels MultiExpansion="true">
+        <MudExpansionPanel Text="Device">
+            <MudStack>
+                <MudSwitch @bind-Value="@Device.IsSim"
+                           Color="Color.Success"
+                           Label="Simulated"/>        
+            </MudStack>
+        </MudExpansionPanel>
+        
+        <MudExpansionPanel Text="Buttons">
+            <MudDataGrid Items="@Device.Buttons" Dense="true" Hover="true" Striped="false" EditMode="DataGridEditMode.Cell" ReadOnly="false"
+             SortMode="SortMode.None" ColumnResizeMode="ResizeMode.Container" Virtualize="false" 
+             FixedHeader="true" HorizontalScrollbar="true" Style="max-height: 400px;">
+                <Columns>
+                    <PropertyColumn Property="x => x.Number" Title="#" StickyLeft="true" Editable="false" CellStyle="max-width: 100px"/>
+                    <PropertyColumn Property="x => x.Name" CellStyle="max-width: 200px">
+                        <EditTemplate>
+                            <MudTextField @bind-Value="context.Item.Name" Variant="Variant.Outlined" Margin="Margin.Dense" />
+                        </EditTemplate>
+                    </PropertyColumn>
+                    <TemplateColumn Title="Icon" Resizable="true" CellStyle="min-width: 300px">
+                        <EditTemplate>
+                            <MudStack Row="true" Justify="Justify.Center">
+                                <MudSelect T="string" @bind-Value="context.Item.Icon">
+                                    @foreach (var icon in _icons)
+                                    {
+                                        <MudSelectItem T="string" Value="@icon.Value">
+                                            <div class="d-flex align-center gap-2">
+                                                <MudIcon Icon="@icon.Value" Size="Size.Small" />
+                                                <MudText>@icon.Name</MudText>
+                                            </div>
+                                        </MudSelectItem>
+                                    }
+                                </MudSelect>
+                            </MudStack>
+                        </EditTemplate>
+                    </TemplateColumn>
+                    <TemplateColumn Title="Mode(Sim Only)" Resizable="true" CellStyle="max-width: 200px">
+                        <EditTemplate>
+                            <MudSelect T="ButtonMode" @bind-Value="context.Item.Mode" Variant="Variant.Outlined"
+                                       Disabled="!Device.IsSim" Dense="true">
+                                @foreach (ButtonMode mode in Enum.GetValues(typeof(ButtonMode)))
+                                {
+                                    <MudSelectItem T="ButtonMode" Value="@mode">@mode</MudSelectItem>
+                                }
+                            </MudSelect>
+                        </EditTemplate>
+                    </TemplateColumn>
+                </Columns>
+            </MudDataGrid>
+        </MudExpansionPanel>
+    </MudExpansionPanels>
+</div>
 
 @code {
+    [Parameter] public GrayhillKeypadDevice Device { get; set; } = default!;
     
+    private List<(string Name, string Value)> _icons;
+    
+    protected override void OnInitialized()
+    {
+        _icons = LoadAllIcons();
+    }
+    
+    private List<(string Name, string Value)> LoadAllIcons()
+    {
+        return typeof(Icons.Material.Filled)
+            .GetFields(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static)
+            .Where(f => f.FieldType == typeof(string))
+            .Select(f => (f.Name, (string)f.GetValue(null)!))
+            .OrderBy(x => x.Name)
+            .ToList();
+    }
 }

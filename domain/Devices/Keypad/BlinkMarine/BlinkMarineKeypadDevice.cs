@@ -38,7 +38,7 @@ public class BlinkMarineKeypadDevice : IKeypadDevice
     [JsonPropertyName("numDials")] public int NumDials { get; set; }
     [JsonPropertyName("numAnalogInputs")] public int NumAnalogInputs { get; set; }
     [JsonPropertyName("backlightColor")] public BacklightColor BacklightColor { get; set; }
-    [JsonIgnore] public int BacklightBrightness { get; set; }
+    [JsonPropertyName("backlightBrightness")] public int BacklightBrightness { get; set; }
     [JsonIgnore] public int IndicatorBrightness { get; set; }
     [JsonIgnore] public bool[] CentralLed  { get; set; } = new bool[12];
     [JsonIgnore] private byte TickTimer { get; set; }
@@ -354,9 +354,6 @@ public class BlinkMarineKeypadDevice : IKeypadDevice
     private void ParseBacklight(byte[] data)
     {
         BacklightBrightness = DbcSignalCodec.ExtractSignalInt(data, startBit: 0, length: 1) > 0 ? 100 : 0;
-
-        foreach (var button in Buttons)
-            button.BacklightBrightness = BacklightBrightness;
     }
 
     private void ParseDialState(byte[] data, int firstDialIndex)

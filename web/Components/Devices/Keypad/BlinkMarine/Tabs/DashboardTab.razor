@@ -1,4 +1,3 @@
-@using domain.Devices.dingoPdm.Enums
 @using domain.Devices.Keypad.BlinkMarine
 @using domain.Devices.Keypad.BlinkMarine.Functions
 
@@ -24,7 +23,9 @@
                 <MudItem>
                     <MudCard>
                         <MudCardContent>
-                            <RingButton Button="@button" Size="80" Enabled="Device.IsSim"/>
+                            <RingButton Button="@button" Size="80" Enabled="Device.IsSim" 
+                                        BacklightColor="Device.BacklightColor"
+                                        BacklightBrightness="Device.BacklightBrightness"/>
                         </MudCardContent>
                     </MudCard>
                 </MudItem>

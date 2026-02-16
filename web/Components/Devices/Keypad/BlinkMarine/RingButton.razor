@@ -6,10 +6,10 @@
 
 <MudStack Spacing="1" AlignItems="AlignItems.Center" Style="display: inline-flex;">
     <div class="ring-button-container @(Button.State ? "pressed" : "")"
-         style="width: @(Size)px; height: @(Size)px; background-color: @GetRingColor();"
+         style="width: @(Size)px; height: @(Size)px; background-color: @GetRingColor(); cursor: @(Enabled ? "pointer" : "not-allowed");"
          @onclick="HandleClick">
         <div class="ring-button-inner">
-            <MudIcon Icon="@IconMap.Get(Button.Icon)" Style="@($"color: white; font-size: {Size * 0.35}px;")" />
+            <MudIcon Icon="@Button.Icon" Style="@($"color: white; font-size: {Size * 0.35}px;")" />
         </div>
     </div>
 
@@ -25,6 +25,12 @@
     
     [Parameter, EditorRequired]
     public bool Enabled { get; set; }
+    
+    [Parameter, EditorRequired]
+    public BacklightColor BacklightColor { get; set; }
+    
+    [Parameter, EditorRequired]
+    public int BacklightBrightness { get; set; }
 
     private System.Threading.Timer? _blinkTimer;
     private bool _showBlinkColor;
@@ -69,17 +75,12 @@
 
     private void HandleClick()
     {
+        if (!Enabled) return;
         Button.State = !Button.State;
     }
 
     private void SetRingColor()
     {
-        //Testing
-        //Button.IndicatorColor = ButtonColor.Off;
-        //Button.IndicatorBrightness = 63;
-        //Button.BacklightBrightness = 50;
-        //Button.BlinkColor = ButtonColor.Orange;
-        
         _indicatorColor = System.Drawing.Color.Black;
         if (Button.IndicatorColor != ButtonColor.Off)
         {
@@ -88,8 +89,8 @@
         }
         else
         {
-            _opacity = Map(Button.IndicatorBrightness, 0, 100, 0, 1.0);
-            _indicatorColor = BacklightColorToColor(Button.BacklightColor);
+            _opacity = Map(BacklightBrightness, 0, 63, 0, 1.0);
+            _indicatorColor = BacklightColorToColor(BacklightColor);
         }
 
         _blinkColor = _indicatorColor;
@@ -156,7 +157,7 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        cursor: pointer;
+
         margin: 4px;
         box-shadow: 0 4px 6px rgba(0, 0, 0, 0.4);
         transition: transform 0.1s ease, box-shadow 0.1s ease, background-color 0.3s ease;

@@ -1,5 +1,3 @@
-using MudBlazor;
-
 namespace web.Components.Devices.Keypad;
 
 public static class IconMap

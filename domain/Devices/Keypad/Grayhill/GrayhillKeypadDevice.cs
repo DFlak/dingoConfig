@@ -150,9 +150,9 @@ public class GrayhillKeypadDevice : IKeypadDevice
         {
             var button = Buttons[i];
             
-            for (var j = 0; j < Button.LedCount; j++)
+            for (var j = 0; j < Buttons[i].Led.Length; j++)
             {
-                var bitPos = (i * Button.LedCount) + j;
+                var bitPos = (i * Buttons[i].Led.Length) + j;
                 var byteIndex = bitPos / 8;
                 var bitIndex = bitPos % 8;
                 
