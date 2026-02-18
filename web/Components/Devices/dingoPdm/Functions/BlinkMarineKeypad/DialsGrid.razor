@@ -19,20 +19,20 @@
                 <MudTextField @bind-Value="context.Item.Name" Variant="Variant.Outlined" Margin="Margin.Dense" />
             </EditTemplate>
         </PropertyColumn>
-        <TemplateColumn Title="Min LED" Resizable="true" CellStyle="max-width: 200px">
+        <TemplateColumn Title="Min Count" Resizable="true" CellStyle="max-width: 200px">
             <EditTemplate>
-                <MudNumericField @key="@($"minLed-{context.Item.Number}-{_refreshCounter}")"
-                                 Value="@context.Item.MinLed"
+                <MudNumericField @key="@($"minCount-{context.Item.Number}-{_refreshCounter}")"
+                                 Value="@context.Item.MinCount"
                                  Disabled="!context.Item.Enabled"
-                                 ValueChanged="@((int val) => OnMinLedChanged(context.Item, val))"/>
+                                 ValueChanged="@((int val) => OnMinCountChanged(context.Item, val))"/>
             </EditTemplate>
         </TemplateColumn>
-        <TemplateColumn Title="Max LED" Resizable="true" CellStyle="max-width: 200px">
+        <TemplateColumn Title="Max Count" Resizable="true" CellStyle="max-width: 200px">
             <EditTemplate>
-                <MudNumericField @key="@($"maxLed-{context.Item.Number}-{_refreshCounter}")"
-                                 Value="@context.Item.MaxLed"
+                <MudNumericField @key="@($"maxCount-{context.Item.Number}-{_refreshCounter}")"
+                                 Value="@context.Item.MaxCount"
                                  Disabled="!context.Item.Enabled"
-                                 ValueChanged="@((int val) => OnMaxLedChanged(context.Item, val))"/>
+                                 ValueChanged="@((int val) => OnMaxCountChanged(context.Item, val))"/>
             </EditTemplate>
         </TemplateColumn>
         <TemplateColumn Title="LED Offset" Resizable="true" CellStyle="max-width: 200px">
@@ -61,43 +61,30 @@
     
     private int _refreshCounter;
 
-    private void OnMinLedChanged(Dial item, int value)
+    private void OnMinCountChanged(Dial item, int value)
     {
         const int min = 1;
         const int max = 16;
         if (value < min || value > max)
-            Notification.NewWarning($"{item.Name}.MinLed must be {min} to {max}");
-        if (value > item.MaxLed)
-            Notification.NewWarning($"{item.Name}.MinLed must be less than MaxLed");
+            Notification.NewWarning($"{item.Name}.MinCount must be {min} to {max}");
+        if (value > item.MaxCount)
+            Notification.NewWarning($"{item.Name}.MinCount must be less than MaxLed");
 
-        try
-        {
-            item.MinLed = Math.Clamp(value, min, max);
-        }
-        catch
-        {
-            
-        }
+        item.MinCount = Math.Clamp(value, min, max);
 
         _refreshCounter++;
     }
     
-    private void OnMaxLedChanged(Dial item, int value)
+    private void OnMaxCountChanged(Dial item, int value)
     {
         const int min = 1;
         const int max = 16;
         if (value < min || value > max)
-            Notification.NewWarning($"{item.Name}.MaxLed must be {min} to {max}");
-        if (value < item.MinLed)
-            Notification.NewWarning($"{item.Name}.MaxLed must be greater than MinLed");
+            Notification.NewWarning($"{item.Name}.MaxCount must be {min} to {max}");
+        if (value < item.MinCount)
+            Notification.NewWarning($"{item.Name}.MaxCount must be greater than MinLed");
 
-        try
-        {
-            item.MaxLed = Math.Clamp(value, min, max);
-        }
-        catch
-        {
-        }
+        item.MaxCount = Math.Clamp(value, min, max);
 
         _refreshCounter++;
     }
