@@ -11,10 +11,10 @@ public class Dial : IDeviceFunction
     [JsonPropertyName("name")] public string Name {get; set; }
     [JsonPropertyName("number")] public int Number {get;}
     [JsonPropertyName("enabled")] public bool Enabled {get; set;}
-    [JsonPropertyName("minLed")] public int MinLed { get; set; } = 1;
-    [JsonPropertyName("maxLed")] public int MaxLed { get; set; } = 16;
+    [JsonPropertyName("minCount")] public int MinCount { get; set; }
+    [JsonPropertyName("maxCount")] public int MaxCount { get; set; } = 16;
     [JsonPropertyName("ledOffset")] public int LedOffset {get; set; }
-    [JsonPropertyName("topPosition")] public int TopPosition { get; set; } = 8; //Default = 8
+    [JsonIgnore] public int TopPosition { get; set; } = 8; //Default = 8
     
     [JsonIgnore] public List<DeviceParameter> Params { get; set; } = null!;
     
@@ -42,16 +42,16 @@ public class Dial : IDeviceFunction
             },
             new DeviceParameter
             {
-                ParentName = Name, Name = "minLed", Index = BaseIndex + (Number - 1), SubIndex = subIndex++,
-                GetValue = () => MinLed, SetValue = val => MinLed = (int)val,
-                ValueType = MinLed.GetType(),
-                DefaultValue = 1
+                ParentName = Name, Name = "minCount", Index = BaseIndex + (Number - 1), SubIndex = subIndex++,
+                GetValue = () => MinCount, SetValue = val => MinCount = (int)val,
+                ValueType = MinCount.GetType(),
+                DefaultValue = 0
             },
             new DeviceParameter
             {
-                ParentName = Name, Name = "maxLed", Index = BaseIndex + (Number - 1), SubIndex = subIndex++,
-                GetValue = () => MaxLed, SetValue = val => MaxLed = (int)val,
-                ValueType = MaxLed.GetType(),
+                ParentName = Name, Name = "maxCount", Index = BaseIndex + (Number - 1), SubIndex = subIndex++,
+                GetValue = () => MaxCount, SetValue = val => MaxCount = (int)val,
+                ValueType = MaxCount.GetType(),
                 DefaultValue = 16
             },
             new DeviceParameter
@@ -60,14 +60,7 @@ public class Dial : IDeviceFunction
                 GetValue = () => LedOffset, SetValue = val => LedOffset = (int)val,
                 ValueType = LedOffset.GetType(),
                 DefaultValue = 0
-            },
-            new DeviceParameter
-            {
-                ParentName = Name, Name = "topPosition", Index = BaseIndex + (Number - 1), SubIndex = subIndex++,
-                GetValue = () => TopPosition, SetValue = val => TopPosition = (int)val,
-                ValueType = TopPosition.GetType(),
-                DefaultValue = 8
-            },
+            }
         ]);
     }
 }

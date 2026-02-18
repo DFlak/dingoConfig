@@ -9,10 +9,10 @@ public class Dial(int number, string name)
     [JsonPropertyName("number")] public int Number { get; } = number;
     [JsonPropertyName("name")] public string Name { get; set; } = name;
     
-    [JsonPropertyName("minLed")] public int MinLed { get; set; }
-    [JsonPropertyName("maxLed")] public int MaxLed { get; set; }
+    [JsonPropertyName("minCount")] public int MinCount { get; set; }
+    [JsonPropertyName("maxCount")] public int MaxCount { get; set; }
     [JsonPropertyName("ledOffset")] public int LedOffset { get; set; }
-    [JsonPropertyName("topPosition")] public int TopPosition { get; set; } = 8; //Default = 8
+    [JsonIgnore] public int TopPosition { get; set; } = 8; //Default = 8
     [JsonIgnore] public int Ticks { get; set; }
     [JsonIgnore] public DialDirection Direction { get; set; }
     [JsonIgnore] public int Counter { get; set; }
