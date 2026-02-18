@@ -69,8 +69,16 @@
             Notification.NewWarning($"{item.Name}.MinLed must be {min} to {max}");
         if (value > item.MaxLed)
             Notification.NewWarning($"{item.Name}.MinLed must be less than MaxLed");
-        
-        item.MinLed = Math.Clamp(value, min, Math.Clamp(value, item.MaxLed, max));
+
+        try
+        {
+            item.MinLed = Math.Clamp(value, min, max);
+        }
+        catch
+        {
+            
+        }
+
         _refreshCounter++;
     }
     
@@ -82,8 +90,15 @@
             Notification.NewWarning($"{item.Name}.MaxLed must be {min} to {max}");
         if (value < item.MinLed)
             Notification.NewWarning($"{item.Name}.MaxLed must be greater than MinLed");
-        
-        item.MaxLed = Math.Clamp(value, Math.Clamp(value, min, item.MinLed), max);
+
+        try
+        {
+            item.MaxLed = Math.Clamp(value, min, max);
+        }
+        catch
+        {
+        }
+
         _refreshCounter++;
     }
     
