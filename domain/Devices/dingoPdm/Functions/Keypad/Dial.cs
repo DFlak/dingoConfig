@@ -14,6 +14,7 @@ public class Dial : IDeviceFunction
     [JsonPropertyName("minLed")] public int MinLed {get; set; }
     [JsonPropertyName("maxLed")] public int MaxLed {get; set; }
     [JsonPropertyName("ledOffset")] public int LedOffset {get; set; }
+    [JsonPropertyName("topPosition")] public int TopPosition { get; set; } = 8; //Default = 8
     
     [JsonIgnore] public List<DeviceParameter> Params { get; set; } = null!;
     
@@ -58,6 +59,13 @@ public class Dial : IDeviceFunction
                 ParentName = Name, Name = "ledOffset", Index = BaseIndex + (Number - 1), SubIndex = subIndex++,
                 GetValue = () => LedOffset, SetValue = val => LedOffset = (int)val,
                 ValueType = LedOffset.GetType(),
+                DefaultValue = 0
+            },
+            new DeviceParameter
+            {
+                ParentName = Name, Name = "topPosition", Index = BaseIndex + (Number - 1), SubIndex = subIndex++,
+                GetValue = () => TopPosition, SetValue = val => TopPosition = (int)val,
+                ValueType = TopPosition.GetType(),
                 DefaultValue = 0
             },
         ]);

@@ -1,4 +1,5 @@
 @using domain.Devices.Keypad.BlinkMarine
+@using domain.Devices.Keypad.BlinkMarine.Enums
 @using domain.Devices.Keypad.BlinkMarine.Functions
 
 <div
@@ -45,29 +46,22 @@
                 <MudItem>
                     <MudCard>
                         <MudCardContent>
+                            
                             <DialRing Dial="dial" Size="80" Enabled="Device.IsSim"/>
+                            <MudButton Variant="Variant.Outlined"
+                                       Size="Size.Small"
+                                       Disabled="@(!Device.IsSim)"
+                                       Style="align-items: flex-start; margin: 5px"
+                                       OnClick="@(e => DialDecrement(dial, e))">-</MudButton>
+                            <MudButton Variant="Variant.Outlined"
+                                       Size="Size.Small"
+                                       Disabled="@(!Device.IsSim)"
+                                       Style="align-items: flex-end; margin: 5px"
+                                       OnClick="@(e => DialIncrement(dial, e))">+</MudButton>
                         </MudCardContent>
                     </MudCard>
                 </MudItem>
             }
-        </MudGrid>
-        <MudGrid>
-            <MudItem xs="12" Class="mt-4">
-                <MudTable Items="@Device.Dials" Dense="true" Hover="true">
-                    <HeaderContent>
-                        <MudTh>Number</MudTh>
-                        <MudTh>Name</MudTh>
-                        <MudTh>Position</MudTh>
-                        <MudTh>Delta</MudTh>
-                    </HeaderContent>
-                    <RowTemplate>
-                        <MudTd>@context.Number</MudTd>
-                        <MudTd>@context.Name</MudTd>
-                        <MudTd>@context.Position</MudTd>
-                        <MudTd>@context.Delta</MudTd>
-                    </RowTemplate>
-                </MudTable>
-            </MudItem>
         </MudGrid>
     }
 
@@ -122,9 +116,25 @@
             "pkp1200" => 2,
             "pkp1500" => 5,
             "pkp3500mt" => 5,
-            "racepad" => 8,
             _ => 1
         };
     }
+    
+    private void DialIncrement(Dial dial, MouseEventArgs obj)
+    {
+        if (!Device.IsSim) return;
+        dial.Counter++;
+        if (dial.Counter > dial.TopPosition) dial.Counter = dial.TopPosition;
+        dial.Direction = DialDirection.Clockwise;
+    }
+
+    private void DialDecrement(Dial dial, MouseEventArgs obj)
+    {
+        if (!Device.IsSim) return;
+        dial.Counter--;
+        if (dial.Counter < 0) dial.Counter = 0;
+        dial.Direction = DialDirection.CounterClockwise;
+    }
+    
 
 }

@@ -3,15 +3,15 @@
 
 <MudStack Spacing="1" AlignItems="AlignItems.Center" Style="display: inline-flex;">
     <div class="dial-ring-wrapper"
-         style="width: @(Size)px; height: @(Size)px; position: relative;"
+         style="width: @(Size)px; height: @(Size)px; position: relative; cursor: @(Enabled ? "pointer" : "not-allowed");"
          @onwheel="HandleWheel"
          @onwheel:preventDefault="true">
 
         @* 16 square LEDs positioned clockface-style *@
-        @for (var i = 0; i < Dial.Leds.Length; i++)
+        @for (var i = 0; i < Dial.RingLeds.Length; i++)
         {
             var index = i;
-            var ledOn = Dial.Leds[index];
+            var ledOn = Dial.RingLeds[index];
             <div class="dial-ring-led @(ledOn ? "dial-led-on" : "")"
                  style="@GetLedStyle(index)"></div>
         }
@@ -22,8 +22,13 @@
                 <div class="dial-indicator-dot"></div>
             </div>
         </div>
+        
     </div>
 
+    <MudChip T="string" Variant="Variant.Outlined"
+             Color="@Color.Primary" Size="MudBlazor.Size.Small" Style="min-width: 100px;">
+        Pos: @Dial.Counter
+    </MudChip>
     <MudText Align="Align.Center" Style="@($"width: {Size}px;")">@Dial.Name</MudText>
 </MudStack>
 
@@ -37,14 +42,14 @@
     [Parameter, EditorRequired]
     public bool Enabled { get; set; }
 
-    // 32 ticks = one full revolution
-    private double KnobAngle => ((Dial.Position % 32 + 32) % 32) * (360.0 / 32);
+    // 16 ticks = one full revolution
+    private double KnobAngle => ((Dial.Counter % 16 + 16) % 16) * (360.0 / 16);
 
     private string GetLedStyle(int index)
     {
-        var angleRad = (index * (360.0 / Dial.Leds.Length) - 90.0) * Math.PI / 180.0;
+        var angleRad = (index * (360.0 / Dial.RingLeds.Length) + 90.0) * Math.PI / 180.0;
         var radius = Size * 0.40;
-        var ledSize = Size * 0.09;
+        var ledSize = Size * 0.1;
         var cx = Size / 2.0 + radius * Math.Cos(angleRad) - ledSize / 2.0;
         var cy = Size / 2.0 + radius * Math.Sin(angleRad) - ledSize / 2.0;
         return $"position: absolute; width: {ledSize:F1}px; height: {ledSize:F1}px; left: {cx:F1}px; top: {cy:F1}px; border-radius: 2px;";
@@ -61,15 +66,17 @@
 
     private void HandleWheel(WheelEventArgs e)
     {
-        //if (!Enabled) return;
+        if (!Enabled) return;
         if (e.DeltaY < 0)
         {
-            Dial.Position++;
+            Dial.Counter++;
+            if (Dial.Counter > Dial.TopPosition) Dial.Counter = Dial.TopPosition;
             Dial.Direction = DialDirection.Clockwise;
         }
         else
         {
-            Dial.Position--;
+            Dial.Counter--;
+            if (Dial.Counter < 0) Dial.Counter = 0;
             Dial.Direction = DialDirection.CounterClockwise;
         }
     }

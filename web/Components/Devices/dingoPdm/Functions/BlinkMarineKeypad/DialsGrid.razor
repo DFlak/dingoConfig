@@ -19,7 +19,7 @@
                 <MudTextField @bind-Value="context.Item.Name" Variant="Variant.Outlined" Margin="Margin.Dense" />
             </EditTemplate>
         </PropertyColumn>
-        <TemplateColumn Title="MinLed" Resizable="true" CellStyle="max-width: 200px">
+        <TemplateColumn Title="Min LED" Resizable="true" CellStyle="max-width: 200px">
             <EditTemplate>
                 <MudNumericField @key="@($"minLed-{context.Item.Number}-{_refreshCounter}")"
                                  Value="@context.Item.MinLed"
@@ -27,7 +27,7 @@
                                  ValueChanged="@((int val) => OnMinLedChanged(context.Item, val))"/>
             </EditTemplate>
         </TemplateColumn>
-        <TemplateColumn Title="MaxLed" Resizable="true" CellStyle="max-width: 200px">
+        <TemplateColumn Title="Max LED" Resizable="true" CellStyle="max-width: 200px">
             <EditTemplate>
                 <MudNumericField @key="@($"maxLed-{context.Item.Number}-{_refreshCounter}")"
                                  Value="@context.Item.MaxLed"
@@ -35,12 +35,20 @@
                                  ValueChanged="@((int val) => OnMaxLedChanged(context.Item, val))"/>
             </EditTemplate>
         </TemplateColumn>
-        <TemplateColumn Title="LedOffset" Resizable="true" CellStyle="max-width: 200px">
+        <TemplateColumn Title="LED Offset" Resizable="true" CellStyle="max-width: 200px">
             <EditTemplate>
                 <MudNumericField @key="@($"ledOffset-{context.Item.Number}-{_refreshCounter}")"
                                  Value="@context.Item.LedOffset"
                                  Disabled="!context.Item.Enabled"
                                  ValueChanged="@((int val) => OnLedOffsetChanged(context.Item, val))"/>
+            </EditTemplate>
+        </TemplateColumn>
+        <TemplateColumn Title="Max Count (set by SDO)" Resizable="true" CellStyle="max-width: 200px">
+            <EditTemplate>
+                <MudNumericField @key="@($"topPosition-{context.Item.Number}-{_refreshCounter}")"
+                                 Value="@context.Item.TopPosition"
+                                 Disabled="!context.Item.Enabled"
+                                 ValueChanged="@((int val) => OnTopPositionChanged(context.Item, val))"/>
             </EditTemplate>
         </TemplateColumn>
     </Columns>
@@ -90,4 +98,14 @@
         _refreshCounter++;
     }
 
+    private void OnTopPositionChanged(Dial item, int value)
+    {
+        const int min = 2;
+        const int max = 16;
+        if (value < min || value > max)
+            Notification.NewWarning($"{item.Name}.LedOffset must be {min} to {max}");
+        
+        item.LedOffset = Math.Clamp(value, min, max);
+        _refreshCounter++;
+    }
 }
