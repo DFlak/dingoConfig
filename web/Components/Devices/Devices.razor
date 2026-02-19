@@ -364,6 +364,10 @@
         //If a name hasn't been set, populate a default name
         if (_newDeviceName.Length == 0)
             _newDeviceName = _newDeviceType.Trim().Replace(" ", "");
+
+        //Default CANopen Node IDs
+        if (_newDeviceType == "BlinkKeypad") _newDeviceBaseId = 0x15;
+        if (_newDeviceType == "GrayhillKeypad") _newDeviceBaseId = 0x0A;
     }
 
     private void NavigateToDevice(Guid deviceId)

@@ -6,7 +6,8 @@
 @using domain.Devices.Keypad
 @using domain.Devices.Keypad.BlinkMarine
 @using domain.Devices.Keypad.Grayhill
-@using domain.Models
+@using web.Components.Devices.dingoPdm.Functions.BlinkMarineKeypad
+@using web.Components.Devices.dingoPdm.Functions.GrayhillKeypad
 @inject DeviceManager DeviceManager
 @typeparam TDevice where TDevice : PdmDevice
 @inherits PdmFunctionComponentBase<TDevice>
@@ -149,25 +150,27 @@
         
         @if (_selectedKeypad != null && Keypad.IsBlinkMarine())
     {
+        <MudExpansionPanel Text="Device Settings">
+            <BlinkMarineDeviceSettings TDevice="TDevice" Device="Device" Keypad="Keypad"/>
+        </MudExpansionPanel>
         <MudExpansionPanel Text="Button LED Colors">
-            <web.Components.Devices.dingoPdm.Functions.BlinkMarineKeypad.ButtonsGrid TDevice="TDevice" Device="Device" 
-                                                                                     Buttons="Keypad.Buttons.Take(Keypad.NumButtons)"/>
+            <BlinkMarineButtonsGrid TDevice="TDevice" Device="Device" Buttons="Keypad.Buttons.Take(Keypad.NumButtons)"/>
         </MudExpansionPanel>
         
         @if (Keypad.NumDials > 0)
             {
                 <MudExpansionPanel Text="Dial LEDs">
-                    <web.Components.Devices.dingoPdm.Functions.BlinkMarineKeypad.DialsGrid TDevice="TDevice"
-                                                                                           Device="Device"
-                                                                                           Dials="Keypad.Dials.Take(Keypad.NumDials)"/>
+                    <BlinkMarineDialsGrid TDevice="TDevice" Device="Device" Dials="Keypad.Dials.Take(Keypad.NumDials)"/>
                 </MudExpansionPanel>
             }
         }
     @if (_selectedKeypad != null && Keypad.IsGrayhill())
     {
+        <MudExpansionPanel Text="Device Settings">
+            <GrayhillDeviceSettings TDevice="TDevice" Device="Device" Keypad="Keypad"/>
+        </MudExpansionPanel>
         <MudExpansionPanel Text="Button LEDs">
-            <web.Components.Devices.dingoPdm.Functions.GrayhillKeypad.ButtonsGrid TDevice="TDevice" Device="Device" 
-                                                                                  Buttons="Keypad.Buttons.Take(Keypad.NumButtons)"/>
+            <GrayhillButtonsGrid TDevice="TDevice" Device="Device" Buttons="Keypad.Buttons.Take(Keypad.NumButtons)"/>
         </MudExpansionPanel>
     }
         

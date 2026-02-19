@@ -37,9 +37,9 @@ public class BlinkMarineKeypadDevice : IKeypadDevice
     [JsonPropertyName("numButtons")] public int NumButtons { get; set; }
     [JsonPropertyName("numDials")] public int NumDials { get; set; }
     [JsonPropertyName("numAnalogInputs")] public int NumAnalogInputs { get; set; }
-    [JsonPropertyName("backlightColor")] public BacklightColor BacklightColor { get; set; }
-    [JsonPropertyName("backlightBrightness")] public int BacklightBrightness { get; set; }
-    [JsonIgnore] public int IndicatorBrightness { get; set; }
+    [JsonIgnore] public BacklightColor BacklightColor { get; set; }
+    [JsonIgnore] public int BacklightBrightness { get; set; }
+    [JsonIgnore] private int IndicatorBrightness { get; set; }
     [JsonIgnore] private byte TickTimer { get; set; }
 
     [JsonPropertyName("buttons")] public List<Button> Buttons { get; init; } = [];
@@ -295,11 +295,6 @@ public class BlinkMarineKeypadDevice : IKeypadDevice
                 ExtractColorWithGaps(data, ledRed, 1, [10]);
                 ExtractColorWithGaps(data, ledGreen, 17, [26]);
                 ExtractColorWithGaps(data, ledBlue, 33, [42]);
-                
-                for (var i = 0; i < NumDials; i++)
-                for (var j = 0; j < 16; j++) 
-                    Dials[i].RingLeds[j] = DbcSignalCodec.ExtractSignalInt(data, 24 + i, 1) != 0;
-
                 break;
             
             default:
@@ -337,8 +332,19 @@ public class BlinkMarineKeypadDevice : IKeypadDevice
 
     private void ParseLedBrightness(byte[] data)
     {
-        IndicatorBrightness =
-            (int)DbcSignalCodec.ExtractSignalInt(data, startBit: 0, length: 8, factor: 1.58); //100% / 63 = 1.58
+        if (Model == "pkp3500mt")
+        {
+            for (var i = 0; i < NumDials; i++)
+                for (var j = 0; j < 16; j++) 
+                    Dials[i].RingLeds[j] = DbcSignalCodec.ExtractSignalInt(data, (i * 16) + j, 1) != 0;
+
+            IndicatorBrightness = 63; //Indicator brightness not sent on this model
+        }
+        else
+        {
+            IndicatorBrightness =
+                (int)DbcSignalCodec.ExtractSignalInt(data, startBit: 0, length: 8, factor: 1.58); //100% / 63 = 1.58
+        }
 
         foreach (var button in Buttons)
             button.IndicatorBrightness = IndicatorBrightness;
