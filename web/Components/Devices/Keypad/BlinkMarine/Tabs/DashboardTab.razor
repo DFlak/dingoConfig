@@ -70,21 +70,20 @@
         <MudDivider Class="my-4"/>
 
         <MudGrid>
-            <MudItem xs="12" Class="mt-4">
-                <MudText Typo="Typo.h6">Analog Inputs</MudText>
-                <MudTable Items="@Device.AnalogInputs" Dense="true" Hover="true">
-                    <HeaderContent>
-                        <MudTh>Number</MudTh>
-                        <MudTh>Name</MudTh>
-                        <MudTh>Voltage (mV)</MudTh>
-                    </HeaderContent>
-                    <RowTemplate>
-                        <MudTd>@context.Number</MudTd>
-                        <MudTd>@context.Name</MudTd>
-                        <MudTd>@context.Voltage.ToString("F2")</MudTd>
-                    </RowTemplate>
-                </MudTable>
-            </MudItem>
+            @foreach (var input in Device.AnalogInputs)
+            {
+                <MudItem>
+                    <MudCard>
+                        <MudCardContent>
+                            <MudChip T="string" Variant="Variant.Outlined"
+                                     Color="@Color.Primary" Size="Size.Small" Style="min-width: 100px;">
+                                @input.Voltage V
+                            </MudChip>
+                            <MudText Align="Align.Center">@input.Name</MudText>
+                        </MudCardContent>
+                    </MudCard>
+                </MudItem>
+            }
         </MudGrid>
     }
 </div>
