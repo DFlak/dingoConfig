@@ -35,35 +35,35 @@ public class Flasher : IDeviceFunction
         [
             new DeviceParameter
             {
-                ParentName = Name, Name = "enabled", Index = BaseIndex + (Number - 1), SubIndex = subIndex++,
+                ParentName = Name, Name = $"flasher[{Number}].enabled", Index = BaseIndex + (Number - 1), SubIndex = subIndex++,
                 GetValue = () => Enabled, SetValue = val => Enabled = (bool)val,
                 ValueType = Enabled.GetType(),
                 DefaultValue = false
             },
             new DeviceParameter
             {
-                ParentName = Name, Name = "single", Index = BaseIndex + (Number - 1), SubIndex = subIndex++,
+                ParentName = Name, Name = $"flasher[{Number}].single", Index = BaseIndex + (Number - 1), SubIndex = subIndex++,
                 GetValue = () => Single, SetValue = val => Single = (bool)val,
                 ValueType = Single.GetType(),
                 DefaultValue = false
             },
             new DeviceParameter
             {
-                ParentName = Name, Name = "input", Index = BaseIndex + (Number - 1), SubIndex = subIndex++,
+                ParentName = Name, Name = $"flasher[{Number}].input", Index = BaseIndex + (Number - 1), SubIndex = subIndex++,
                 GetValue = () => Input, SetValue = val => Input = (int)val,
                 ValueType = Input.GetType(),
                 DefaultValue = 0
             },
             new DeviceParameter
             {
-                ParentName = Name, Name = "onTime", Index = BaseIndex + (Number - 1), SubIndex = subIndex++,
+                ParentName = Name, Name = $"flasher[{Number}].onTime", Index = BaseIndex + (Number - 1), SubIndex = subIndex++,
                 GetValue = () => OnTime, SetValue = val => OnTime = (int)val,
                 ValueType = OnTime.GetType(),
                 DefaultValue = 0
             },
             new DeviceParameter
             {
-                ParentName = Name, Name = "offTime", Index = BaseIndex + (Number - 1), SubIndex = subIndex++,
+                ParentName = Name, Name = $"flasher[{Number}].offTime", Index = BaseIndex + (Number - 1), SubIndex = subIndex++,
                 GetValue = () => OffTime, SetValue = val => OffTime = (int)val,
                 ValueType = OffTime.GetType(),
                 DefaultValue = 0

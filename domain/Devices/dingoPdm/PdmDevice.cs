@@ -42,6 +42,7 @@ public class PdmDevice : IDeviceConfigurable
     
     [JsonIgnore] public Guid Guid { get; }
     [JsonIgnore] public virtual string Type => "dingoPDM";
+    [JsonIgnore] public int ConfigVersion { get; set; }
     [JsonPropertyName("name")] public string Name { get; set; }
     [JsonPropertyName("baseId")] public int BaseId { get; set; }
     [JsonIgnore] public List<DeviceVariable> VarMap { get; set; } = null!;
@@ -78,7 +79,9 @@ public class PdmDevice : IDeviceConfigurable
 
     [JsonIgnore] private Dictionary<(int Index, int SubIndex), object> TempParamValues { get; set; } = new();
     [JsonIgnore] private int _readAllCount;
+    [JsonIgnore] private int _readAllAttempts;
     [JsonIgnore] private int _writeAllCount;
+    [JsonIgnore] private int _writeAllAttempts;
 
     [JsonIgnore]
     public bool Connected
@@ -619,6 +622,46 @@ public class PdmDevice : IDeviceConfigurable
     private void InitParams()
     {
         var allParams = new List<DeviceParameter>();
+        var subIndex = 0;
+        allParams.AddRange(
+        [
+            new DeviceParameter
+            {
+                ParentName = Name, Name = "device.configVersion", Index = BaseIndex, SubIndex = subIndex++,
+                GetValue = () => ConfigVersion, SetValue = val => ConfigVersion = (int)val,
+                ValueType = ConfigVersion.GetType(),
+                DefaultValue = false
+            },
+            new DeviceParameter
+            {
+                ParentName = Name, Name = "device.baseId", Index = BaseIndex, SubIndex = subIndex++,
+                GetValue = () => BaseId, SetValue = val => BaseId = (int)val,
+                ValueType = BaseId.GetType(),
+                DefaultValue = 0x7D0
+            },
+            new DeviceParameter
+            {
+                ParentName = Name, Name = "device.canSpeed", Index = BaseIndex, SubIndex = subIndex++,
+                GetValue = () => BitRate, SetValue = val => BitRate = (CanBitRate)val,
+                ValueType = BitRate.GetType(),
+                DefaultValue = CanBitRate.BitRate500K
+            },
+            new DeviceParameter
+            {
+                ParentName = Name, Name = "device.sleepEnabled", Index = BaseIndex, SubIndex = subIndex++,
+                GetValue = () => SleepEnabled, SetValue = val => SleepEnabled = (bool)val,
+                ValueType = SleepEnabled.GetType(),
+                DefaultValue = false
+            },
+            new DeviceParameter
+            {
+                ParentName = Name, Name = "device.canFiltersEnabled", Index = BaseIndex, SubIndex = subIndex++,
+                GetValue = () => CanFiltersEnabled, SetValue = val => CanFiltersEnabled = (bool)val,
+                ValueType = CanFiltersEnabled.GetType(),
+                DefaultValue = false
+            }
+        ]);
+        
         foreach (var input in Inputs) allParams.AddRange(input.Params);
         foreach (var output in Outputs) allParams.AddRange(output.Params);
         foreach (var canInput in CanInputs) allParams.AddRange(canInput.Params);
@@ -779,6 +822,7 @@ public class PdmDevice : IDeviceConfigurable
                     TempParamValues[(param.Index, param.SubIndex)] = param.DefaultValue;
 
                 _readAllCount = 0;
+                _readAllAttempts = 0;
                 
                 key = (BaseId, index, subIndex);
                 if (queue.TryGetValue(key, out canFrame!))
@@ -798,7 +842,11 @@ public class PdmDevice : IDeviceConfigurable
                 subIndex = data[3];
                 
                 matchingParam = Params.FirstOrDefault(p => p.Index == index && p.SubIndex == subIndex);
-                if (matchingParam is null) break;
+                if (matchingParam is null)
+                {
+                    Logger.LogWarning("{Name} ID: {BaseId}, Cannot find param {index}:{subIndex}", Name, BaseId, index, subIndex);
+                    break;
+                }
 
                 rawValue = DbcSignalCodec.ExtractSignal(data, startBit: 32, length: 32);
 
@@ -838,7 +886,7 @@ public class PdmDevice : IDeviceConfigurable
                     }
 
                     TempParamValues.Clear();
-                    Logger.LogInformation("{Name} ID: {BaseId}, Read All Complete", Name, BaseId);
+                    Logger.LogInformation("{Name} ID: {BaseId}, Read All Complete {fromPdm}", Name, BaseId, readAllCount);
                 }
                 else
                 {
@@ -846,6 +894,10 @@ public class PdmDevice : IDeviceConfigurable
                     Logger.LogWarning("{Name} ID: {BaseId}, Read All Incomplete {fromPdm} vs {received}", 
                                         Name, BaseId, readAllCount, _readAllCount);
 
+                    if (_readAllAttempts >= 5) break;
+                    
+                    _readAllAttempts++;
+                    
                     outgoing.Add(new DeviceCanFrame
                     {
                         DeviceBaseId = BaseId,
@@ -874,34 +926,7 @@ public class PdmDevice : IDeviceConfigurable
                 Logger.LogInformation("{Name} ID: {BaseId}, Write All Started", Name, BaseId);
                 
                 //Write all modified values
-                var modifiedParams = Params.Where(p => p.IsModified).ToList();
-                List<DeviceCanFrame> msgs = [];
-                _writeAllCount = modifiedParams.Count;
-
-                foreach (var parameter in modifiedParams)
-                {
-                    msgs.Add(new DeviceCanFrame
-                    {
-                        DeviceBaseId = BaseId,
-                        Frame = ParamCodec.ToFrame(MessageCommand.WriteAllVal, parameter, BaseId - 1)
-                    });
-                }
-
-                //Write all complete, with num params
-                msgs.Add(new DeviceCanFrame
-                {
-                    DeviceBaseId = BaseId,
-                    SendOnly = true,
-                    Frame = new CanFrame(
-                        Id: BaseId - 1,
-                        Len: 8,
-                        Payload:[   Convert.ToByte(MessageCommand.WriteAllComplete),
-                                    Convert.ToByte(_writeAllCount & 0xFF),
-                                    Convert.ToByte((_writeAllCount >> 8) & 0xFF),
-                                    0, 0, 0, 0, 0])
-                });
-
-                outgoing.AddRange(msgs);
+                outgoing.AddRange(BuildWriteAllMsgs());
                 
                 break;
             
@@ -912,13 +937,16 @@ public class PdmDevice : IDeviceConfigurable
 
                 if (writeAllCount == _writeAllCount)
                 {
-                    Logger.LogInformation("{Name} ID: {BaseId}, Write All Completed", Name, BaseId);
+                    Logger.LogInformation("{Name} ID: {BaseId}, Write All Completed {fromPdm}", Name, BaseId, writeAllCount);
                 }
                 else
                 {
                     Logger.LogWarning("{Name} ID: {BaseId}, Write All Incomplete {fromPdm} vs {received}", 
                                         Name, BaseId, writeAllCount, _writeAllCount);
 
+                    if (_writeAllAttempts > 5) break;
+                    _writeAllAttempts++;
+                    
                     outgoing.Add(new DeviceCanFrame
                     {
                         DeviceBaseId = BaseId,
@@ -994,6 +1022,42 @@ public class PdmDevice : IDeviceConfigurable
         }
     }
 
+    private List<DeviceCanFrame> BuildWriteAllMsgs()
+    {
+        var modifiedParams = Params.Where(p => p.IsModified).ToList();
+        List<DeviceCanFrame> msgs = [];
+        _writeAllCount = modifiedParams.Count;
+
+        _writeAllAttempts = 0;
+
+        foreach (var parameter in modifiedParams)
+        {
+            msgs.Add(new DeviceCanFrame
+            {
+                DeviceBaseId = BaseId,
+                Frame = ParamCodec.ToFrame(MessageCommand.WriteAllVal, parameter, BaseId - 1),
+                Name = parameter.Name
+            });
+        }
+
+        //Write all complete, with num params
+        msgs.Add(new DeviceCanFrame
+        {
+            DeviceBaseId = BaseId,
+            SendOnly = true,
+            Frame = new CanFrame(
+                Id: BaseId - 1,
+                Len: 8,
+                Payload:[   Convert.ToByte(MessageCommand.WriteAllComplete),
+                    Convert.ToByte(_writeAllCount & 0xFF),
+                    Convert.ToByte((_writeAllCount >> 8) & 0xFF),
+                    0, 0, 0, 0, 0]),
+            Name = "WriteAllComplete"
+        });
+
+        return msgs;
+    }
+
     protected void ReadInfoWarnErrorMessage(byte[] data)
     {
         //Response is lowercase version of set/get prefix
@@ -1032,6 +1096,7 @@ public class PdmDevice : IDeviceConfigurable
                     Id: id - 1,
                     Len: 8,
                     Payload: [Convert.ToByte(MessageCommand.ReadAll), 0, 0, 0, 0, 0, 0, 0]),
+                Name = "ReadAll"
             }
         ];
 
@@ -1051,7 +1116,8 @@ public class PdmDevice : IDeviceConfigurable
                     Id: BaseId - 1,
                     Len: 8,
                     Payload: [Convert.ToByte(MessageCommand.WriteAll), 0, 0, 0, 0, 0, 0, 0]
-                )
+                ),
+                Name = "WriteAll"
             }
         ];
 
@@ -1070,7 +1136,8 @@ public class PdmDevice : IDeviceConfigurable
             {
                 SendOnly = true,
                 DeviceBaseId = newId,
-                Frame = ParamCodec.ToFrame(MessageCommand.Write, parameter, BaseId - 1)
+                Frame = ParamCodec.ToFrame(MessageCommand.Write, parameter, BaseId - 1),
+                Name = $"Modify {parameter.Index}:{parameter.SubIndex}"
             });
         }
         
@@ -1087,7 +1154,8 @@ public class PdmDevice : IDeviceConfigurable
                 Id: BaseId - 1,
                 Len: 8,
                 Payload: [Convert.ToByte(MessageCommand.BurnParams), 1, 3, 8, 0, 0, 0, 0]
-            )
+            ),
+            Name = "Burn"
         };
     }
 
@@ -1104,7 +1172,8 @@ public class PdmDevice : IDeviceConfigurable
                 Payload: [Convert.ToByte(MessageCommand.Sleep), Convert.ToByte('Q'), Convert.ToByte('U'), 
                             Convert.ToByte('I'), Convert.ToByte('T'), 0, 0, 0
                 ]
-            )
+            ),
+            Name = "Sleep"
         };
     }
 
@@ -1118,7 +1187,8 @@ public class PdmDevice : IDeviceConfigurable
                 Id: BaseId - 1,
                 Len: 8,
                 Payload: [Convert.ToByte(MessageCommand.Version), 0, 0, 0, 0, 0, 0, 0]
-            )
+            ),
+            Name = "Version"
         };
     }
 
@@ -1133,7 +1203,8 @@ public class PdmDevice : IDeviceConfigurable
                 Id: BaseId - 1,
                 Len: 8,
                 Payload: [Convert.ToByte('!'), 0, 0, 0, 0, 0, 0, 0]
-            )
+            ),
+            Name = "Wakeup"
         };
     }
 
@@ -1151,7 +1222,8 @@ public class PdmDevice : IDeviceConfigurable
                     Convert.ToByte(MessageCommand.Bootloader), (byte)'B', (byte)'O', (byte)'O', (byte)'T', (byte)'L', 0,
                     0
                 ]
-            )
+            ),
+            Name = "Bootloader"
         };
     }
     

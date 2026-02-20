@@ -35,28 +35,28 @@ public class Condition : IDeviceFunction
         [
             new DeviceParameter
             {
-                ParentName = "condition", Name = "enabled", Index = BaseIndex + (Number - 1), SubIndex = subIndex++,
+                ParentName = Name, Name = $"condition[{Number}].enabled", Index = BaseIndex + (Number - 1), SubIndex = subIndex++,
                 GetValue = () => Enabled, SetValue = val => Enabled = (bool)val,
                 ValueType = Enabled.GetType(),
                 DefaultValue = false
             },
             new DeviceParameter
             {
-                ParentName = Name, Name = "input", Index = BaseIndex + (Number - 1), SubIndex = subIndex++,
+                ParentName = Name, Name = $"condition[{Number}].input", Index = BaseIndex + (Number - 1), SubIndex = subIndex++,
                 GetValue = () => Input, SetValue = val => Input = (int)val,
                 ValueType = Input.GetType(),
                 DefaultValue = 0
             },
             new DeviceParameter
             {
-                ParentName = Name, Name = "operator", Index = BaseIndex + (Number - 1), SubIndex = subIndex++,
+                ParentName = Name, Name = $"condition[{Number}].operator", Index = BaseIndex + (Number - 1), SubIndex = subIndex++,
                 GetValue = () => Operator, SetValue = val => Operator = (Operator)val,
                 ValueType = Operator.GetType(),
                 DefaultValue = Operator.Equal
             },
             new DeviceParameter
             {
-                ParentName = Name, Name = "arg", Index = BaseIndex + (Number - 1), SubIndex = subIndex++,
+                ParentName = Name, Name = $"condition[{Number}].arg", Index = BaseIndex + (Number - 1), SubIndex = subIndex++,
                 GetValue = () => Arg, SetValue = val => Arg = (int)val,
                 ValueType = Arg.GetType(),
                 DefaultValue = 0

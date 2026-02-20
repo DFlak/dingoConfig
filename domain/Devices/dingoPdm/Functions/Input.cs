@@ -36,35 +36,35 @@ public class Input : IDeviceFunction
         [
             new DeviceParameter
             {
-                ParentName = Name, Name = "enabled", Index = BaseIndex + (Number - 1), SubIndex = subIndex++,
+                ParentName = Name, Name = $"input[{Number}].enabled", Index = BaseIndex + (Number - 1), SubIndex = subIndex++,
                 GetValue = () => Enabled, SetValue = val => Enabled = (bool)val,
                 ValueType = Enabled.GetType(),
                 DefaultValue = false
             },
             new DeviceParameter
             {
-                ParentName = Name, Name = "invert", Index = BaseIndex + (Number - 1), SubIndex = subIndex++,
+                ParentName = Name, Name = $"input[{Number}].invert", Index = BaseIndex + (Number - 1), SubIndex = subIndex++,
                 GetValue = () => Invert, SetValue = val => Invert = (bool)val,
                 ValueType = Invert.GetType(),
                 DefaultValue = false
             },
             new DeviceParameter
             {
-                ParentName = Name, Name = "mode", Index = BaseIndex + (Number - 1), SubIndex = subIndex++,
+                ParentName = Name, Name = $"input[{Number}].mode", Index = BaseIndex + (Number - 1), SubIndex = subIndex++,
                 GetValue = () => Mode, SetValue = val => Mode = (InputMode)val,
                 ValueType = Mode.GetType(),
                 DefaultValue = InputMode.Momentary
             },
             new DeviceParameter
             {
-                ParentName = Name, Name = "debounceTime", Index = BaseIndex + (Number - 1), SubIndex = subIndex++,
+                ParentName = Name, Name = $"input[{Number}].debounceTime", Index = BaseIndex + (Number - 1), SubIndex = subIndex++,
                 GetValue = () => DebounceTime, SetValue = val => DebounceTime = (int)val,
                 ValueType = DebounceTime.GetType(),
                 DefaultValue = 0
             },
             new DeviceParameter
             {
-                ParentName = Name, Name = "pull", Index = BaseIndex + (Number - 1), SubIndex = subIndex++,
+                ParentName = Name, Name = $"input[{Number}].pull", Index = BaseIndex + (Number - 1), SubIndex = subIndex++,
                 GetValue = () => Pull, SetValue = val => Pull = (InputPull)val,
                 ValueType = Pull.GetType(),
                 DefaultValue = InputPull.NoPull

@@ -66,105 +66,105 @@ public class CanInput : IDeviceFunction
         [
             new DeviceParameter
             {
-                ParentName = Name, Name = "enabled", Index = BaseIndex + (Number - 1), SubIndex = subIndex++,
+                ParentName = Name, Name = $"canInput[{Number}].enabled", Index = BaseIndex + (Number - 1), SubIndex = subIndex++,
                 GetValue = () => Enabled, SetValue = val => Enabled = (bool)val,
                 ValueType = Enabled.GetType(),
                 DefaultValue = false
             },
             new DeviceParameter
             {
-                ParentName = Name, Name = "timeoutEnabled", Index = BaseIndex + (Number - 1), SubIndex = subIndex++,
+                ParentName = Name, Name = $"canInput[{Number}].timeoutEnabled", Index = BaseIndex + (Number - 1), SubIndex = subIndex++,
                 GetValue = () => TimeoutEnabled, SetValue = val => TimeoutEnabled = (bool)val,
                 ValueType = TimeoutEnabled.GetType(),
                 DefaultValue = false
             },
             new DeviceParameter
             {
-                ParentName = Name, Name = "timeout", Index = BaseIndex + (Number - 1), SubIndex = subIndex++,
+                ParentName = Name, Name = $"canInput[{Number}].timeout", Index = BaseIndex + (Number - 1), SubIndex = subIndex++,
                 GetValue = () => Timeout, SetValue = val => Timeout = (int)val,
                 ValueType = Timeout.GetType(),
                 DefaultValue = 0
             },
             new DeviceParameter
             {
-                ParentName = Name, Name = "ide", Index = BaseIndex + (Number - 1), SubIndex = subIndex++,
+                ParentName = Name, Name = $"canInput[{Number}].ide", Index = BaseIndex + (Number - 1), SubIndex = subIndex++,
                 GetValue = () => Ide, SetValue = val => Ide = (bool)val,
                 ValueType = Ide.GetType(),
                 DefaultValue = false
             },
             new DeviceParameter
             {
-                ParentName = Name, Name = "sid", Index = BaseIndex + (Number - 1), SubIndex = subIndex++,
+                ParentName = Name, Name = $"canInput[{Number}].sid", Index = BaseIndex + (Number - 1), SubIndex = subIndex++,
                 GetValue = () => Sid, SetValue = val => Sid = (int)val,
                 ValueType = Sid.GetType(),
                 DefaultValue = 0
             },
             new DeviceParameter
             {
-                ParentName = Name, Name = "eid", Index = BaseIndex + (Number - 1), SubIndex = subIndex++,
+                ParentName = Name, Name = $"canInput[{Number}].eid", Index = BaseIndex + (Number - 1), SubIndex = subIndex++,
                 GetValue = () => Eid, SetValue = val => Eid = (int)val,
                 ValueType = Eid.GetType(),
                 DefaultValue = 0
             },
             new DeviceParameter
             {
-                ParentName = Name, Name = "startBit", Index = BaseIndex + (Number - 1), SubIndex = subIndex++,
+                ParentName = Name, Name = $"canInput[{Number}].startBit", Index = BaseIndex + (Number - 1), SubIndex = subIndex++,
                 GetValue = () => StartBit, SetValue = val => StartBit = (int)val,
                 ValueType = StartBit.GetType(),
                 DefaultValue = 0
             },
             new DeviceParameter
             {
-                ParentName = Name, Name = "bitLength", Index = BaseIndex + (Number - 1), SubIndex = subIndex++,
+                ParentName = Name, Name = $"canInput[{Number}].bitLength", Index = BaseIndex + (Number - 1), SubIndex = subIndex++,
                 GetValue = () => BitLength, SetValue = val => BitLength = (int)val,
                 ValueType = BitLength.GetType(),
                 DefaultValue = 0
             },
             new DeviceParameter
             {
-                ParentName = Name, Name = "factor", Index = BaseIndex + (Number - 1), SubIndex = subIndex++,
+                ParentName = Name, Name = $"canInput[{Number}].factor", Index = BaseIndex + (Number - 1), SubIndex = subIndex++,
                 GetValue = () => Factor, SetValue = val => Factor = (double)val,
                 ValueType = Factor.GetType(),
                 DefaultValue = 0
             },
             new DeviceParameter
             {
-                ParentName = Name, Name = "offset", Index = BaseIndex + (Number - 1), SubIndex = subIndex++,
+                ParentName = Name, Name = $"canInput[{Number}].offset", Index = BaseIndex + (Number - 1), SubIndex = subIndex++,
                 GetValue = () => Offset, SetValue = val => Offset = (double)val,
                 ValueType = Offset.GetType(),
                 DefaultValue = 0
             },
             new DeviceParameter
             {
-                ParentName = Name, Name = "byteOrder", Index = BaseIndex + (Number - 1), SubIndex = subIndex++,
+                ParentName = Name, Name = $"canInput[{Number}].byteOrder", Index = BaseIndex + (Number - 1), SubIndex = subIndex++,
                 GetValue = () => ByteOrder, SetValue = val => ByteOrder = (ByteOrder)val,
                 ValueType = ByteOrder.GetType(),
                 DefaultValue = 0
             },
             new DeviceParameter
             {
-                ParentName = Name, Name = "signed", Index = BaseIndex + (Number - 1), SubIndex = subIndex++,
+                ParentName = Name, Name = $"canInput[{Number}].signed", Index = BaseIndex + (Number - 1), SubIndex = subIndex++,
                 GetValue = () => Signed, SetValue = val => Signed = (bool)val,
                 ValueType = Signed.GetType(),
                 DefaultValue = 0
             },
             new DeviceParameter
             {
-                ParentName = Name, Name = "operator", Index = BaseIndex + (Number - 1), SubIndex = subIndex++,
+                ParentName = Name, Name = $"canInput[{Number}].operator", Index = BaseIndex + (Number - 1), SubIndex = subIndex++,
                 GetValue = () => Operator, SetValue = val => Operator = (Operator)val,
                 ValueType = Operator.GetType(),
                 DefaultValue = Operator.Equal
             },
             new DeviceParameter
             {
-                ParentName = Name, Name = "operand", Index = BaseIndex + (Number - 1), SubIndex = subIndex++,
+                ParentName = Name, Name = $"canInput[{Number}].operand", Index = BaseIndex + (Number - 1), SubIndex = subIndex++,
                 GetValue = () => Operand, SetValue = val => Operand = (double)val,
                 ValueType = Operand.GetType(),
                 DefaultValue = 0
             },
             new DeviceParameter
             {
-                ParentName = Name, Name = "mode", Index = BaseIndex + (Number - 1), SubIndex = subIndex++,
+                ParentName = Name, Name = $"canInput[{Number}].mode", Index = BaseIndex + (Number - 1), SubIndex = subIndex++,
                 GetValue = () => Mode, SetValue = val => Mode = (InputMode)val,
                 ValueType = Mode.GetType(),
                 DefaultValue = InputMode.Momentary

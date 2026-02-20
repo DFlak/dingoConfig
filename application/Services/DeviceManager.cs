@@ -319,7 +319,7 @@ public class DeviceManager(ILogger<DeviceManager> logger, ILoggerFactory loggerF
 
         if (!_requestQueue.TryAdd(key, frame))
         {
-            logger.LogWarning("Message already in queue: BaseId={BaseId}, Prefix={Prefix}, Index={Index}",
+            logger.LogWarning("Message already in queue: BaseId={BaseId}, Prefix={Prefix:X}, Index={Index}",
                 key.Item1, key.Item2, key.Item3);
             return;
         }
@@ -350,8 +350,8 @@ public class DeviceManager(ILogger<DeviceManager> logger, ILoggerFactory loggerF
             int subIndex = frame.Frame.Payload[3];
             
             var device = GetDeviceByBaseId(key.BaseId);
-            logger.LogError("Message failed after {MaxRetries} retries: {Index:X}:{SubIndex} on {DeviceName} (ID: {BaseId})",
-                MaxRetries, index, subIndex, device?.Name ?? "Unknown", key.BaseId);
+            logger.LogError("Message failed after {MaxRetries} retries: {Index:X}:{SubIndex} on {DeviceName} (ID: {BaseId}) - {Name}",
+                MaxRetries, index, subIndex, device?.Name ?? "Unknown", key.BaseId, frame.Name);
         }
         else
         {
@@ -363,8 +363,8 @@ public class DeviceManager(ILogger<DeviceManager> logger, ILoggerFactory loggerF
 
             StartMessageTimer(key, frame);
 
-            logger.LogWarning("Message retry {Attempt}/{MaxRetries}: (BaseId={BaseId})",
-                frame.RxAttempts, MaxRetries, key.BaseId);
+            logger.LogWarning("Message retry {Attempt}/{MaxRetries}: (BaseId={BaseId}) - {Name}",
+                frame.RxAttempts, MaxRetries, key.BaseId, frame.Name);
         }
     }
 

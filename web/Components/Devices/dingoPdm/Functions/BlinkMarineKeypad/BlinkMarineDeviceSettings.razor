@@ -38,20 +38,22 @@
                                      Label="Brightness (0-63)"
                                      ValueChanged="@((int val) => OnDimBacklightBrightnessChanged(val))"/>
 
-                    <MudStack Row="false">
-                        <MudText>Dimming Var</MudText>
-                        <MudStack Row="true">
-                            <MudIconButton Icon="@Icons.Material.Filled.Search"
-                                           Color="Color.Primary"
-                                           Size="Size.Small"
-                                           Disabled="(!Keypad.Enabled)"
-                                           Style="max-width: 20px"
-                                           OnClick="@(() => OpenVariableSelectorAsync("bool", v => Keypad.DimmingVar = v))">
-                            </MudIconButton>
-                            <MudText>@GetSelectedVarText(Keypad.DimmingVar)</MudText>
+                    <MudCard Elevation="4">
+                        <MudCardContent>
+                            <MudText Class="fst-italic">Dimming Var</MudText>
+                            <MudStack Row="true">
+                                <MudIconButton Icon="@Icons.Material.Filled.Search"
+                                               Color="Color.Primary"
+                                               Size="Size.Small"
+                                               Disabled="(!Keypad.Enabled)"
+                                               Style="max-width: 20px"
+                                               OnClick="@(() => OpenVariableSelectorAsync("bool", v => Keypad.DimmingVar = v))">
+                                </MudIconButton>
+                                <MudText>@GetSelectedVarText(Keypad.DimmingVar)</MudText>
 
-                        </MudStack>
-                    </MudStack>
+                            </MudStack>
+                        </MudCardContent>
+                    </MudCard>
                 </MudStack>
             </MudCardContent>
         </MudCard>

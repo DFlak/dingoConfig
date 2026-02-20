@@ -7,4 +7,5 @@ public class DeviceCanFrame
     public Timer? TimeSentTimer { get; set; }
     public int RxAttempts { get; set; }
     public int DeviceBaseId { get; set; }
+    public string Name { get; set; } = string.Empty;
 }

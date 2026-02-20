@@ -21,16 +21,21 @@
                         <MudSwitch @bind-Value="StarterDisable.Enabled"
                                    Label="Enabled"
                                    Color="Color.Primary"/>
-                        <MudStack Row="true">
-                            <MudIconButton Icon="@Icons.Material.Filled.Search"
-                                           Color="Color.Primary"
-                                           Size="Size.Small"
-                                           Disabled="(!StarterDisable.Enabled)"
-                                           Style="max-width: 20px"
-                                           OnClick="@(() => OpenVariableSelectorAsync("bool", v => StarterDisable.Input = v))">
-                            </MudIconButton>
-                            <MudText>@GetSelectedVarText(StarterDisable.Input)</MudText>
-                        </MudStack>
+                        <MudCard Elevation="4">
+                            <MudCardContent>
+                                <MudText Class="fst-italic">Input</MudText>
+                                <MudStack Row="true">
+                                    <MudIconButton Icon="@Icons.Material.Filled.Search"
+                                                   Color="Color.Primary"
+                                                   Size="Size.Small"
+                                                   Disabled="(!StarterDisable.Enabled)"
+                                                   Style="max-width: 20px"
+                                                   OnClick="@(() => OpenVariableSelectorAsync("bool", v => StarterDisable.Input = v))">
+                                    </MudIconButton>
+                                    <MudText>@GetSelectedVarText(StarterDisable.Input)</MudText>
+                                </MudStack>
+                            </MudCardContent>
+                        </MudCard>
                     </MudCardContent>
                 </MudCard>
             </MudItem>
