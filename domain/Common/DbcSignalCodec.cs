@@ -26,7 +26,8 @@ public class DbcSignalCodec
         ByteOrder byteOrder = ByteOrder.LittleEndian,
         bool isSigned = false,
         double factor = 1.0,
-        double offset = 0.0)
+        double offset = 0.0,
+        bool isFloat = false)
     {
         if (length > 64 || length < 1)
             throw new ArgumentException("Length must be between 1 and 64 bits");
@@ -93,33 +94,27 @@ public class DbcSignalCodec
             }
         }
 
-        // Handle signed values using two's complement
         double value;
-        if (isSigned)
+        if (isFloat && length == 32)
         {
-            // Create a mask for the value bits
+            value = BitConverter.Int32BitsToSingle((int)(uint)rawValue);
+        }
+        else if (isSigned)
+        {
             ulong mask = (1UL << length) - 1;
             ulong maskedValue = rawValue & mask;
-
-            // Check if sign bit is set
             ulong signBitMask = 1UL << (length - 1);
 
             if ((maskedValue & signBitMask) != 0)
-            {
-                // Negative number - sign extend by subtracting 2^length
                 value = (long)maskedValue - (long)(1UL << length);
-            }
             else
-            {
                 value = (long)maskedValue;
-            }
         }
         else
         {
             value = rawValue;
         }
 
-        // Apply scale and offset
         return (value * factor) + offset;
     }
 
@@ -171,33 +166,44 @@ public class DbcSignalCodec
         ByteOrder byteOrder = ByteOrder.LittleEndian,
         bool isSigned = false,
         double factor = 1.0,
-        double offset = 0.0)
+        double offset = 0.0,
+        bool isFloat = false)
     {
         if (length > 64 || length < 1)
             throw new ArgumentException("Length must be between 1 and 64 bits");
 
-        // Reverse the scaling: raw = (value - offset) / factor
-        double scaledValue = (value - offset) / factor;
-        long rawValue = (long)Math.Round(scaledValue);
-
         // Convert to unsigned representation
         ulong unsignedRawValue;
-        if (isSigned)
+        if (isFloat && length == 32)
         {
-            // For signed values, mask to the specified bit length
-            ulong mask = (1UL << length) - 1;
-            unsignedRawValue = (ulong)rawValue & mask;
+            // Reinterpret the double as a float, then get its bits
+            uint bits = BitConverter.SingleToUInt32Bits((float)value);
+            unsignedRawValue = bits;
         }
         else
         {
-            unsignedRawValue = (ulong)rawValue;
-        }
+            // Reverse the scaling: raw = (value - offset) / factor
+            double scaledValue = (value - offset) / factor;
+            long rawValue = (long)Math.Round(scaledValue);
 
-        // Ensure value fits in the specified number of bits
-        ulong maxValue = (1UL << length) - 1;
-        if (unsignedRawValue > maxValue)
-        {
-            throw new ArgumentException($"Value {value} exceeds maximum for {length} bits");
+            if (isSigned)
+            {
+                // For signed values, mask to the specified bit length
+                ulong mask = (1UL << length) - 1;
+                unsignedRawValue = (ulong)rawValue & mask;
+            }
+            else
+            {
+                unsignedRawValue = (ulong)rawValue;
+            }
+
+            // Ensure value fits in the specified number of bits
+            ulong maxValue = (1UL << length) - 1;
+            if (unsignedRawValue > maxValue)
+            {
+                throw new ArgumentException($"Value {value} exceeds maximum for {length} bits");
+            }
+
         }
 
         if (byteOrder == ByteOrder.LittleEndian)
@@ -217,7 +223,8 @@ public class DbcSignalCodec
                 byte bitMask = (byte)(((1 << bitsToWrite) - 1) << shift);
 
                 // Extract the bits to write from rawValue
-                byte bitsToInsert = (byte)(((unsignedRawValue >> currentBit) & ((1UL << bitsToWrite) - 1)) << shift);
+                byte bitsToInsert =
+                    (byte)(((unsignedRawValue >> currentBit) & ((1UL << bitsToWrite) - 1)) << shift);
 
                 // Clear the bits we're about to write, then OR in the new bits
                 data[i] = (byte)((data[i] & ~bitMask) | bitsToInsert);

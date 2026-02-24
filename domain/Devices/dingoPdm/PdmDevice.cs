@@ -786,20 +786,25 @@ public class PdmDevice : IDeviceConfigurable
                 matchingParam = Params.FirstOrDefault(p => p.Index == index && p.SubIndex == subIndex);
                 if (matchingParam is null) break;
 
-                rawValue = DbcSignalCodec.ExtractSignal(data, startBit: 32, length: 32);
-
-                // Convert to the appropriate type based on param.ValueType
-                convertedValue = matchingParam.ValueType switch
+                if (matchingParam.ValueType == typeof(double))
                 {
-                    { } t when t == typeof(bool) => rawValue != 0,
-                    { } t when t == typeof(int) => (int)rawValue,
-                    { } t when t == typeof(uint) => (uint)rawValue,
-                    { } t when t == typeof(float) => (float)rawValue,
-                    { } t when t == typeof(double) => rawValue,
-                    { IsEnum: true } t => Enum.ToObject(t, (int)rawValue),
-                    _ => rawValue
-                };
-                
+                    convertedValue = (double)DbcSignalCodec.ExtractSignal(data, startBit: 32, length: 32, isFloat: true);    
+                }
+                else
+                {
+                    rawValue = DbcSignalCodec.ExtractSignal(data, startBit: 32, length: 32);
+
+                    // Convert to the appropriate type based on param.ValueType
+                    convertedValue = matchingParam.ValueType switch
+                    {
+                        { } t when t == typeof(bool) => rawValue != 0,
+                        { } t when t == typeof(int) => (int)rawValue,
+                        { } t when t == typeof(uint) => (uint)rawValue,
+                        { IsEnum: true } t => Enum.ToObject(t, (int)rawValue),
+                        _ => rawValue
+                    };
+                }
+
                 matchingParam.SetValue(convertedValue);
 
                 key = (BaseId, index, subIndex);
@@ -848,20 +853,25 @@ public class PdmDevice : IDeviceConfigurable
                     break;
                 }
 
-                rawValue = DbcSignalCodec.ExtractSignal(data, startBit: 32, length: 32);
-
-                // Convert to the appropriate type based on param.ValueType
-                convertedValue = matchingParam.ValueType switch
+                if (matchingParam.ValueType == typeof(double))
                 {
-                    { } t when t == typeof(bool) => rawValue != 0,
-                    { } t when t == typeof(int) => (int)rawValue,
-                    { } t when t == typeof(uint) => (uint)rawValue,
-                    { } t when t == typeof(float) => (float)rawValue,
-                    { } t when t == typeof(double) => rawValue,
-                    { IsEnum: true } t => Enum.ToObject(t, (int)rawValue),
-                    _ => rawValue
-                };
-                
+                    convertedValue = (double)DbcSignalCodec.ExtractSignal(data, startBit: 32, length: 32, isFloat: true);
+                }
+                else
+                {
+                    rawValue = DbcSignalCodec.ExtractSignal(data, startBit: 32, length: 32);
+
+                    // Convert to the appropriate type based on param.ValueType
+                    convertedValue = matchingParam.ValueType switch
+                    {
+                        { } t when t == typeof(bool) => rawValue != 0,
+                        { } t when t == typeof(int) => (int)rawValue,
+                        { } t when t == typeof(uint) => (uint)rawValue,
+                        { IsEnum: true } t => Enum.ToObject(t, (int)rawValue),
+                        _ => rawValue
+                    };
+                }
+
                 TempParamValues[(index, subIndex)] = convertedValue;
 
                 _readAllCount++;
@@ -923,7 +933,7 @@ public class PdmDevice : IDeviceConfigurable
                     queue.TryRemove(key, out _);
                 }
                 
-                Logger.LogInformation("{Name} ID: {BaseId}, Write All Started", Name, BaseId);
+                Logger.LogInformation("{Name} ID: {BaseId}, Write All Started {Count}", Name, BaseId, _writeAllCount);
                 
                 //Write all modified values
                 outgoing.AddRange(BuildWriteAllMsgs());
@@ -941,11 +951,19 @@ public class PdmDevice : IDeviceConfigurable
                 }
                 else
                 {
-                    Logger.LogWarning("{Name} ID: {BaseId}, Write All Incomplete {fromPdm} vs {received}", 
-                                        Name, BaseId, writeAllCount, _writeAllCount);
 
-                    if (_writeAllAttempts > 5) break;
+
+                    if (_writeAllAttempts > 5)
+                    {
+                        Logger.LogError("{Name} ID: {BaseId}, Write All Failed {fromPdm} vs {received}", 
+                            Name, BaseId, writeAllCount, _writeAllCount);
+                        break;
+                    }
+                    
                     _writeAllAttempts++;
+                    
+                    Logger.LogWarning("{Name} ID: {BaseId}, Write All Incomplete {fromPdm} vs {received}", 
+                        Name, BaseId, writeAllCount, _writeAllCount);
                     
                     outgoing.Add(new DeviceCanFrame
                     {
@@ -1028,13 +1046,12 @@ public class PdmDevice : IDeviceConfigurable
         List<DeviceCanFrame> msgs = [];
         _writeAllCount = modifiedParams.Count;
 
-        _writeAllAttempts = 0;
-
         foreach (var parameter in modifiedParams)
         {
             msgs.Add(new DeviceCanFrame
             {
                 DeviceBaseId = BaseId,
+                SendOnly = false,
                 Frame = ParamCodec.ToFrame(MessageCommand.WriteAllVal, parameter, BaseId - 1),
                 Name = parameter.Name
             });
@@ -1105,6 +1122,8 @@ public class PdmDevice : IDeviceConfigurable
 
     public List<DeviceCanFrame> GetWriteMsgs()
     {
+        _writeAllAttempts = 0;
+        
         //Start WriteAll 
         List<DeviceCanFrame> msgs =
         [
