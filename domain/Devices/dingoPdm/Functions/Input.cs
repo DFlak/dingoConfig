@@ -43,13 +43,6 @@ public class Input : IDeviceFunction
             },
             new DeviceParameter
             {
-                ParentName = Name, Name = $"input[{Number}].invert", Index = BaseIndex + (Number - 1), SubIndex = subIndex++,
-                GetValue = () => Invert, SetValue = val => Invert = (bool)val,
-                ValueType = Invert.GetType(),
-                DefaultValue = false
-            },
-            new DeviceParameter
-            {
                 ParentName = Name, Name = $"input[{Number}].mode", Index = BaseIndex + (Number - 1), SubIndex = subIndex++,
                 GetValue = () => Mode, SetValue = val => Mode = (InputMode)val,
                 ValueType = Mode.GetType(),
@@ -57,10 +50,17 @@ public class Input : IDeviceFunction
             },
             new DeviceParameter
             {
+                ParentName = Name, Name = $"input[{Number}].invert", Index = BaseIndex + (Number - 1), SubIndex = subIndex++,
+                GetValue = () => Invert, SetValue = val => Invert = (bool)val,
+                ValueType = Invert.GetType(),
+                DefaultValue = false
+            },
+            new DeviceParameter
+            {
                 ParentName = Name, Name = $"input[{Number}].debounceTime", Index = BaseIndex + (Number - 1), SubIndex = subIndex++,
                 GetValue = () => DebounceTime, SetValue = val => DebounceTime = (int)val,
                 ValueType = DebounceTime.GetType(),
-                DefaultValue = 0
+                DefaultValue = 20
             },
             new DeviceParameter
             {

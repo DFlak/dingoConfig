@@ -14,7 +14,7 @@ public class Condition : IDeviceFunction
     [JsonPropertyName("enabled")] public bool Enabled {get; set; }
     [JsonPropertyName("input")] public int Input { get; set; }
     [JsonPropertyName("operator")] public Operator Operator {get; set;}
-    [JsonPropertyName("arg")] public int Arg {get; set;}
+    [JsonPropertyName("arg")] public double Arg {get; set;}
 
     [JsonIgnore][Plotable(displayName:"State")] public int Value {get; set;}
 
@@ -57,9 +57,9 @@ public class Condition : IDeviceFunction
             new DeviceParameter
             {
                 ParentName = Name, Name = $"condition[{Number}].arg", Index = BaseIndex + (Number - 1), SubIndex = subIndex++,
-                GetValue = () => Arg, SetValue = val => Arg = (int)val,
+                GetValue = () => Arg, SetValue = val => Arg = (double)val,
                 ValueType = Arg.GetType(),
-                DefaultValue = 0
+                DefaultValue = 0.0
             }
         ];
     }

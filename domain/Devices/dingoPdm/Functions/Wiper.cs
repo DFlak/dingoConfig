@@ -127,10 +127,11 @@ public class Wiper : IDeviceFunction
                 ParentName = Name, Name = "wiper.washWipeCycles", Index = BaseIndex + (Number - 1), SubIndex = subIndex++,
                 GetValue = () => WashWipeCycles, SetValue = val => WashWipeCycles = (int)val,
                 ValueType = WashWipeCycles.GetType(),
-                DefaultValue = 0
+                DefaultValue = 3
             }
         };
 
+        WiperSpeed[] speedMapDefaults = [WiperSpeed.Inter1, WiperSpeed.Inter2, WiperSpeed.Inter3, WiperSpeed.Inter4, WiperSpeed.Inter5, WiperSpeed.Inter6, WiperSpeed.Slow, WiperSpeed.Fast];
         for (var i = 0; i < 8; i++)
         {
             var idx = i;
@@ -139,10 +140,11 @@ public class Wiper : IDeviceFunction
                 ParentName = Name, Name = $"wiper.speedMap[{i}]", Index = BaseIndex + (Number - 1), SubIndex = subIndex++,
                 GetValue = () => SpeedMap[idx], SetValue = val => SpeedMap[idx] = (WiperSpeed)val,
                 ValueType = SpeedMap[idx].GetType(),
-                DefaultValue = WiperSpeed.Park
+                DefaultValue = speedMapDefaults[idx]
             });
         }
 
+        double[] intermitDefaults = [1000.0, 2000.0, 3000.0, 4000.0, 5000.0, 6000.0];
         for (var i = 0; i < 6; i++)
         {
             var idx = i;
@@ -151,7 +153,7 @@ public class Wiper : IDeviceFunction
                 ParentName = Name, Name = $"wiper.intermitTime[{i}]", Index = BaseIndex + (Number - 1), SubIndex = subIndex++,
                 GetValue = () => IntermitTime[idx], SetValue = val => IntermitTime[idx] = (double)val,
                 ValueType = IntermitTime[idx].GetType(),
-                DefaultValue = 0.0
+                DefaultValue = intermitDefaults[idx]
             });
         }
 

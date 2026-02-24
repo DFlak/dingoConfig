@@ -83,7 +83,21 @@ public class Output : IDeviceFunction
                 ParentName = Name, Name = $"output[{Number}].currentLimit", Index = BaseIndex + (Number - 1), SubIndex = subIndex++,
                 GetValue = () => CurrentLimit, SetValue = val => CurrentLimit = (double)val,
                 ValueType = CurrentLimit.GetType(),
-                DefaultValue = 0.0
+                DefaultValue = 20.0
+            },
+            new DeviceParameter
+            {
+                ParentName = Name, Name = $"output[{Number}].inrushCurrentLimit", Index = BaseIndex + (Number - 1), SubIndex = subIndex++,
+                GetValue = () => InrushCurrentLimit, SetValue = val => InrushCurrentLimit = (double)val,
+                ValueType = InrushCurrentLimit.GetType(),
+                DefaultValue = 50.0
+            },
+            new DeviceParameter
+            {
+                ParentName = Name, Name = $"output[{Number}].inrushTime", Index = BaseIndex + (Number - 1), SubIndex = subIndex++,
+                GetValue = () => InrushTime, SetValue = val => InrushTime = (int)val,
+                ValueType = InrushTime.GetType(),
+                DefaultValue = 100
             },
             new DeviceParameter
             {
@@ -94,31 +108,17 @@ public class Output : IDeviceFunction
             },
             new DeviceParameter
             {
-                ParentName = Name, Name = $"output[{Number}].resetCountLimit", Index = BaseIndex + (Number - 1), SubIndex = subIndex++,
-                GetValue = () => ResetCountLimit, SetValue = val => ResetCountLimit = (int)val,
-                ValueType = ResetCountLimit.GetType(),
-                DefaultValue = 0
-            },
-            new DeviceParameter
-            {
                 ParentName = Name, Name = $"output[{Number}].resetTime", Index = BaseIndex + (Number - 1), SubIndex = subIndex++,
                 GetValue = () => ResetTime, SetValue = val => ResetTime = (int)val,
                 ValueType = ResetTime.GetType(),
-                DefaultValue = 0
+                DefaultValue = 1000
             },
             new DeviceParameter
             {
-                ParentName = Name, Name = $"output[{Number}].inrushCurrentLimit", Index = BaseIndex + (Number - 1), SubIndex = subIndex++,
-                GetValue = () => InrushCurrentLimit, SetValue = val => InrushCurrentLimit = (double)val,
-                ValueType = InrushCurrentLimit.GetType(),
-                DefaultValue = 0.0
-            },
-            new DeviceParameter
-            {
-                ParentName = Name, Name = $"output[{Number}].inrushTime", Index = BaseIndex + (Number - 1), SubIndex = subIndex++,
-                GetValue = () => InrushTime, SetValue = val => InrushTime = (int)val,
-                ValueType = InrushTime.GetType(),
-                DefaultValue = 0
+                ParentName = Name, Name = $"output[{Number}].resetCountLimit", Index = BaseIndex + (Number - 1), SubIndex = subIndex++,
+                GetValue = () => ResetCountLimit, SetValue = val => ResetCountLimit = (int)val,
+                ValueType = ResetCountLimit.GetType(),
+                DefaultValue = 3
             },
             new DeviceParameter
             {
@@ -153,14 +153,14 @@ public class Output : IDeviceFunction
                 ParentName = Name, Name = $"output[{Number}].fixedDutyCycle", Index = BaseIndex + (Number - 1), SubIndex = subIndex++,
                 GetValue = () => FixedDutyCycle, SetValue = val => FixedDutyCycle = (int)val,
                 ValueType = FixedDutyCycle.GetType(),
-                DefaultValue = 0
+                DefaultValue = 100
             },
             new DeviceParameter
             {
                 ParentName = Name, Name = $"output[{Number}].frequency", Index = BaseIndex + (Number - 1), SubIndex = subIndex++,
                 GetValue = () => Frequency, SetValue = val => Frequency = (int)val,
                 ValueType = Frequency.GetType(),
-                DefaultValue = 0
+                DefaultValue = 100
             },
             new DeviceParameter
             {
@@ -174,7 +174,7 @@ public class Output : IDeviceFunction
                 ParentName = Name, Name = $"output[{Number}].dutyCycleDenominator", Index = BaseIndex + (Number - 1), SubIndex = subIndex++,
                 GetValue = () => DutyCycleDenominator, SetValue = val => DutyCycleDenominator = (int)val,
                 ValueType = DutyCycleDenominator.GetType(),
-                DefaultValue = 0
+                DefaultValue = 100
             },
             new DeviceParameter
             {

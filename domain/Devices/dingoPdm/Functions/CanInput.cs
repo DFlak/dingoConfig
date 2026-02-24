@@ -83,7 +83,7 @@ public class CanInput : IDeviceFunction
                 ParentName = Name, Name = $"canInput[{Number}].timeout", Index = BaseIndex + (Number - 1), SubIndex = subIndex++,
                 GetValue = () => Timeout, SetValue = val => Timeout = (int)val,
                 ValueType = Timeout.GetType(),
-                DefaultValue = 0
+                DefaultValue = 1000
             },
             new DeviceParameter
             {
@@ -118,14 +118,14 @@ public class CanInput : IDeviceFunction
                 ParentName = Name, Name = $"canInput[{Number}].bitLength", Index = BaseIndex + (Number - 1), SubIndex = subIndex++,
                 GetValue = () => BitLength, SetValue = val => BitLength = (int)val,
                 ValueType = BitLength.GetType(),
-                DefaultValue = 0
+                DefaultValue = 8
             },
             new DeviceParameter
             {
                 ParentName = Name, Name = $"canInput[{Number}].factor", Index = BaseIndex + (Number - 1), SubIndex = subIndex++,
                 GetValue = () => Factor, SetValue = val => Factor = (double)val,
                 ValueType = Factor.GetType(),
-                DefaultValue = 0
+                DefaultValue = 1.0
             },
             new DeviceParameter
             {

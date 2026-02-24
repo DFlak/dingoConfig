@@ -81,7 +81,7 @@ public class Counter : IDeviceFunction
                 ParentName = Name, Name = $"counter[{Number}].maxCount", Index = BaseIndex + (Number - 1), SubIndex = subIndex++,
                 GetValue = () => MaxCount, SetValue = val => MaxCount = (int)val,
                 ValueType = MaxCount.GetType(),
-                DefaultValue = 0
+                DefaultValue = 10
             },
             new DeviceParameter
             {
@@ -123,7 +123,7 @@ public class Counter : IDeviceFunction
                 ParentName = Name, Name = $"counter[{Number}].resetTime", Index = BaseIndex + (Number - 1), SubIndex = subIndex++,
                 GetValue = () => ResetTime, SetValue = val => ResetTime = (int)val,
                 ValueType = ResetTime.GetType(),
-                DefaultValue = 0
+                DefaultValue = 2000
             }
         ];
     }

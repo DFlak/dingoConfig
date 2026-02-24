@@ -42,13 +42,6 @@ public class Flasher : IDeviceFunction
             },
             new DeviceParameter
             {
-                ParentName = Name, Name = $"flasher[{Number}].single", Index = BaseIndex + (Number - 1), SubIndex = subIndex++,
-                GetValue = () => Single, SetValue = val => Single = (bool)val,
-                ValueType = Single.GetType(),
-                DefaultValue = false
-            },
-            new DeviceParameter
-            {
                 ParentName = Name, Name = $"flasher[{Number}].input", Index = BaseIndex + (Number - 1), SubIndex = subIndex++,
                 GetValue = () => Input, SetValue = val => Input = (int)val,
                 ValueType = Input.GetType(),
@@ -59,14 +52,21 @@ public class Flasher : IDeviceFunction
                 ParentName = Name, Name = $"flasher[{Number}].onTime", Index = BaseIndex + (Number - 1), SubIndex = subIndex++,
                 GetValue = () => OnTime, SetValue = val => OnTime = (int)val,
                 ValueType = OnTime.GetType(),
-                DefaultValue = 0
+                DefaultValue = 500
             },
             new DeviceParameter
             {
                 ParentName = Name, Name = $"flasher[{Number}].offTime", Index = BaseIndex + (Number - 1), SubIndex = subIndex++,
                 GetValue = () => OffTime, SetValue = val => OffTime = (int)val,
                 ValueType = OffTime.GetType(),
-                DefaultValue = 0
+                DefaultValue = 500
+            },
+            new DeviceParameter
+            {
+                ParentName = Name, Name = $"flasher[{Number}].single", Index = BaseIndex + (Number - 1), SubIndex = subIndex++,
+                GetValue = () => Single, SetValue = val => Single = (bool)val,
+                ValueType = Single.GetType(),
+                DefaultValue = false
             }
         ];
     }

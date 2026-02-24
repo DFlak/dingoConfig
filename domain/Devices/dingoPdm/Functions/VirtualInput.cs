@@ -21,7 +21,6 @@ public class VirtualInput : IDeviceFunction
     [JsonPropertyName("cond1")] public Conditional Cond1 { get; set; }
     [JsonPropertyName("not2")] public bool Not2 {get; set;}
     [JsonPropertyName("var2")] public int Var2 { get; set; }
-    [JsonPropertyName("cond2")] public Conditional Cond2 { get; set; }
     [JsonPropertyName("mode")] public InputMode Mode {get; set;}
 
     [JsonIgnore][Plotable(displayName:"State")] public bool Value {get; set;}
@@ -103,13 +102,6 @@ public class VirtualInput : IDeviceFunction
                 GetValue = () => Var2, SetValue = val => Var2 = (int)val,
                 ValueType = Var2.GetType(),
                 DefaultValue = 0
-            },
-            new DeviceParameter
-            {
-                ParentName = Name, Name = $"virtualInput[{Number}].cond2", Index = BaseIndex + (Number - 1), SubIndex = subIndex++,
-                GetValue = () => Cond2, SetValue = val => Cond2 = (Conditional)val,
-                ValueType = Cond2.GetType(),
-                DefaultValue = Conditional.And
             },
             new DeviceParameter
             {
