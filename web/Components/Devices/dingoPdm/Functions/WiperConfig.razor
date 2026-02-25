@@ -278,12 +278,12 @@
                         @for (int i = 0; i < 3; i++)
                         {
                             var index = i; // Capture for lambda
-                            <MudNumericField @key="@($"inrushLimit-{index}-{_refreshCounter}")"
+                            <MudNumericField @key="@($"intermit-{index}-{_refreshCounter}")"
                                              Value= "Wiper.IntermitTime[index]"
                                              Label="@($"Delay {index}")"
                                              Variant="Variant.Outlined"
                                              Disabled="!Wiper.Enabled"
-                                             ValueChanged="@((double val) => OnIntermitTimeChanged(Wiper, index, val))"/>
+                                             ValueChanged="@((int val) => OnIntermitTimeChanged(Wiper, index, val))"/>
                         }
                     </MudCardContent>
                 </MudCard>
@@ -298,12 +298,12 @@
                         @for (int i = 3; i < 6; i++)
                         {
                             var index = i; // Capture for lambda
-                            <MudNumericField @key="@($"inrushLimit-{index}-{_refreshCounter}")"
+                            <MudNumericField @key="@($"intermit-{index}-{_refreshCounter}")"
                                              Value= "Wiper.IntermitTime[index]"
                                              Label="@($"Delay {index}")"
                                              Variant="Variant.Outlined"
                                              Disabled="!Wiper.Enabled"
-                                             ValueChanged="@((double val) => OnIntermitTimeChanged(Wiper, index, val))"/>
+                                             ValueChanged="@((int val) => OnIntermitTimeChanged(Wiper, index, val))"/>
                         }
                     </MudCardContent>
                 </MudCard>
@@ -369,10 +369,10 @@
         }
     }
     
-    private void OnIntermitTimeChanged(Wiper wiper, int index, double value)
+    private void OnIntermitTimeChanged(Wiper wiper, int index, int value)
     {
-        const double min = 0;
-        const double max = 25;
+        const int min = 0;
+        const int max = 30000;
         if (value < min || value > max)
         {
             Notification.NewWarning($"{Wiper.Name}.IntermitTime[{index}] must be {min} to {max}");
@@ -384,7 +384,7 @@
     private void OnWashWipeCyclesChanged(Wiper wiper, int value)
     {
         const int min = 0;
-        const int max = 15;
+        const int max = 10;
         if (value < min || value > max)
         {
             Notification.NewWarning($"{Wiper.Name}.WashWipeCycles must be {min} to {max}");

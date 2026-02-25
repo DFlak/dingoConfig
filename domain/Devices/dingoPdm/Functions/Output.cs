@@ -21,7 +21,7 @@ public class Output : IDeviceFunction
     [JsonPropertyName("inrushCurrentLimit")]
     public double InrushCurrentLimit { get; set; } = 50.0;
 
-    [JsonPropertyName("inrushTime")] public int InrushTime { get; set; } = 100;
+    [JsonPropertyName("inrushTime")] public int InrushTime { get; set; } = 1000;
     [JsonPropertyName("input")] public int Input { get; set; }
     [JsonPropertyName("pwmEnabled")] public bool PwmEnabled { get; set; }
     [JsonPropertyName("softStartEnabled")] public bool SoftStartEnabled { get; set; }
@@ -98,7 +98,7 @@ public class Output : IDeviceFunction
                 ParentName = Name, Name = $"output[{Number}].inrushTime", Index = BaseIndex + (Number - 1), SubIndex = subIndex++,
                 GetValue = () => InrushTime, SetValue = val => InrushTime = (int)val,
                 ValueType = InrushTime.GetType(),
-                DefaultValue = 100
+                DefaultValue = 1000
             },
             new DeviceParameter
             {

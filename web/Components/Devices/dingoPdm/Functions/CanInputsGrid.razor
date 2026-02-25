@@ -128,7 +128,7 @@
                     <MudCheckBox @bind-Value="context.Item.TimeoutEnabled" Dense="true" Disabled="!context.Item.Enabled"/>
                 </EditTemplate>
             </PropertyColumn>
-            <TemplateColumn Title="Timeout (s)" Resizable="true" CellStyle="max-width: 150px">
+            <TemplateColumn Title="Timeout (ms)" Resizable="true" CellStyle="max-width: 150px">
                 <EditTemplate>
                     <MudNumericField @key="@($"timeout-{context.Item.Number}-{_refreshCounter}")"
                                      Value="@context.Item.Timeout"
@@ -188,7 +188,7 @@
     private void OnTimeoutChanged(CanInput item, int value)
     {
         const int min = 0;
-        const int max = 25;
+        const int max = 60000;
         if (value < min || value > max)
         {
             Notification.NewWarning($"{item.Name}.Timeout must be {min} to {max}");

@@ -26,8 +26,7 @@ public class Wiper : IDeviceFunction
     [JsonPropertyName("speedMap")] public WiperSpeed[] SpeedMap { get; set; } = 
         [WiperSpeed.Inter1, WiperSpeed.Inter2, WiperSpeed.Inter3, WiperSpeed.Inter4, 
             WiperSpeed.Inter5, WiperSpeed.Inter6, WiperSpeed.Slow, WiperSpeed.Fast];
-    [JsonPropertyName("intermitTime")] public double[] IntermitTime { get; set; } = [1000.0, 2000.0, 3000.0, 4000.0, 5000.0, 6000.0];
-
+    [JsonPropertyName("intermitTime")] public int[] IntermitTime { get; set; } = [1000, 2000, 3000, 4000, 5000, 6000];
     [JsonIgnore][Plotable(displayName:"SlowState")] public bool SlowState { get; set; }
     [JsonIgnore][Plotable(displayName:"FastState")] public bool FastState { get; set; }
     [JsonIgnore][Plotable(displayName:"State")] public WiperState State { get; set; }
@@ -146,14 +145,14 @@ public class Wiper : IDeviceFunction
             });
         }
 
-        double[] intermitDefaults = [1000.0, 2000.0, 3000.0, 4000.0, 5000.0, 6000.0];
+        int[] intermitDefaults = [1000, 2000, 3000, 4000, 5000, 6000];
         for (var i = 0; i < 6; i++)
         {
             var idx = i;
             parameters.Add(new DeviceParameter
             {
                 ParentName = Name, Name = $"wiper.intermitTime[{i}]", Index = BaseIndex + (Number - 1), SubIndex = subIndex++,
-                GetValue = () => IntermitTime[idx], SetValue = val => IntermitTime[idx] = (double)val,
+                GetValue = () => IntermitTime[idx], SetValue = val => IntermitTime[idx] = (int)val,
                 ValueType = IntermitTime[idx].GetType(),
                 DefaultValue = intermitDefaults[idx]
             });

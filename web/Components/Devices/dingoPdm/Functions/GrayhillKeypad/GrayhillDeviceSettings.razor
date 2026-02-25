@@ -46,6 +46,33 @@
             </MudCardContent>
         </MudCard>
     </MudItem>
+    
+    <MudItem>
+        <MudCard Elevation="4">
+            <MudCardHeader>Buttons</MudCardHeader>
+            <MudCardContent>
+                <MudStack Spacing="4">
+                    <MudNumericField Value="Keypad.ButtonBrightness"
+                                     Label="Brightness (0-63)"
+                                     Style="max-width: 200px"
+                                     ValueChanged="@((int val) => OnButtonBrightnessChanged(val))"/>
+                </MudStack>
+            </MudCardContent>
+        </MudCard>
+    </MudItem>
+    
+    <MudItem>
+        <MudCard Elevation="4">
+            <MudCardHeader>Dim Buttons</MudCardHeader>
+            <MudCardContent>
+                <MudStack Spacing="4">
+                    <MudNumericField Value="Keypad.DimButtonBrightness"
+                                     Label="Brightness (0-63)"
+                                     ValueChanged="@((int val) => OnDimButtonBrightnessChanged(val))"/>
+                </MudStack>
+            </MudCardContent>
+        </MudCard>
+    </MudItem>
 </MudGrid>
 
 @code {
@@ -74,4 +101,25 @@
         Keypad.DimBacklightBrightness = Math.Clamp(value, min, max);
     }
 
+    private void OnButtonBrightnessChanged(int value)
+    {
+        const int min = 0;
+        const int max = 63;
+        if (value < min || value > max)
+        {
+            Notification.NewWarning($"{Keypad.Name}.ButtonBrightness must be {min} to {max}");
+        }
+        Keypad.ButtonBrightness = Math.Clamp(value, min, max);
+    }
+
+    private void OnDimButtonBrightnessChanged(int value)
+    {
+        const int min = 0;
+        const int max = 63;
+        if (value < min || value > max)
+        {
+            Notification.NewWarning($"{Keypad.Name}.DimButtonBrightness must be {min} to {max}");
+        }
+        Keypad.DimButtonBrightness = Math.Clamp(value, min, max);
+    }
 }

@@ -123,7 +123,7 @@
 
     private void OnDutyCycleDenominatorChanged(Output item, int value)
     {
-        const int min = 0;
+        const int min = 1;
         const int max = 255;
         if (value < min || value > max)
         {
@@ -136,7 +136,7 @@
     private void OnSoftStartRampTimeChanged(Output item, int value)
     {
         const int min = 0;
-        const int max = 65535;
+        const int max = 10000;
         if (value < min || value > max)
         {
             Notification.NewWarning($"{item.Name}.SoftStartRampTime must be {min} to {max}");

@@ -19,16 +19,16 @@ public class KeypadMaster : IDeviceFunction
     [JsonPropertyName("model")] public KeypadModel Model { get; set; } = KeypadModel.Blink12Key;
 
     [JsonPropertyName("backlightBrightness")]
-    public int BacklightBrightness { get; set; } = 100;
+    public int BacklightBrightness { get; set; } = 63;
 
     [JsonPropertyName("dimBacklightBrightness")]
-    public int DimBacklightBrightness { get; set; } = 50;
+    public int DimBacklightBrightness { get; set; } = 32;
     [JsonPropertyName("backlightButtonColor")] public int BacklightColor {get; set;}
     [JsonPropertyName("dimmingVar")] public int DimmingVar {get; set;}
-    [JsonPropertyName("buttonBrightness")] public int ButtonBrightness { get; set; } = 100;
+    [JsonPropertyName("buttonBrightness")] public int ButtonBrightness { get; set; } = 63;
 
     [JsonPropertyName("dimButtonBrightness")]
-    public int DimButtonBrightness { get; set; } = 50;
+    public int DimButtonBrightness { get; set; } = 32;
     [JsonPropertyName("buttons")] public List<Button> Buttons { get; init; } = [];
     [JsonPropertyName("dials")] public List<Dial> Dials { get; init; } = [];
     
@@ -103,7 +103,7 @@ public class KeypadMaster : IDeviceFunction
                 SubIndex = subIndex++,
                 GetValue = () => BacklightBrightness, SetValue = val => BacklightBrightness = (int)val,
                 ValueType = BacklightBrightness.GetType(),
-                DefaultValue = 100
+                DefaultValue = 63
             },
             new DeviceParameter
             {
@@ -111,7 +111,7 @@ public class KeypadMaster : IDeviceFunction
                 SubIndex = subIndex++,
                 GetValue = () => DimBacklightBrightness, SetValue = val => DimBacklightBrightness = (int)val,
                 ValueType = DimBacklightBrightness.GetType(),
-                DefaultValue = 50
+                DefaultValue = 32
             },
             new DeviceParameter
             {
@@ -132,7 +132,7 @@ public class KeypadMaster : IDeviceFunction
                 ParentName = Name, Name = $"keypad[{Number}].buttonBrightness", Index = BaseIndex + (Number - 1), SubIndex = subIndex++,
                 GetValue = () => ButtonBrightness, SetValue = val => ButtonBrightness = (int)val,
                 ValueType = ButtonBrightness.GetType(),
-                DefaultValue = 100
+                DefaultValue = 63
             },
             new DeviceParameter
             {
@@ -140,7 +140,7 @@ public class KeypadMaster : IDeviceFunction
                 SubIndex = subIndex++,
                 GetValue = () => DimButtonBrightness, SetValue = val => DimButtonBrightness = (int)val,
                 ValueType = DimButtonBrightness.GetType(),
-                DefaultValue = 50
+                DefaultValue = 32
             },
         ]);
 
