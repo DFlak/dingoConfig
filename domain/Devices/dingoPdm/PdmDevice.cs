@@ -8,7 +8,6 @@ using domain.Enums;
 using domain.Interfaces;
 using domain.Models;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using static domain.Common.DbcSignalCodec;
 // ReSharper disable MemberCanBePrivate.Global
 // ReSharper disable VirtualMemberCallInConstructor
@@ -672,8 +671,7 @@ public class PdmDevice : IDeviceConfigurable
         foreach (var keypad in Keypads) allParams.AddRange(keypad.Params);
         Params = allParams;
 
-        _paramProtocol = new ParamProtocol(Params, MinMajorVersion, MinMinorVersion, MinBuildVersion);
-        _paramProtocol.VersionReceived += v => Version = v;
+        _paramProtocol = new ParamProtocol(Params);
     }
 
     private void Clear()
@@ -713,7 +711,7 @@ public class PdmDevice : IDeviceConfigurable
     {
         var offset = id - BaseId;
 
-        // Use dictionary lookup for status messages 0-15
+        // Use dictionary lookup for status messages
         if (StatusSigs.TryGetValue(offset, out var signals))
         {
             foreach (var (signal, setValue) in signals)
@@ -722,12 +720,18 @@ public class PdmDevice : IDeviceConfigurable
                 setValue(value);
             }
         }
-        // Handle special messages with custom logic
+        // Handle special messages
         else
         {
             switch (offset)
             {
-                case 30: _paramProtocol.HandleMessage(BaseId, Name, data, queue, outgoing); break;
+                case 30:
+                {
+                    if (((MessageCommand)data[0]) == MessageCommand.Version)
+                        ReadVersion(BaseId, Name, data, queue);
+                    
+                    _paramProtocol.HandleMessage(BaseId, Name, data, queue, outgoing); break;
+                }
                 case 31: ReadInfoWarnErrorMessage(data); break;
             }
         }
@@ -943,6 +947,44 @@ public class PdmDevice : IDeviceConfigurable
         Keypads[index].Model = model;
         
         return true;
+    }
+
+    private void ReadVersion(int baseId, string name, byte[] data,
+        ConcurrentDictionary<(int BaseId, int Index, int SubIndex), DeviceCanFrame> queue)
+    {
+        if (data.Length != 8) return;
+
+        var version = $"v{data[4]}.{data[5]}.{(data[6] << 8) + (data[7])}";
+
+        if (!CheckVersion(data[4], data[5], (data[6] << 8) + (data[7])))
+        {
+            Logger.LogError("{Name} ID: {BaseId}, Firmware needs to be updated. V{MinMajorVersion}.{MinMinorVersion}.{MinBuildVersion} or greater",
+                name, baseId, MinMajorVersion, MinMinorVersion, MinBuildVersion);
+        }
+        
+        (int BaseId, int, int) key = (baseId, 0, 0); //Version request message index =0, subindex = 0
+        if (queue.TryGetValue(key, out var canFrame))
+        {
+            canFrame.TimeSentTimer?.Dispose();
+            queue.TryRemove(key, out _);
+        }
+
+        Logger.LogInformation("{Name} FW version received: {Version}", name, version);
+        
+    }
+    
+    private bool CheckVersion(int major, int minor, int build)
+    {
+        if (major > MinMajorVersion)
+            return true;
+
+        if ((major == MinMajorVersion) && (minor > MinMinorVersion))
+            return true;
+
+        if ((major == MinMajorVersion) && (minor == MinMinorVersion) && (build >= MinBuildVersion))
+            return true;
+
+        return false;
     }
 
     // Collection accessors

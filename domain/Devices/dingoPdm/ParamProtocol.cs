@@ -10,9 +10,6 @@ namespace domain.Devices.dingoPdm;
 internal class ParamProtocol
 {
     private readonly List<DeviceParameter> _params;
-    private readonly int _minMajor;
-    private readonly int _minMinor;
-    private readonly int _minBuild;
     private ILogger _logger = NullLogger.Instance;
 
     private readonly Dictionary<(int Index, int SubIndex), object> _tempParamValues = new();
@@ -21,14 +18,9 @@ internal class ParamProtocol
     private int _writeAllCount;
     private int _writeAllAttempts;
 
-    public event Action<string>? VersionReceived;
-
-    public ParamProtocol(List<DeviceParameter> @params, int minMajor, int minMinor, int minBuild)
+    public ParamProtocol(List<DeviceParameter> @params)
     {
         _params = @params;
-        _minMajor = minMajor;
-        _minMinor = minMinor;
-        _minBuild = minBuild;
     }
 
     public void SetLogger(ILogger logger) => _logger = logger;
@@ -81,7 +73,7 @@ internal class ParamProtocol
                     _ => "Invalid error type"
                 };
 
-                _logger.LogError("{Name} ID: {BaseId}, {ErrorType} - {paramName} - {index}:{subindex}",
+                _logger.LogError("{Name} ID: {BaseId}, {ErrorType} - {paramName} - 0x{index:X}:{subindex}",
                     name, baseId, errorType, paramName, index, subIndex);
 
                 break;
@@ -99,7 +91,7 @@ internal class ParamProtocol
 
                 if (matchingParam.ValueType == typeof(double))
                 {
-                    convertedValue = (double)DbcSignalCodec.ExtractSignal(data, startBit: 32, length: 32, isFloat: true);
+                    convertedValue = DbcSignalCodec.ExtractSignal(data, startBit: 32, length: 32, isFloat: true);
                 }
                 else
                 {
@@ -165,7 +157,7 @@ internal class ParamProtocol
 
                 if (matchingParam.ValueType == typeof(double))
                 {
-                    convertedValue = (double)DbcSignalCodec.ExtractSignal(data, startBit: 32, length: 32, isFloat: true);
+                    convertedValue = DbcSignalCodec.ExtractSignal(data, startBit: 32, length: 32, isFloat: true);
                 }
                 else
                 {
@@ -286,37 +278,14 @@ internal class ParamProtocol
                 }
                 break;
 
-            case MessageCommand.Version:
-                if (data.Length != 8) return;
-
-                var version = $"v{data[1]}.{data[2]}.{(data[3] << 8) + (data[4])}";
-                VersionReceived?.Invoke(version);
-
-                key = (baseId, (int)MessageCommand.Version, 0);
-                if (queue.TryGetValue(key, out canFrame!))
-                {
-                    canFrame.TimeSentTimer?.Dispose();
-                    queue.TryRemove(key, out _);
-                }
-
-                _logger.LogInformation("{Name} FW version received: {Version}", name, version);
-
-                if (!CheckVersion(data[1], data[2], (data[3] << 8) + (data[4])))
-                {
-                    _logger.LogError("{Name} ID: {BaseId}, Firmware needs to be updated. V{MinMajorVersion}.{MinMinorVersion}.{MinBuildVersion} or greater",
-                                        name, baseId, _minMajor, _minMinor, _minBuild);
-                }
-
-                break;
-
 		    case MessageCommand.BurnParams:
                 if (data.Length != 8) return;
 
-                if (data[1] == 1) //Successful burn
+                if (data[4] == 1) //Successful burn
                 {
                     _logger.LogInformation("{Name} ID: {BaseId}, Burn Successful", name, baseId);
 
-                    key = (baseId, (int)MessageCommand.BurnParams, 0);
+                    key = (baseId, 3 << 8 | 1, 8); //Index bytes are 1 and 3, subindex is 8
                     if (queue.TryGetValue(key, out canFrame!))
                     {
                         canFrame.TimeSentTimer?.Dispose();
@@ -324,7 +293,7 @@ internal class ParamProtocol
                     }
                 }
 
-                if (data[1] == 0) //Unsuccessful burn
+                if (data[4] == 0) //Unsuccessful burn
                     _logger.LogError("{Name} ID: {BaseId}, Burn Failed", name, baseId);
 
                 break;
@@ -332,11 +301,11 @@ internal class ParamProtocol
             case MessageCommand.Sleep:
                 if (data.Length != 8) return;
 
-                if (data[1] == 1) //Successful sleep
+                if (data[5] == 1) //Successful sleep
                 {
                     _logger.LogInformation("{Name} ID: {BaseId}, Sleep Successful", name, baseId);
 
-                    key = (baseId, (int)MessageCommand.Sleep, 0);
+                    key = (baseId, 'U' << 8 | 'Q', 'I'); //Index bytes = QU, Subindex = I
                     if (queue.TryGetValue(key, out canFrame!))
                     {
                         canFrame.TimeSentTimer?.Dispose();
@@ -344,7 +313,7 @@ internal class ParamProtocol
                     }
                 }
 
-                if (data[1] == 0) //Unsuccessful sleep
+                if (data[5] == 0) //Unsuccessful sleep
                     _logger.LogError("{Name} ID: {BaseId}, Sleep Failed", name, baseId);
 
                 break;
@@ -384,19 +353,5 @@ internal class ParamProtocol
         });
 
         return msgs;
-    }
-
-    private bool CheckVersion(int major, int minor, int build)
-    {
-        if (major > _minMajor)
-            return true;
-
-        if ((major == _minMajor) && (minor > _minMinor))
-            return true;
-
-        if ((major == _minMajor) && (minor == _minMinor) && (build >= _minBuild))
-            return true;
-
-        return false;
     }
 }
