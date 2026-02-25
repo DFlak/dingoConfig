@@ -829,14 +829,13 @@ public class PdmDevice : IDeviceConfigurable
                 }
                 else
                 {
-                    rawValue = DbcSignalCodec.ExtractSignal(data, startBit: 32, length: 32);
+                    rawValue = DbcSignalCodec.ExtractSignal(data, startBit: 32, length: 32, isSigned: matchingParam.IsSignedInt);
 
                     // Convert to the appropriate type based on param.ValueType
                     convertedValue = matchingParam.ValueType switch
                     {
                         { } t when t == typeof(bool) => rawValue != 0,
                         { } t when t == typeof(int) => (int)rawValue,
-                        { } t when t == typeof(uint) => (uint)rawValue,
                         { IsEnum: true } t => Enum.ToObject(t, (int)rawValue),
                         _ => rawValue
                     };
@@ -896,14 +895,13 @@ public class PdmDevice : IDeviceConfigurable
                 }
                 else
                 {
-                    rawValue = DbcSignalCodec.ExtractSignal(data, startBit: 32, length: 32);
+                    rawValue = DbcSignalCodec.ExtractSignal(data, startBit: 32, length: 32, isSigned: matchingParam.IsSignedInt);
 
                     // Convert to the appropriate type based on param.ValueType
                     convertedValue = matchingParam.ValueType switch
                     {
                         { } t when t == typeof(bool) => rawValue != 0,
                         { } t when t == typeof(int) => (int)rawValue,
-                        { } t when t == typeof(uint) => (uint)rawValue,
                         { IsEnum: true } t => Enum.ToObject(t, (int)rawValue),
                         _ => rawValue
                     };

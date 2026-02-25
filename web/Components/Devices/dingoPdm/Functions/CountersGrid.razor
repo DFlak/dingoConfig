@@ -130,13 +130,14 @@
         </PropertyColumn>
         <PropertyColumn Property="x => x.HoldToReset" Title="Hold To Reset" CellStyle="max-width: 100px">
             <EditTemplate>
-                <MudCheckBox @bind-Value="context.Item.HoldToReset" Dense="true" />
+                <MudCheckBox @bind-Value="context.Item.HoldToReset" Disabled="!context.Item.Enabled" Dense="true" />
             </EditTemplate>
         </PropertyColumn>
         <TemplateColumn Title="Reset Time (s)" Resizable="true" CellStyle="max-width: 100px">
             <EditTemplate>
                 <MudNumericField @key="@($"resetTime-{context.Item.Number}-{_refreshCounter}")"
                                  Value="@context.Item.ResetTime"
+                                 Disabled="!context.Item.Enabled"
                                  ValueChanged="@((int val) => ResetTimeChanged(context.Item, val))"/>
             </EditTemplate>
         </TemplateColumn>

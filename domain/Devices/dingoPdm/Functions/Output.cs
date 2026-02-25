@@ -182,7 +182,8 @@ public class Output : IDeviceFunction
                 ParentName = Name, Name = $"output[{Number}].primaryOutput", Index = BaseIndex + (Number - 1), SubIndex = subIndex++,
                 GetValue = () => PrimaryOutput, SetValue = val => PrimaryOutput = (int)val,
                 ValueType = PrimaryOutput.GetType(),
-                DefaultValue = -1
+                DefaultValue = -1,
+                IsSignedInt = true
             }
         ];
     }
