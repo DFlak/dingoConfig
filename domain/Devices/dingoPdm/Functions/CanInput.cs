@@ -15,19 +15,19 @@ public class CanInput : IDeviceFunction
     [JsonPropertyName("number")] public int Number {get;}
     [JsonPropertyName("enabled")] public bool Enabled {get; set;}
     [JsonPropertyName("timeoutEnabled")] public bool TimeoutEnabled {get; set;}
-    [JsonPropertyName("timeout")] public int Timeout {get; set;}
+    [JsonPropertyName("timeout")] public int Timeout { get; set; } = 1000;
     [JsonPropertyName("ide")] public bool Ide {get; set;}
     [JsonPropertyName("sid")] public int Sid {get; set;}
     [JsonPropertyName("eid")] public int Eid {get; set;}
     [JsonPropertyName("startBit")] public int StartBit {get; set;}
-    [JsonPropertyName("bitLength")] public int BitLength {get; set;}
-    [JsonPropertyName("factor")] public double Factor {get; set;}
+    [JsonPropertyName("bitLength")] public int BitLength { get; set; } = 8;
+    [JsonPropertyName("factor")] public double Factor { get; set; } = 1.0;
     [JsonPropertyName("offset")] public double Offset {get; set;}
-    [JsonPropertyName("byteOrder")] public ByteOrder ByteOrder {get; set;}
+    [JsonPropertyName("byteOrder")] public ByteOrder ByteOrder { get; set; } = ByteOrder.LittleEndian;
     [JsonPropertyName("signed")] public bool Signed {get; set;}
-    [JsonPropertyName("operator")] public Operator Operator {get; set;}
+    [JsonPropertyName("operator")] public Operator Operator { get; set; } = Operator.Equal;
     [JsonPropertyName("operand")] public double Operand {get; set;}
-    [JsonPropertyName("mode")] public InputMode Mode {get; set;}
+    [JsonPropertyName("mode")] public InputMode Mode { get; set; } = InputMode.Momentary;
 
     [JsonPropertyName("id")]
     public int Id
@@ -132,21 +132,21 @@ public class CanInput : IDeviceFunction
                 ParentName = Name, Name = $"canInput[{Number}].offset", Index = BaseIndex + (Number - 1), SubIndex = subIndex++,
                 GetValue = () => Offset, SetValue = val => Offset = (double)val,
                 ValueType = Offset.GetType(),
-                DefaultValue = 0
+                DefaultValue = 0.0
             },
             new DeviceParameter
             {
                 ParentName = Name, Name = $"canInput[{Number}].byteOrder", Index = BaseIndex + (Number - 1), SubIndex = subIndex++,
                 GetValue = () => ByteOrder, SetValue = val => ByteOrder = (ByteOrder)val,
                 ValueType = ByteOrder.GetType(),
-                DefaultValue = 0
+                DefaultValue = ByteOrder.LittleEndian
             },
             new DeviceParameter
             {
                 ParentName = Name, Name = $"canInput[{Number}].signed", Index = BaseIndex + (Number - 1), SubIndex = subIndex++,
                 GetValue = () => Signed, SetValue = val => Signed = (bool)val,
                 ValueType = Signed.GetType(),
-                DefaultValue = 0
+                DefaultValue = false
             },
             new DeviceParameter
             {
@@ -160,7 +160,7 @@ public class CanInput : IDeviceFunction
                 ParentName = Name, Name = $"canInput[{Number}].operand", Index = BaseIndex + (Number - 1), SubIndex = subIndex++,
                 GetValue = () => Operand, SetValue = val => Operand = (double)val,
                 ValueType = Operand.GetType(),
-                DefaultValue = 0
+                DefaultValue = 0.0
             },
             new DeviceParameter
             {

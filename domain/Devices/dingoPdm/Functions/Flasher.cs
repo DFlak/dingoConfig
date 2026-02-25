@@ -13,8 +13,8 @@ public class Flasher : IDeviceFunction
     [JsonPropertyName("enabled")] public bool Enabled {get; set;}
     [JsonPropertyName("single")] public bool Single {get; set;}
     [JsonPropertyName("input")] public int Input {get; set;}
-    [JsonPropertyName("onTime")] public int OnTime {get; set;}
-    [JsonPropertyName("offTime")] public int  OffTime {get; set;}
+    [JsonPropertyName("onTime")] public int OnTime { get; set; } = 500;
+    [JsonPropertyName("offTime")] public int OffTime { get; set; } = 500;
 
     [JsonIgnore][Plotable(displayName:"State")] public bool Value {get; set;}
 

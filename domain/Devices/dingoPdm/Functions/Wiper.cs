@@ -22,9 +22,11 @@ public class Wiper : IDeviceFunction
     [JsonPropertyName("parkStopLevel")] public bool ParkStopLevel { get; set; }
     [JsonPropertyName("swipeInput")] public int SwipeInput { get; set; }
     [JsonPropertyName("washInput")] public int WashInput { get; set; }
-    [JsonPropertyName("washWipeCycles")] public int WashWipeCycles { get; set; }
-    [JsonPropertyName("speedMap")] public WiperSpeed[] SpeedMap { get; set; } = new WiperSpeed[8];
-    [JsonPropertyName("intermitTime")] public double[] IntermitTime { get; set; } = new double[6];
+    [JsonPropertyName("washWipeCycles")] public int WashWipeCycles { get; set; } = 3;
+    [JsonPropertyName("speedMap")] public WiperSpeed[] SpeedMap { get; set; } = 
+        [WiperSpeed.Inter1, WiperSpeed.Inter2, WiperSpeed.Inter3, WiperSpeed.Inter4, 
+            WiperSpeed.Inter5, WiperSpeed.Inter6, WiperSpeed.Slow, WiperSpeed.Fast];
+    [JsonPropertyName("intermitTime")] public double[] IntermitTime { get; set; } = [1000.0, 2000.0, 3000.0, 4000.0, 5000.0, 6000.0];
 
     [JsonIgnore][Plotable(displayName:"SlowState")] public bool SlowState { get; set; }
     [JsonIgnore][Plotable(displayName:"FastState")] public bool FastState { get; set; }

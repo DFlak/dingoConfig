@@ -15,13 +15,13 @@ public class VirtualInput : IDeviceFunction
     [JsonPropertyName("enabled")] public bool Enabled {get; set;}
     [JsonPropertyName("not0")] public bool Not0 {get; set;}
     [JsonPropertyName("var0")] public int Var0 { get; set; }
-    [JsonPropertyName("cond0")] public Conditional Cond0 { get; set; }
+    [JsonPropertyName("cond0")] public Conditional Cond0 { get; set; } = Conditional.And;
     [JsonPropertyName("not1")] public bool Not1 {get; set;}
     [JsonPropertyName("var1")] public int Var1 { get; set; }
-    [JsonPropertyName("cond1")] public Conditional Cond1 { get; set; }
+    [JsonPropertyName("cond1")] public Conditional Cond1 { get; set; } = Conditional.And;
     [JsonPropertyName("not2")] public bool Not2 {get; set;}
     [JsonPropertyName("var2")] public int Var2 { get; set; }
-    [JsonPropertyName("mode")] public InputMode Mode {get; set;}
+    [JsonPropertyName("mode")] public InputMode Mode {get; set;} = InputMode.Momentary;
 
     [JsonIgnore][Plotable(displayName:"State")] public bool Value {get; set;}
 

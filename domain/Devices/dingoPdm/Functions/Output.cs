@@ -13,25 +13,26 @@ public class Output : IDeviceFunction
     [JsonPropertyName("enabled")] public bool Enabled { get; set; }
     [JsonPropertyName("name")] public string Name { get; set; }
     [JsonPropertyName("number")] public int Number { get; }
-    
-    [JsonPropertyName("currentLimit")]
-    [Range(0.0, 18.0)]
-    public double CurrentLimit { get; set; }
-    
-    [JsonPropertyName("resetCountLimit")] public int ResetCountLimit { get; set; }
-    [JsonPropertyName("resetMode")] public ResetMode ResetMode { get; set; }
-    [JsonPropertyName("resetTime")] public int ResetTime { get; set; }  //seconds
-    [JsonPropertyName("inrushCurrentLimit")] public double InrushCurrentLimit { get; set; }
-    [JsonPropertyName("inrushTime")] public int InrushTime { get; set; }
+    [JsonPropertyName("currentLimit")] public double CurrentLimit { get; set; } = 20.0;
+    [JsonPropertyName("resetCountLimit")] public int ResetCountLimit { get; set; } = 3;
+    [JsonPropertyName("resetMode")] public ResetMode ResetMode { get; set; } = ResetMode.None;
+    [JsonPropertyName("resetTime")] public int ResetTime { get; set; } = 1000;
+
+    [JsonPropertyName("inrushCurrentLimit")]
+    public double InrushCurrentLimit { get; set; } = 50.0;
+
+    [JsonPropertyName("inrushTime")] public int InrushTime { get; set; } = 100;
     [JsonPropertyName("input")] public int Input { get; set; }
     [JsonPropertyName("pwmEnabled")] public bool PwmEnabled { get; set; }
     [JsonPropertyName("softStartEnabled")] public bool SoftStartEnabled { get; set; }
     [JsonPropertyName("variableDutyCycle")] public bool VariableDutyCycle { get; set; }
     [JsonPropertyName("dutyCycleInput")] public int DutyCycleInput { get; set; }
-    [JsonPropertyName("fixedDutyCycle")] public int FixedDutyCycle { get; set; }
-    [JsonPropertyName("frequency")] public int Frequency { get; set; }
+    [JsonPropertyName("fixedDutyCycle")] public int FixedDutyCycle { get; set; } = 100;
+    [JsonPropertyName("frequency")] public int Frequency { get; set; } = 100;
     [JsonPropertyName("softStartRampTime")] public int SoftStartRampTime { get; set; }
-    [JsonPropertyName("dutyCycleDenominator")] public int DutyCycleDenominator { get; set; }
+
+    [JsonPropertyName("dutyCycleDenominator")]
+    public int DutyCycleDenominator { get; set; } = 100;
     [JsonPropertyName("primaryOutput")] public int PrimaryOutput { get; set; } = -1; //-1 = pairing disabled
     
     [JsonIgnore][Plotable(displayName:"Current", unit:"A")] public double Current { get; set; }

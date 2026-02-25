@@ -57,7 +57,7 @@ public class PdmDevice : IDeviceConfigurable
     
     [JsonPropertyName("sleepEnabled")] public bool SleepEnabled { get; set; }
     [JsonPropertyName("filtersEnabled")] public bool CanFiltersEnabled { get; set; }
-    [JsonPropertyName("bitrate")] public CanBitRate BitRate { get; set; }
+    [JsonPropertyName("bitrate")] public CanBitRate BitRate { get; set; } = CanBitRate.BitRate500K;
     [JsonIgnore] public TimeSpan CyclicGap { get; } =  TimeSpan.FromSeconds(0);
     [JsonIgnore] public TimeSpan CyclicPause { get; } = TimeSpan.FromMilliseconds(0);
     
@@ -775,6 +775,43 @@ public class PdmDevice : IDeviceConfigurable
 
         switch ((MessageCommand)data[0])
         {
+            //Error message commands
+            case MessageCommand.ReadParamNotFound:
+            case MessageCommand.WriteAllParamNotFound:
+            case MessageCommand.WriteAllOutOfRange:
+                if (data.Length != 8) return;
+
+                index = data[2] << 8 | data[1];
+                subIndex = data[3];
+                
+                matchingParam = Params.FirstOrDefault(p => p.Index == index && p.SubIndex == subIndex);
+
+                var paramName = "";
+                if (matchingParam != null)
+                {
+                    paramName = matchingParam.Name;
+                }
+                
+                key = (BaseId, index, subIndex);
+                if (queue.TryGetValue(key, out canFrame!))
+                {
+                    canFrame.TimeSentTimer?.Dispose();
+                    queue.TryRemove(key, out _);
+                }
+
+                var errorType = (MessageCommand)data[0] switch
+                {
+                    MessageCommand.ReadParamNotFound => "Read Param Not Found",
+                    MessageCommand.WriteAllParamNotFound => "Write Param Not Found",
+                    MessageCommand.WriteAllOutOfRange => "Write Param Out of Range",
+                    _ => "Invalid error type"
+                };
+
+                Logger.LogError("{Name} ID: {BaseId}, {ErrorType} - {paramName} - {index}:{subindex}", 
+                    Name, BaseId, errorType, paramName, index, subIndex);
+
+                break;
+                
             case MessageCommand.Read:
             case MessageCommand.Write:
             case MessageCommand.WriteAllVal:
@@ -904,6 +941,7 @@ public class PdmDevice : IDeviceConfigurable
                     Logger.LogWarning("{Name} ID: {BaseId}, Read All Incomplete {fromPdm} vs {received}", 
                                         Name, BaseId, readAllCount, _readAllCount);
 
+                    /*
                     if (_readAllAttempts >= 5) break;
                     
                     _readAllAttempts++;
@@ -916,6 +954,7 @@ public class PdmDevice : IDeviceConfigurable
                             Len: 8,
                             Payload: [Convert.ToByte(MessageCommand.ReadAll), 0, 0, 0, 0, 0, 0, 0])
                     });
+                    */
                 }
 
                 break;
@@ -933,10 +972,10 @@ public class PdmDevice : IDeviceConfigurable
                     queue.TryRemove(key, out _);
                 }
                 
-                Logger.LogInformation("{Name} ID: {BaseId}, Write All Started {Count}", Name, BaseId, _writeAllCount);
-                
                 //Write all modified values
                 outgoing.AddRange(BuildWriteAllMsgs());
+                
+                Logger.LogInformation("{Name} ID: {BaseId}, Write All Started {Count}", Name, BaseId, _writeAllCount);
                 
                 break;
             
@@ -953,13 +992,13 @@ public class PdmDevice : IDeviceConfigurable
                 {
 
 
-                    if (_writeAllAttempts > 5)
-                    {
+                    //if (_writeAllAttempts > 5)
+                    //{
                         Logger.LogError("{Name} ID: {BaseId}, Write All Failed {fromPdm} vs {received}", 
                             Name, BaseId, writeAllCount, _writeAllCount);
-                        break;
-                    }
-                    
+                     //   break;
+                    //}
+                    /*
                     _writeAllAttempts++;
                     
                     Logger.LogWarning("{Name} ID: {BaseId}, Write All Incomplete {fromPdm} vs {received}", 
@@ -973,6 +1012,7 @@ public class PdmDevice : IDeviceConfigurable
                             Len: 8,
                             Payload: [Convert.ToByte(MessageCommand.WriteAll), 0, 0, 0, 0, 0, 0, 0])
                     });
+                    */
                 }
                 break;
             

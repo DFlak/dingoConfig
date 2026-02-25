@@ -16,12 +16,12 @@ public class CanOutput : IDeviceFunction
     [JsonPropertyName("sid")] public int Sid {get; set;}
     [JsonPropertyName("eid")] public int Eid {get; set;}
     [JsonPropertyName("startBit")] public int StartBit {get; set;}
-    [JsonPropertyName("bitLength")] public int BitLength {get; set;}
-    [JsonPropertyName("factor")] public double Factor {get; set;}
+    [JsonPropertyName("bitLength")] public int BitLength { get; set; } = 8;
+    [JsonPropertyName("factor")] public double Factor { get; set; } = 1.0;
     [JsonPropertyName("offset")] public double Offset {get; set;}
-    [JsonPropertyName("byteOrder")] public ByteOrder ByteOrder {get; set;}
+    [JsonPropertyName("byteOrder")] public ByteOrder ByteOrder {get; set;} =  ByteOrder.LittleEndian;
     [JsonPropertyName("signed")] public bool Signed {get; set;}
-    [JsonPropertyName("interval")] public int Interval {get; set;}
+    [JsonPropertyName("interval")] public int Interval { get; set; } = 1000;
     
     [JsonPropertyName("id")]
     public int Id
@@ -73,7 +73,7 @@ public class CanOutput : IDeviceFunction
                 ParentName = Name, Name = $"canOutput[{Number}].ide", Index = BaseIndex + (Number - 1), SubIndex = subIndex++,
                 GetValue = () => Ide, SetValue = val => Ide = (bool)val,
                 ValueType = Ide.GetType(),
-                DefaultValue = 0
+                DefaultValue = false
             },
             new DeviceParameter
             {
@@ -101,7 +101,7 @@ public class CanOutput : IDeviceFunction
                 ParentName = Name, Name = $"canOutput[{Number}].bitLength", Index = BaseIndex + (Number - 1), SubIndex = subIndex++,
                 GetValue = () => BitLength, SetValue = val => BitLength = (int)val,
                 ValueType = BitLength.GetType(),
-                DefaultValue = 0
+                DefaultValue = 8
             },
             new DeviceParameter
             {

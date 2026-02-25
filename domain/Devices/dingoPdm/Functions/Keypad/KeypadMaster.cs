@@ -16,13 +16,19 @@ public class KeypadMaster : IDeviceFunction
     [JsonPropertyName("id")] public int Id {get; set; }
     [JsonPropertyName("timeoutEnabled")] public bool TimeoutEnabled {get; set;}
     [JsonPropertyName("timeout")] public int Timeout {get; set;}
-    [JsonPropertyName("model")] public KeypadModel Model { get; set; }
-    [JsonPropertyName("backlightBrightness")] public int BacklightBrightness {get; set;}
-    [JsonPropertyName("dimBacklightBrightness")] public int DimBacklightBrightness {get; set;}
+    [JsonPropertyName("model")] public KeypadModel Model { get; set; } = KeypadModel.Blink12Key;
+
+    [JsonPropertyName("backlightBrightness")]
+    public int BacklightBrightness { get; set; } = 100;
+
+    [JsonPropertyName("dimBacklightBrightness")]
+    public int DimBacklightBrightness { get; set; } = 50;
     [JsonPropertyName("backlightButtonColor")] public int BacklightColor {get; set;}
     [JsonPropertyName("dimmingVar")] public int DimmingVar {get; set;}
-    [JsonPropertyName("buttonBrightness")] public int ButtonBrightness {get; set;}
-    [JsonPropertyName("dimButtonBrightness")] public int DimButtonBrightness {get; set;}
+    [JsonPropertyName("buttonBrightness")] public int ButtonBrightness { get; set; } = 100;
+
+    [JsonPropertyName("dimButtonBrightness")]
+    public int DimButtonBrightness { get; set; } = 50;
     [JsonPropertyName("buttons")] public List<Button> Buttons { get; init; } = [];
     [JsonPropertyName("dials")] public List<Dial> Dials { get; init; } = [];
     

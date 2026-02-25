@@ -13,7 +13,7 @@ public class Condition : IDeviceFunction
     [JsonPropertyName("number")] public int Number {get;}
     [JsonPropertyName("enabled")] public bool Enabled {get; set; }
     [JsonPropertyName("input")] public int Input { get; set; }
-    [JsonPropertyName("operator")] public Operator Operator {get; set;}
+    [JsonPropertyName("operator")] public Operator Operator {get; set;} = Operator.Equal;
     [JsonPropertyName("arg")] public double Arg {get; set;}
 
     [JsonIgnore][Plotable(displayName:"State")] public int Value {get; set;}

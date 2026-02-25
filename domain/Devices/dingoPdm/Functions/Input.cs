@@ -13,9 +13,9 @@ public class Input : IDeviceFunction
     [JsonPropertyName("name")] public string Name { get; set; }
     [JsonPropertyName("number")] public int Number { get; }
     [JsonPropertyName("invert")] public bool Invert { get; set; }
-    [JsonPropertyName("mode")] public InputMode Mode { get; set; }
-    [JsonPropertyName("debounceTime")] public int DebounceTime { get; set; }
-    [JsonPropertyName("pull")] public InputPull Pull { get; set; }
+    [JsonPropertyName("mode")] public InputMode Mode { get; set; } = InputMode.Momentary;
+    [JsonPropertyName("debounceTime")] public int DebounceTime { get; set; } = 20;
+    [JsonPropertyName("pull")] public InputPull Pull { get; set; } = InputPull.NoPull;
 
     [JsonIgnore][Plotable(displayName:"State")] public bool State { get; set; }
 
