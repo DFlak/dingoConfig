@@ -7,7 +7,7 @@
 
 <MudGrid Spacing="2">
     <MudItem>
-        <MudCard Elevation="4">
+        <MudCard Elevation="4" Style="height: 100%">
             <MudCardHeader>Backlight</MudCardHeader>
             <MudCardContent>
                 <MudStack Spacing="4">
@@ -30,7 +30,7 @@
     </MudItem>
     
     <MudItem>
-        <MudCard Elevation="4">
+        <MudCard Elevation="4" Style="height: 100%">
             <MudCardHeader>Dim Backlight</MudCardHeader>
             <MudCardContent>
                 <MudStack Spacing="4">
@@ -60,7 +60,7 @@
     </MudItem>
     
     <MudItem>
-        <MudCard Elevation="4">
+        <MudCard Elevation="4" Style="height: 100%">
             <MudCardHeader>Buttons</MudCardHeader>
             <MudCardContent>
                 <MudStack Spacing="4">
@@ -74,13 +74,29 @@
     </MudItem>
     
     <MudItem>
-        <MudCard Elevation="4">
+        <MudCard Elevation="4" Style="height: 100%">
             <MudCardHeader>Dim Buttons</MudCardHeader>
             <MudCardContent>
                 <MudStack Spacing="4">
                     <MudNumericField Value="Keypad.DimButtonBrightness"
                                      Label="Brightness (0-63)"
                                      ValueChanged="@((int val) => OnDimButtonBrightnessChanged(val))"/>
+                </MudStack>
+            </MudCardContent>
+        </MudCard>
+    </MudItem>
+    
+    <MudItem>
+        <MudCard Elevation="4" Style="height: 100%">
+            <MudCardHeader>Timeout</MudCardHeader>
+            <MudCardContent>
+                <MudStack Spacing="4">
+                    <MudSwitch @bind-Value="@Keypad.TimeoutEnabled"
+                               Color="Color.Success"
+                               Label="Enabled"/>
+                    <MudNumericField Value="Keypad.Timeout"
+                                     Label="Timeout (ms)"
+                                     ValueChanged="@((int val) => OnTimeoutChanged(val))"/>
                 </MudStack>
             </MudCardContent>
         </MudCard>
@@ -142,6 +158,17 @@
             Notification.NewWarning($"{Keypad.Name}.DimButtonBrightness must be {min} to {max}");
         }
         Keypad.DimButtonBrightness = Math.Clamp(value, min, max);
+    }
+    
+    private void OnTimeoutChanged(int value)
+    {
+        const int min = 0;
+        const int max = 60000;
+        if (value < min || value > max)
+        {
+            Notification.NewWarning($"{Keypad.Name}.Timeout must be {min} to {max}");
+        }
+        Keypad.Timeout = Math.Clamp(value, min, max);
     }
 
 }
