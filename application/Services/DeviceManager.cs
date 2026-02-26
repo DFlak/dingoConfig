@@ -16,7 +16,7 @@ public class DeviceManager(ILogger<DeviceManager> logger, ILoggerFactory loggerF
 {
     private readonly Dictionary<Guid, IDevice> _devices = new();
     private ConcurrentDictionary<(int BaseId, int Index, int SubIndex), DeviceCanFrame> _requestQueue = new();
-    private Action<CanFrame>? _transmitCallback;
+    private Action<DeviceCanFrame>? _transmitCallback;
     private readonly Dictionary<Guid, DeviceUiState> _deviceUiState = new();
 
     private readonly Dictionary<Guid, System.Timers.Timer> _cyclicTimers = new();
@@ -24,7 +24,7 @@ public class DeviceManager(ILogger<DeviceManager> logger, ILoggerFactory loggerF
     public int QueueCount => _requestQueue.Count;
 
     private const int MaxRetries = 2;
-    private const int TimeoutMs = 2000;
+    private const int TimeoutMs = 3000;
 
     public event EventHandler<DeviceEventArgs>? DeviceAdded;
     public event EventHandler<DeviceEventArgs>? DeviceRemoved;
@@ -32,7 +32,7 @@ public class DeviceManager(ILogger<DeviceManager> logger, ILoggerFactory loggerF
     /// <summary>
     /// Set the callback for transmitting frames (called by CommsDataPipeline during setup)
     /// </summary>
-    public void SetTransmitCallback(Action<CanFrame> callback)
+    public void SetTransmitCallback(Action<DeviceCanFrame> callback)
     {
         _transmitCallback = callback;
     }
@@ -301,7 +301,7 @@ public class DeviceManager(ILogger<DeviceManager> logger, ILoggerFactory loggerF
         // Queue for transmission
         if (_transmitCallback != null)
         {
-            _transmitCallback(frame.Frame);
+            _transmitCallback(frame);
         }
         else
         {
@@ -314,7 +314,7 @@ public class DeviceManager(ILogger<DeviceManager> logger, ILoggerFactory loggerF
 
         int index = frame.Frame.Payload[2] << 8 | frame.Frame.Payload[1];
         int subIndex = frame.Frame.Payload[3];
-        
+
         //Unique message key, used to find message in transmit queue later
         var key = (frame.DeviceBaseId, index, subIndex);
 
@@ -325,8 +325,7 @@ public class DeviceManager(ILogger<DeviceManager> logger, ILoggerFactory loggerF
             return;
         }
 
-        // Start timeout timer
-        StartMessageTimer(key, frame);
+        // NOTE: Timer starts after transmission in OnFrameTransmitted
     }
 
     private void StartMessageTimer((int, int, int) key, DeviceCanFrame frame)
@@ -359,14 +358,30 @@ public class DeviceManager(ILogger<DeviceManager> logger, ILoggerFactory loggerF
             // Retry - queue again
             if (_transmitCallback != null)
             {
-                _transmitCallback(frame.Frame);
+                _transmitCallback(frame);
             }
 
-            StartMessageTimer(key, frame);
+            // NOTE: Timer restarts after transmission in OnFrameTransmitted
 
             logger.LogWarning("Message retry {Attempt}/{MaxRetries}: (BaseId={BaseId}) - {Name}",
                 frame.RxAttempts, MaxRetries, key.BaseId, frame.Name);
         }
+    }
+
+    /// <summary>
+    /// Called by CommsDataPipeline after a frame has been physically transmitted.
+    /// Starts the response timeout timer only after the frame is actually sent.
+    /// </summary>
+    public void OnFrameTransmitted(DeviceCanFrame frame)
+    {
+        if (frame.SendOnly) return;
+
+        int index = frame.Frame.Payload[2] << 8 | frame.Frame.Payload[1];
+        int subIndex = frame.Frame.Payload[3];
+        var key = (frame.DeviceBaseId, index, subIndex);
+
+        if (_requestQueue.TryGetValue(key, out var queuedFrame))
+            StartMessageTimer(key, queuedFrame);
     }
 
     /// <summary>

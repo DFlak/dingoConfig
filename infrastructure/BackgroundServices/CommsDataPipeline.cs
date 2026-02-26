@@ -27,7 +27,7 @@ public class CommsDataPipeline(
         });
     
     // TX Channel - Outgoing CAN frames to adapter
-    private readonly Channel<CanFrame> _txChannel = Channel.CreateBounded<CanFrame>(
+    private readonly Channel<DeviceCanFrame> _txChannel = Channel.CreateBounded<DeviceCanFrame>(
         new BoundedChannelOptions(10000)
         {
             FullMode = BoundedChannelFullMode.DropOldest,
@@ -106,9 +106,9 @@ public class CommsDataPipeline(
         {
             while (await _txChannel.Reader.WaitToReadAsync(ct))
             {
-                while (_txChannel.Reader.TryRead(out var frame))
+                while (_txChannel.Reader.TryRead(out var deviceFrame))
                 {
-                    await TransmitFrameAsync(frame, ct);
+                    await TransmitFrameAsync(deviceFrame, ct);
                 }
             }
         }
@@ -120,8 +120,9 @@ public class CommsDataPipeline(
         logger.LogInformation("TX Pipeline stopped");
     }
     
-    private async Task TransmitFrameAsync(CanFrame frame, CancellationToken ct)
+    private async Task TransmitFrameAsync(DeviceCanFrame deviceFrame, CancellationToken ct)
     {
+        var frame = deviceFrame.Frame;
         try
         {
             if (adapterManager.ActiveAdapter == null)
@@ -133,8 +134,11 @@ public class CommsDataPipeline(
             }
 
             await adapterManager.ActiveAdapter.WriteAsync(frame, ct);
-            
+
             msgLogger.Log(DataDirection.Tx, frame);
+
+            // Start timeout timer now that frame has been physically transmitted
+            deviceManager.OnFrameTransmitted(deviceFrame);
 
             logger.LogDebug(
                 "TX frame sent: CanId={Id:X}, Length={Len}",
@@ -157,7 +161,7 @@ public class CommsDataPipeline(
     /// <summary>
     /// Queue a frame for transmission (normal priority)
     /// </summary>
-    private void QueueTransmit(CanFrame frame)
+    private void QueueTransmit(DeviceCanFrame frame)
     {
         _txChannel.Writer.TryWrite(frame);
     }
