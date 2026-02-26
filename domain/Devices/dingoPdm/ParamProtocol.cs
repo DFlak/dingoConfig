@@ -18,6 +18,8 @@ internal class ParamProtocol
     private int _writeAllCount;
     private int _writeAllAttempts;
 
+    public Action<string>? NotifySuccess;
+
     public ParamProtocol(List<DeviceParameter> @params)
     {
         _params = @params;
@@ -119,6 +121,7 @@ internal class ParamProtocol
                 break;
 
             case MessageCommand.ReadAll:
+            case MessageCommand.ReadAllModified:
                 if (data.Length != 8) return;
 
                 index = data[2] << 8 | data[1];
@@ -198,27 +201,13 @@ internal class ParamProtocol
 
                     _tempParamValues.Clear();
                     _logger.LogInformation("{Name} ID: {BaseId}, Read All Complete {fromPdm}", name, baseId, readAllCount);
+                    NotifySuccess?.Invoke($"{name}: Read Successful");
                 }
                 else
                 {
                     _tempParamValues.Clear();
                     _logger.LogWarning("{Name} ID: {BaseId}, Read All Incomplete {fromPdm} vs {received}",
                                         name, baseId, readAllCount, _readAllCount);
-
-                    /*
-                    if (_readAllAttempts >= 5) break;
-
-                    _readAllAttempts++;
-
-                    outgoing.Add(new DeviceCanFrame
-                    {
-                        DeviceBaseId = baseId,
-                        Frame = new CanFrame(
-                            Id: baseId - 1,
-                            Len: 8,
-                            Payload: [Convert.ToByte(MessageCommand.ReadAll), 0, 0, 0, 0, 0, 0, 0])
-                    });
-                    */
                 }
 
                 break;
@@ -237,7 +226,27 @@ internal class ParamProtocol
                 }
 
                 //Write all modified values
-                outgoing.AddRange(BuildWriteAllMsgs(baseId));
+                outgoing.AddRange(BuildWriteAllMsgs(baseId, allParams: true));
+
+                _logger.LogInformation("{Name} ID: {BaseId}, Write All Started {Count}", name, baseId, _writeAllCount);
+
+                break;
+            
+            case MessageCommand.WriteAllModified:
+                if (data.Length != 8) return;
+
+                index = data[2] << 8 | data[1];
+                subIndex = data[3];
+
+                key = (baseId, index, subIndex);
+                if (queue.TryGetValue(key, out canFrame!))
+                {
+                    canFrame.TimeSentTimer?.Dispose();
+                    queue.TryRemove(key, out _);
+                }
+
+                //Write all modified values
+                outgoing.AddRange(BuildWriteAllMsgs(baseId, allParams: false));
 
                 _logger.LogInformation("{Name} ID: {BaseId}, Write All Started {Count}", name, baseId, _writeAllCount);
 
@@ -251,30 +260,12 @@ internal class ParamProtocol
                 if (writeAllCount == _writeAllCount)
                 {
                     _logger.LogInformation("{Name} ID: {BaseId}, Write All Completed {fromPdm}", name, baseId, writeAllCount);
+                    NotifySuccess?.Invoke($"{name}: Write Successful");
                 }
                 else
                 {
-                    //if (_writeAllAttempts > 5)
-                    //{
-                        _logger.LogError("{Name} ID: {BaseId}, Write All Failed {fromPdm} vs {received}",
-                            name, baseId, writeAllCount, _writeAllCount);
-                     //   break;
-                    //}
-                    /*
-                    _writeAllAttempts++;
-
-                    _logger.LogWarning("{Name} ID: {BaseId}, Write All Incomplete {fromPdm} vs {received}",
+                    _logger.LogError("{Name} ID: {BaseId}, Write All Failed {fromPdm} vs {received}",
                         name, baseId, writeAllCount, _writeAllCount);
-
-                    outgoing.Add(new DeviceCanFrame
-                    {
-                        DeviceBaseId = baseId,
-                        Frame = new CanFrame(
-                            Id: baseId - 1,
-                            Len: 8,
-                            Payload: [Convert.ToByte(MessageCommand.WriteAll), 0, 0, 0, 0, 0, 0, 0])
-                    });
-                    */
                 }
                 break;
 
@@ -284,6 +275,7 @@ internal class ParamProtocol
                 if (data[4] == 1) //Successful burn
                 {
                     _logger.LogInformation("{Name} ID: {BaseId}, Burn Successful", name, baseId);
+                    NotifySuccess?.Invoke($"{name}: Burn Successful");
 
                     key = (baseId, 3 << 8 | 1, 8); //Index bytes are 1 and 3, subindex is 8
                     if (queue.TryGetValue(key, out canFrame!))
@@ -304,6 +296,7 @@ internal class ParamProtocol
                 if (data[5] == 1) //Successful sleep
                 {
                     _logger.LogInformation("{Name} ID: {BaseId}, Sleep Successful", name, baseId);
+                    NotifySuccess?.Invoke($"{name}: Sleep Successful");
 
                     key = (baseId, 'U' << 8 | 'Q', 'I'); //Index bytes = QU, Subindex = I
                     if (queue.TryGetValue(key, out canFrame!))
@@ -320,13 +313,14 @@ internal class ParamProtocol
         }
     }
 
-    private List<DeviceCanFrame> BuildWriteAllMsgs(int baseId)
+    private List<DeviceCanFrame> BuildWriteAllMsgs(int baseId, bool allParams)
     {
-        var modifiedParams = _params.Where(p => p.IsModified).ToList();
+        var writeParams = allParams ? _params : _params.Where(p => p.IsModified).ToList();
+        
         List<DeviceCanFrame> msgs = [];
-        _writeAllCount = modifiedParams.Count;
+        _writeAllCount = writeParams.Count;
 
-        foreach (var parameter in modifiedParams)
+        foreach (var parameter in writeParams)
         {
             msgs.Add(new DeviceCanFrame
             {

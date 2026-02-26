@@ -69,6 +69,22 @@
                        OnClick="@OnEnterBootloaderAsync">
                 Bootloader
             </MudButton>
+            <MudButton Variant="Variant.Outlined"
+                       Color="Color.Default"
+                       Size="Size.Small"
+                       StartIcon="@Icons.Material.Filled.Download"
+                       Disabled="@(!Device.Connected || !AdapterConnected || !Configurable)"
+                       OnClick="@OnReadAllDeviceAsync">
+                Read All
+            </MudButton>
+            <MudButton Variant="Variant.Outlined"
+                       Color="Color.Default"
+                       Size="Size.Small"
+                       StartIcon="@Icons.Material.Filled.Upload"
+                       Disabled="@(!Device.Connected || !AdapterConnected || !Configurable)"
+                       OnClick="@OnWriteAllDeviceAsync">
+                Write All
+            </MudButton>
             <MudSpacer/>
             <MudChip T="string" Variant="Variant.Outlined"
                      Color="@(Device.Connected ? Color.Success : Color.Error)" Size="Size.Small"
@@ -137,20 +153,46 @@
         try
         {
             DeviceManager.ReadDeviceConfig(Device.Guid);
-            Notification.NewInfo($"Device read: {DeviceName}");
+            Notification.NewInfo($"Device read modified: {DeviceName}");
         }
         catch (Exception ex)
         {
             Notification.NewError($"Error reading device: {DeviceName}", ex);
         }
     }
-
+    
+    private void OnReadAllDeviceAsync()
+    {
+        try
+        {
+            DeviceManager.ReadAllDeviceConfig(Device.Guid);
+            Notification.NewInfo($"Device read all: {DeviceName}");
+        }
+        catch (Exception ex)
+        {
+            Notification.NewError($"Error reading device: {DeviceName}", ex);
+        }
+    }
+    
     private void OnWriteDeviceAsync()
     {
         try
         {
             DeviceManager.WriteDeviceConfig(Device.Guid);
-            Notification.NewSuccess($"Device write: {DeviceName}");
+            Notification.NewSuccess($"Device write modified: {DeviceName}");
+        }
+        catch (Exception ex)
+        {
+            Notification.NewError($"Error writing device: {DeviceName}", ex);
+        }
+    }
+
+    private void OnWriteAllDeviceAsync()
+    {
+        try
+        {
+            DeviceManager.WriteAllDeviceConfig(Device.Guid);
+            Notification.NewSuccess($"Device write all: {DeviceName}");
         }
         catch (Exception ex)
         {

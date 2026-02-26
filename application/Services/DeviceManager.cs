@@ -12,7 +12,7 @@ using Microsoft.Extensions.Logging;
 
 namespace application.Services;
 
-public class DeviceManager(ILogger<DeviceManager> logger, ILoggerFactory loggerFactory)
+public class DeviceManager(ILogger<DeviceManager> logger, ILoggerFactory loggerFactory, SystemLogger systemLogger)
 {
     private readonly Dictionary<Guid, IDevice> _devices = new();
     private ConcurrentDictionary<(int BaseId, int Index, int SubIndex), DeviceCanFrame> _requestQueue = new();
@@ -23,8 +23,8 @@ public class DeviceManager(ILogger<DeviceManager> logger, ILoggerFactory loggerF
 
     public int QueueCount => _requestQueue.Count;
 
-    private const int MaxRetries = 10;
-    private const int TimeoutMs = 500;
+    private const int MaxRetries = 2;
+    private const int TimeoutMs = 2000;
 
     public event EventHandler<DeviceEventArgs>? DeviceAdded;
     public event EventHandler<DeviceEventArgs>? DeviceRemoved;
@@ -221,6 +221,7 @@ public class DeviceManager(ILogger<DeviceManager> logger, ILoggerFactory loggerF
         {
             case PdmDevice pdmDevice:
                 pdmDevice.SetLogger(loggerFactory.CreateLogger<PdmDevice>());
+                pdmDevice.SuccessNotification += msg => systemLogger.Notify(pdmDevice.Name, msg);
                 break;
             case CanboardDevice canboardDevice:
                 canboardDevice.SetLogger(loggerFactory.CreateLogger<CanboardDevice>());
@@ -368,12 +369,9 @@ public class DeviceManager(ILogger<DeviceManager> logger, ILoggerFactory loggerF
         }
     }
 
-    // ============================================
-    // Device Operations (called by controllers)
-    // ============================================
-
     /// <summary>
     /// Read configuration from device to host
+    /// Only modified params
     /// </summary>
     public void ReadDeviceConfig(Guid deviceId)
     {
@@ -383,7 +381,29 @@ public class DeviceManager(ILogger<DeviceManager> logger, ILoggerFactory loggerF
 
         GetDeviceUiState(deviceId).NeedsRead = false;
 
-        var readMsgs = configurable.GetReadMsgs();
+        var readMsgs = configurable.GetReadMsgs(allParams: false);
+        foreach (var msg in readMsgs)
+        {
+            QueueMessage(msg);
+            Thread.Sleep(1); //Slow down to give device time to respond
+        }
+
+        logger.LogInformation("Read started for {DeviceName} (Guid: {Guid})", device.Name, deviceId);
+    }
+    
+    /// <summary>
+    /// Read configuration from device to host
+    /// All parameters
+    /// </summary>
+    public void ReadAllDeviceConfig(Guid deviceId)
+    {
+        var device = GetDevice(deviceId);
+        if (device is not IDeviceConfigurable configurable)
+            return;
+
+        GetDeviceUiState(deviceId).NeedsRead = false;
+
+        var readMsgs = configurable.GetReadMsgs(allParams: true);
         foreach (var msg in readMsgs)
         {
             QueueMessage(msg);
@@ -395,6 +415,7 @@ public class DeviceManager(ILogger<DeviceManager> logger, ILoggerFactory loggerF
 
     /// <summary>
     /// Write configuration to device
+    /// Only modified parameters
     /// </summary>
     /// <returns>
     /// Send write config success
@@ -405,7 +426,31 @@ public class DeviceManager(ILogger<DeviceManager> logger, ILoggerFactory loggerF
         if (device is not IDeviceConfigurable configurable)
             return false;
 
-        var downloadMsgs = configurable.GetWriteMsgs();
+        var downloadMsgs = configurable.GetWriteMsgs(allParams: false);
+        foreach (var msg in downloadMsgs)
+        {
+            QueueMessage(msg);
+            Thread.Sleep(1); //Slow down to give device time to respond
+        }
+
+        logger.LogInformation("Write started for {DeviceName} (Guid: {Guid})", device.Name, deviceId);
+        return true;
+    }
+    
+    /// <summary>
+    /// Write all configuration to device
+    /// Write all parameters
+    /// </summary>
+    /// <returns>
+    /// Send write config success
+    /// </returns>
+    public bool WriteAllDeviceConfig(Guid deviceId)
+    {
+        var device = GetDevice(deviceId);
+        if (device is not IDeviceConfigurable configurable)
+            return false;
+
+        var downloadMsgs = configurable.GetWriteMsgs(allParams: true);
         foreach (var msg in downloadMsgs)
         {
             QueueMessage(msg);

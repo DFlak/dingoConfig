@@ -6,8 +6,8 @@ public interface IDeviceConfigurable : IDevice
 {
     List<DeviceVariable> VarMap { get; set; }
     List<DeviceParameter> Params { get; set; }
-    List<DeviceCanFrame> GetReadMsgs();
-    List<DeviceCanFrame> GetWriteMsgs();
+    List<DeviceCanFrame> GetReadMsgs(bool allParams);
+    List<DeviceCanFrame> GetWriteMsgs(bool allParams);
     List<DeviceCanFrame> GetModifyMsgs(int newId);
     DeviceCanFrame GetBurnMsg();
     DeviceCanFrame GetSleepMsg();

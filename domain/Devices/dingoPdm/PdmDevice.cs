@@ -53,6 +53,7 @@ public class PdmDevice : IDeviceConfigurable
     [JsonIgnore][Plotable(displayName:"BatteryVoltage", unit:"V")] public double BatteryVoltage { get; private set; }
     [JsonIgnore][Plotable(displayName:"Temperature", unit:"degC")] public double BoardTempC { get; private set; }
     [JsonIgnore] public string Version { get; private set; } = "v0.0.0";
+    public event Action<string>? SuccessNotification;
     
     [JsonPropertyName("sleepEnabled")] public bool SleepEnabled { get; set; }
     [JsonPropertyName("filtersEnabled")] public bool CanFiltersEnabled { get; set; }
@@ -672,6 +673,7 @@ public class PdmDevice : IDeviceConfigurable
         Params = allParams;
 
         _paramProtocol = new ParamProtocol(Params);
+        _paramProtocol.NotifySuccess = msg => SuccessNotification?.Invoke(msg);
     }
 
     private void Clear()
@@ -788,10 +790,13 @@ public class PdmDevice : IDeviceConfigurable
         }
     }
 
-    public List<DeviceCanFrame> GetReadMsgs()
+    public List<DeviceCanFrame> GetReadMsgs(bool allParams)
     {
         var id = BaseId;
 
+        var cmd = allParams ? MessageCommand.ReadAll : MessageCommand.ReadAllModified;
+        var name = allParams ? "ReadAll" : "ReadAllModified";
+        
         List<DeviceCanFrame>  msgs =
         [
             GetVersionMsg(),
@@ -802,17 +807,19 @@ public class PdmDevice : IDeviceConfigurable
                 Frame = new CanFrame(
                     Id: id - 1,
                     Len: 8,
-                    Payload: [Convert.ToByte(MessageCommand.ReadAll), 0, 0, 0, 0, 0, 0, 0]),
-                Name = "ReadAll"
+                    Payload: [Convert.ToByte(cmd), 0, 0, 0, 0, 0, 0, 0]),
+                Name = name
             }
         ];
 
 		return msgs;
     }
 
-    public List<DeviceCanFrame> GetWriteMsgs()
+    public List<DeviceCanFrame> GetWriteMsgs(bool allParams)
     {
-        //Start WriteAll 
+        var cmd = allParams ? MessageCommand.WriteAll : MessageCommand.WriteAllModified;
+        var name = allParams ? "WriteAll" : "WriteAllModified";
+        
         List<DeviceCanFrame> msgs =
         [
             new()
@@ -822,9 +829,9 @@ public class PdmDevice : IDeviceConfigurable
                 (
                     Id: BaseId - 1,
                     Len: 8,
-                    Payload: [Convert.ToByte(MessageCommand.WriteAll), 0, 0, 0, 0, 0, 0, 0]
+                    Payload: [Convert.ToByte(cmd), 0, 0, 0, 0, 0, 0, 0]
                 ),
-                Name = "WriteAll"
+                Name = name
             }
         ];
 
@@ -970,7 +977,8 @@ public class PdmDevice : IDeviceConfigurable
         }
 
         Logger.LogInformation("{Name} FW version received: {Version}", name, version);
-        
+
+        Version = version;
     }
     
     private bool CheckVersion(int major, int minor, int build)

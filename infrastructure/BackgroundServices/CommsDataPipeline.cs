@@ -104,16 +104,12 @@ public class CommsDataPipeline(
         
         try
         {
-            while (!ct.IsCancellationRequested)
+            while (await _txChannel.Reader.WaitToReadAsync(ct))
             {
-                if (_txChannel.Reader.TryRead(out var normalRequest))
+                while (_txChannel.Reader.TryRead(out var frame))
                 {
-                    await TransmitFrameAsync(normalRequest, ct);
-                    continue;
+                    await TransmitFrameAsync(frame, ct);
                 }
-                
-                // If no messages, wait a bit
-                await Task.Delay(1, ct);
             }
         }
         catch (OperationCanceledException)

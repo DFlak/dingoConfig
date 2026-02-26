@@ -18,7 +18,9 @@ public static class ParamCodec
         DbcSignalCodec.InsertSignal(payload, param.SubIndex, 24, 8);
         
         //Value
-        DbcSignalCodec.InsertSignal(payload, Convert.ToDouble(param.GetValue()), 32, 32);
+        var isFloat = param.ValueType == typeof(double);
+        DbcSignalCodec.InsertSignal(payload, Convert.ToDouble(param.GetValue()), 32, 32,
+            isSigned: param.IsSignedInt, isFloat: isFloat);
         
         return new CanFrame
         (
