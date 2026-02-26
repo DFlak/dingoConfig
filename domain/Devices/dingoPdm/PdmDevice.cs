@@ -32,7 +32,7 @@ public class PdmDevice : IDeviceConfigurable
     [JsonIgnore] protected virtual int NumConditions => 32;
     [JsonIgnore] protected virtual int NumKeypads => 2;
     [JsonIgnore] protected virtual int KeypadMaxButtons => 20;
-    [JsonIgnore] protected virtual int KeypadMaxDials => 4;
+    [JsonIgnore] protected virtual int KeypadMaxDials => 2;
     [JsonIgnore] protected virtual int KeypadMaxAnalogInputs => 4;
 
     [JsonIgnore] public const int BaseIndex = 0x0000;

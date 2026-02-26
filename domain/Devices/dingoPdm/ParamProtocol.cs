@@ -325,7 +325,7 @@ internal class ParamProtocol
             msgs.Add(new DeviceCanFrame
             {
                 DeviceBaseId = baseId,
-                SendOnly = false,
+                SendOnly = true,
                 Frame = ParamCodec.ToFrame(MessageCommand.WriteAllVal, parameter, baseId - 1),
                 Name = parameter.Name
             });
