@@ -125,14 +125,14 @@ public class CommsAdapterManager(IServiceProvider serviceProvider, ILogger<Comms
     {
         if (_activeAdapter == null) return await Task.FromResult(false);
 
-        if (_activeAdapter != null)
-        {
-            _activeAdapter.DataReceived -= OnDataReceived;
-            _activeAdapter.Disconnected -= OnDisconnected;
-            await _activeAdapter.StopAsync();
+        var adapter = _activeAdapter;
+        _activeAdapter = null; // Null immediately so IsConnected returns false
 
-            logger.LogInformation("Adapter disconnected: {AdapterName}", _activeAdapter.Name);
-        }
+        adapter.DataReceived -= OnDataReceived;
+        adapter.Disconnected -= OnDisconnected;
+        await adapter.StopAsync();
+
+        logger.LogInformation("Adapter disconnected: {AdapterName}", adapter.Name);
 
         return await Task.FromResult(true);
     }

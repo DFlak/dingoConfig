@@ -30,14 +30,14 @@ public class StarterDisable : IDeviceFunction
         {
             new DeviceParameter
             {
-                ParentName = Name, Name = "enabled", Index = BaseIndex + (Number - 1), SubIndex = subIndex++,
+                ParentName = Name, Name = "starterDisable.enabled", Index = BaseIndex + (Number - 1), SubIndex = subIndex++,
                 GetValue = () => Enabled, SetValue = val => Enabled = (bool)val,
                 ValueType = Enabled.GetType(),
                 DefaultValue = false
             },
             new DeviceParameter
             {
-                ParentName = Name, Name = "input", Index = BaseIndex + (Number - 1), SubIndex = subIndex++,
+                ParentName = Name, Name = "starterDisable.input", Index = BaseIndex + (Number - 1), SubIndex = subIndex++,
                 GetValue = () => Input, SetValue = val => Input = (int)val,
                 ValueType = Input.GetType(),
                 DefaultValue = 0
@@ -49,7 +49,7 @@ public class StarterDisable : IDeviceFunction
             var idx = i;
             parameters.Add(new DeviceParameter
             {
-                Name = $"outputsDisabled[{i}]", Index = BaseIndex + (Number - 1), SubIndex = subIndex++,
+                Name = $"starterDisable.outputsDisabled[{i}]", Index = BaseIndex + (Number - 1), SubIndex = subIndex++,
                 GetValue = () => OutputsDisabled[idx], SetValue = val => OutputsDisabled[idx] = (bool)val,
                 ValueType = OutputsDisabled[i].GetType(),
                 DefaultValue = false

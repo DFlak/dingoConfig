@@ -19,6 +19,11 @@ public class SystemLogger : IDisposable
     /// </summary>
     public event Action<LogEntry>? OnError;
 
+    /// <summary>
+    /// Event fired when backend code explicitly requests a snackbar notification
+    /// </summary>
+    public event Action<LogEntry>? OnNotify;
+
     public SystemLogger(string logDirectory = "./logs")
     {
         _logDirectory = logDirectory;
@@ -55,6 +60,22 @@ public class SystemLogger : IDisposable
         {
             OnError?.Invoke(entry);
         }
+    }
+
+    /// <summary>
+    /// Fire a snackbar notification without adding a duplicate log entry.
+    /// The message should already be in the log buffer via ILogger.
+    /// </summary>
+    public void Notify(string source, string message)
+    {
+        var entry = new LogEntry
+        {
+            Timestamp = DateTime.Now,
+            Level = LogLevel.Info,
+            Source = source,
+            Message = message
+        };
+        OnNotify?.Invoke(entry);
     }
 
     public List<LogEntry> GetLogs(LogLevel? filterLevel = null, string? filterSource = null)

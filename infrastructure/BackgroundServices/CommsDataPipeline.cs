@@ -27,7 +27,7 @@ public class CommsDataPipeline(
         });
     
     // TX Channel - Outgoing CAN frames to adapter
-    private readonly Channel<CanFrame> _txChannel = Channel.CreateBounded<CanFrame>(
+    private readonly Channel<DeviceCanFrame> _txChannel = Channel.CreateBounded<DeviceCanFrame>(
         new BoundedChannelOptions(10000)
         {
             FullMode = BoundedChannelFullMode.DropOldest,
@@ -104,16 +104,12 @@ public class CommsDataPipeline(
         
         try
         {
-            while (!ct.IsCancellationRequested)
+            while (await _txChannel.Reader.WaitToReadAsync(ct))
             {
-                if (_txChannel.Reader.TryRead(out var normalRequest))
+                while (_txChannel.Reader.TryRead(out var deviceFrame))
                 {
-                    await TransmitFrameAsync(normalRequest, ct);
-                    continue;
+                    await TransmitFrameAsync(deviceFrame, ct);
                 }
-                
-                // If no messages, wait a bit
-                await Task.Delay(1, ct);
             }
         }
         catch (OperationCanceledException)
@@ -124,8 +120,9 @@ public class CommsDataPipeline(
         logger.LogInformation("TX Pipeline stopped");
     }
     
-    private async Task TransmitFrameAsync(CanFrame frame, CancellationToken ct)
+    private async Task TransmitFrameAsync(DeviceCanFrame deviceFrame, CancellationToken ct)
     {
+        var frame = deviceFrame.Frame;
         try
         {
             if (adapterManager.ActiveAdapter == null)
@@ -137,8 +134,11 @@ public class CommsDataPipeline(
             }
 
             await adapterManager.ActiveAdapter.WriteAsync(frame, ct);
-            
+
             msgLogger.Log(DataDirection.Tx, frame);
+
+            // Start timeout timer now that frame has been physically transmitted
+            deviceManager.OnFrameTransmitted(deviceFrame);
 
             logger.LogDebug(
                 "TX frame sent: CanId={Id:X}, Length={Len}",
@@ -161,7 +161,7 @@ public class CommsDataPipeline(
     /// <summary>
     /// Queue a frame for transmission (normal priority)
     /// </summary>
-    private void QueueTransmit(CanFrame frame)
+    private void QueueTransmit(DeviceCanFrame frame)
     {
         _txChannel.Writer.TryWrite(frame);
     }

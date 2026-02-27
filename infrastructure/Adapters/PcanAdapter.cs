@@ -67,6 +67,8 @@ public class PcanAdapter  : ICommsAdapter
         _worker.MessageAvailable -= OnMessageAvailable;
         _worker.Stop();
 
+        RxTimeDelta = TimeSpan.FromHours(1);
+
         return Task.FromResult(true);
     }
 

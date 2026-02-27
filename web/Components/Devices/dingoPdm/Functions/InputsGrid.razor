@@ -75,7 +75,7 @@
     private void OnDebounceChanged(Input item, int value)
     {
         const int min = 0;
-        const int max = 2550;
+        const int max = 1000;
         if (value < min || value > max)
         {
             Notification.NewWarning($"{item.Name}.DebounceTime must be {min} to {max}");

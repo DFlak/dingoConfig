@@ -122,17 +122,6 @@
                 </MudStack>
             </EditTemplate>
         </PropertyColumn>
-        <PropertyColumn Property="x => x.Cond2" Title="Cond 2" CellStyle="max-width: 200px">
-            <EditTemplate>
-                <MudSelect T="Conditional" @bind-Value="context.Item.Cond2" Variant="Variant.Outlined" Dense="true"
-                           Disabled="!context.Item.Enabled">
-                    @foreach (Conditional cond in Enum.GetValues(typeof(Conditional)))
-                    {
-                        <MudSelectItem T="Conditional" Value="@cond">@cond</MudSelectItem>
-                    }
-                </MudSelect>
-            </EditTemplate>
-        </PropertyColumn>
     </Columns>
 </MudDataGrid>
 

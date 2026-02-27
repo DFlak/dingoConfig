@@ -14,21 +14,20 @@ public class NotificationService
         _snackbar = snackbar;
         _logger = logger;
 
-        // Subscribe to backend error logs
+        // Subscribe to backend error and notification events
         _logger.OnError += HandleBackendError;
+        _logger.OnNotify += HandleBackendNotify;
     }
 
     private void HandleBackendError(LogEntry entry)
     {
-        // Don't show UI notifications if the error came from "UI" source (would be duplicate)
-        if (entry.Source == "UI")
-            return;
+        if (entry.Source == "UI") return;
+        _snackbar.Add(entry.Message, Severity.Error);
+    }
 
-        // Format message with source and category for context
-        var displayMessage = entry.Message;
-
-        // Show snackbar only (don't log again - already logged)
-        _snackbar.Add(displayMessage, Severity.Error);
+    private void HandleBackendNotify(LogEntry entry)
+    {
+        _snackbar.Add(entry.Message, Severity.Success);
     }
 
     public void NewInfo(string message, bool logOnly = false)

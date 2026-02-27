@@ -70,7 +70,7 @@ public class SlcanAdapter : SerialAdapter
 
         Serial.Close();
 
-        return Task.FromResult(true);
+        return base.StopAsync();
     }
 
     public override Task<bool> WriteAsync(CanFrame frame, CancellationToken ct)

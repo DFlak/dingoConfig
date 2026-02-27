@@ -9,17 +9,20 @@ public class Dial : IDeviceFunction
 {
     [JsonIgnore] public const int BaseIndex = 0x3200;
     [JsonPropertyName("name")] public string Name {get; set; }
+    [JsonPropertyName("keypadNumber")] public int KeypadNumber {get;}
     [JsonPropertyName("number")] public int Number {get;}
     [JsonPropertyName("enabled")] public bool Enabled {get; set;}
-    [JsonPropertyName("minLed")] public int MinLed {get; set; }
-    [JsonPropertyName("maxLed")] public int MaxLed {get; set; }
+    [JsonPropertyName("minCount")] public int MinCount { get; set; }
+    [JsonPropertyName("maxCount")] public int MaxCount { get; set; } = 16;
     [JsonPropertyName("ledOffset")] public int LedOffset {get; set; }
+    [JsonIgnore] public int TopPosition { get; set; } = 8; //Default = 8
     
     [JsonIgnore] public List<DeviceParameter> Params { get; set; } = null!;
     
     [JsonConstructor]
-    public Dial(int number, string name)
+    public Dial(int keypadNumber, int number, string name)
     {
+        KeypadNumber = keypadNumber;
         Number = number;
         Name = name;
 
@@ -34,32 +37,36 @@ public class Dial : IDeviceFunction
         [
             new DeviceParameter
             {
-                ParentName = Name, Name = "enabled", Index = BaseIndex + (Number - 1), SubIndex = subIndex++,
+                ParentName = Name, Name = $"keypad[{KeypadNumber}].dial[{Number}].enabled", 
+                Index = BaseIndex + ((KeypadNumber - 1) * 4) + (Number - 1), SubIndex = subIndex++,
                 GetValue = () => Enabled, SetValue = val => Enabled = (bool)val,
                 ValueType = Enabled.GetType(),
                 DefaultValue = false
             },
             new DeviceParameter
             {
-                ParentName = Name, Name = "minLed", Index = BaseIndex + (Number - 1), SubIndex = subIndex++,
-                GetValue = () => MinLed, SetValue = val => MinLed = (int)val,
-                ValueType = MinLed.GetType(),
+                ParentName = Name, Name = $"keypad[{KeypadNumber}].dial[{Number}].minCount", 
+                Index = BaseIndex + ((KeypadNumber - 1) * 4) + (Number - 1), SubIndex = subIndex++,
+                GetValue = () => MinCount, SetValue = val => MinCount = (int)val,
+                ValueType = MinCount.GetType(),
                 DefaultValue = 0
             },
             new DeviceParameter
             {
-                ParentName = Name, Name = "maxLed", Index = BaseIndex + (Number - 1), SubIndex = subIndex++,
-                GetValue = () => MaxLed, SetValue = val => MaxLed = (int)val,
-                ValueType = MaxLed.GetType(),
-                DefaultValue = 0
+                ParentName = Name, Name = $"keypad[{KeypadNumber}].dial[{Number}].maxCount", 
+                Index = BaseIndex + ((KeypadNumber - 1) * 4) + (Number - 1), SubIndex = subIndex++,
+                GetValue = () => MaxCount, SetValue = val => MaxCount = (int)val,
+                ValueType = MaxCount.GetType(),
+                DefaultValue = 16
             },
             new DeviceParameter
             {
-                ParentName = Name, Name = "ledOffset", Index = BaseIndex + (Number - 1), SubIndex = subIndex++,
+                ParentName = Name, Name = $"keypad[{KeypadNumber}].dial[{Number}].ledOffset", 
+                Index = BaseIndex + ((KeypadNumber - 1) * 4) + (Number - 1), SubIndex = subIndex++,
                 GetValue = () => LedOffset, SetValue = val => LedOffset = (int)val,
                 ValueType = LedOffset.GetType(),
                 DefaultValue = 0
-            },
+            }
         ]);
     }
 }

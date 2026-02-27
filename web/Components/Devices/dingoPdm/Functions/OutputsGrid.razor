@@ -60,7 +60,7 @@
                                  ValueChanged="@((double val) => OnInrushLimitChanged(context.Item, val))"/>
             </EditTemplate>
         </TemplateColumn>
-        <TemplateColumn Title="Inrush Time (s)" Resizable="true" CellStyle="max-width: 100px">
+        <TemplateColumn Title="Inrush Time (ms)" Resizable="true" CellStyle="max-width: 100px">
             <EditTemplate>
                 <MudNumericField @key="@($"inrushTime-{context.Item.Number}-{_refreshCounter}")"
                                  Value="@context.Item.InrushTime"
@@ -87,7 +87,7 @@
                                  ValueChanged="@((int val) => OnResetCountChanged(context.Item, val))"/>
             </EditTemplate>
         </TemplateColumn>
-        <TemplateColumn Title="Reset Time (s)" Resizable="true" CellStyle="max-width: 70px">
+        <TemplateColumn Title="Reset Time (ms)" Resizable="true" CellStyle="max-width: 70px">
             <EditTemplate>
                 <MudNumericField @key="@($"resetTime-{context.Item.Number}-{_refreshCounter}")"
                                  Value="@context.Item.ResetTime"
@@ -119,8 +119,8 @@
 
     private void OnCurrentLimitChanged(Output item, double value)
     {
-        const int min = 0;
-        const int max = 255;
+        const double min = 0;
+        const double max = 100.0;
         if (value < min || value > max)
         {
             Notification.NewWarning($"{item.Name}.CurrentLimit must be {min} to {max}");
@@ -131,8 +131,8 @@
 
     private void OnInrushLimitChanged(Output item, double value)
     {
-        const int min = 0;
-        const int max = 255;
+        const double min = 0;
+        const double max = 100.0;
         if (value < min || value > max)
         {
             Notification.NewWarning($"{item.Name}.InrushCurrentLimit must be {min} to {max}");
@@ -144,7 +144,7 @@
     private void OnInrushTimeChanged(Output item, int value)
     {
         const int min = 0;
-        const int max = 25;
+        const int max = 10000;
         if (value < min || value > max)
         {
             Notification.NewWarning($"{item.Name}.InrushTime must be {min} to {max}");
@@ -156,7 +156,7 @@
     private void OnResetCountChanged(Output item, int value)
     {
         const int min = 0;
-        const int max = 15;
+        const int max = 20;
         if (value < min || value > max)
         {
             Notification.NewWarning($"{item.Name}.ResetCountLimit must be {min} to {max}");
@@ -168,7 +168,7 @@
     private void OnResetTimeChanged(Output item, int value)
     {
         const int min = 0;
-        const int max = 25;
+        const int max = 60000;
         if (value < min || value > max)
         {
             Notification.NewWarning($"{item.Name}.ResetTime must be {min} to {max}");

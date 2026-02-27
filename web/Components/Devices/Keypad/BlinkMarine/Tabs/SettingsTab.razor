@@ -1,44 +1,29 @@
 @using domain.Devices.Keypad.BlinkMarine
 @using domain.Devices.Keypad.BlinkMarine.Enums
 @using domain.Devices.Keypad.Enums
-@using Microsoft.AspNetCore.Connections
 @using web.Services
 @inject NotificationService Notification
 
 <div
     style="overflow-y: auto; height: calc(100vh - 250px); padding: 24px; scrollbar-width: auto; scrollbar-color: #888 transparent;">
-
+    
+    <MudStack>
+        <MudSwitch @bind-Value="@Device.IsSim"
+                   Color="Color.Success"
+                   Style="max-width: 150px"
+                   Label="Simulated"/>
+    </MudStack>
+    
     <MudExpansionPanels MultiExpansion="true">
-        <MudExpansionPanel Text="Device" Expanded="true">
-            <MudStack>
-                <MudSwitch @bind-Value="@Device.IsSim"
-                           Color="Color.Success"
-                           Style="max-width: 150px"
-                           Label="Simulated"/>        
-                
-                <MudSelect T="BacklightColor" @bind-Value="Device.BacklightColor" Style="max-width: 200px" Label="Backlight Color" Variant="Variant.Outlined" Dense="true">
-                    @foreach (BacklightColor backlight in Enum.GetValues(typeof(BacklightColor)))
-                    {
-                        <MudSelectItem T="BacklightColor" Value="@backlight">@backlight</MudSelectItem>
-                    }
-                </MudSelect>
-                
-                <MudNumericField Value="Device.BacklightBrightness"
-                                 Label="Backlight Brightness (0-63)"
-                                 Style="max-width: 200px"
-                                 ValueChanged="@((int val) => OnBacklightBrightnessChanged(val))"/>
-            </MudStack>            
-        </MudExpansionPanel>
-        
         <MudExpansionPanel Text="Buttons" Expanded="true">
             <MudDataGrid Items="@Device.Buttons" Dense="true" Hover="true" Striped="false" EditMode="DataGridEditMode.Cell" ReadOnly="false"
-             SortMode="SortMode.None" ColumnResizeMode="ResizeMode.Container" Virtualize="false" 
-             FixedHeader="true" HorizontalScrollbar="true" Style="max-height: 400px;">
+                         SortMode="SortMode.None" ColumnResizeMode="ResizeMode.Container" Virtualize="false"
+                         FixedHeader="true" HorizontalScrollbar="true" Style="max-height: 400px;">
                 <Columns>
                     <PropertyColumn Property="x => x.Number" Title="#" StickyLeft="true" Editable="false" CellStyle="max-width: 100px"/>
                     <PropertyColumn Property="x => x.Name" CellStyle="max-width: 200px">
                         <EditTemplate>
-                            <MudTextField @bind-Value="context.Item.Name" Variant="Variant.Outlined" Margin="Margin.Dense" />
+                            <MudTextField @bind-Value="context.Item.Name" Variant="Variant.Outlined" Margin="Margin.Dense"/>
                         </EditTemplate>
                     </PropertyColumn>
                     <TemplateColumn Title="Icon" Resizable="true" CellStyle="min-width: 300px">
@@ -49,7 +34,7 @@
                                     {
                                         <MudSelectItem T="string" Value="@icon.Value">
                                             <div class="d-flex align-center gap-2">
-                                                <MudIcon Icon="@icon.Value" Size="Size.Small" />
+                                                <MudIcon Icon="@icon.Value" Size="Size.Small"/>
                                                 <MudText>@icon.Name</MudText>
                                             </div>
                                         </MudSelectItem>
@@ -76,18 +61,36 @@
         @if (Device.NumDials > 0)
         {
             <MudExpansionPanel Text="Dials" Expanded="true">
-                <MudStack>
-
-                </MudStack>
+                <MudDataGrid Items="@Device.Dials" Dense="true" Hover="true" Striped="false" EditMode="DataGridEditMode.Cell" ReadOnly="false"
+                             SortMode="SortMode.None" ColumnResizeMode="ResizeMode.Container" Virtualize="false"
+                             FixedHeader="true" HorizontalScrollbar="true" Style="max-height: 400px;">
+                    <Columns>
+                        <PropertyColumn Property="x => x.Number" Title="#" StickyLeft="true" Editable="false" CellStyle="max-width: 100px"/>
+                        <PropertyColumn Property="x => x.Name" CellStyle="max-width: 200px">
+                            <EditTemplate>
+                                <MudTextField @bind-Value="context.Item.Name" Variant="Variant.Outlined" Margin="Margin.Dense"/>
+                            </EditTemplate>
+                        </PropertyColumn>
+                    </Columns>
+                </MudDataGrid>
             </MudExpansionPanel>
         }
 
-        @if (Device.NumDials > 0)
+        @if (Device.NumAnalogInputs > 0)
         {
             <MudExpansionPanel Text="Analog Inputs" Expanded="true">
-                <MudStack>
-
-                </MudStack>
+                <MudDataGrid Items="@Device.AnalogInputs" Dense="true" Hover="true" Striped="false" EditMode="DataGridEditMode.Cell" ReadOnly="false"
+                             SortMode="SortMode.None" ColumnResizeMode="ResizeMode.Container" Virtualize="false"
+                             FixedHeader="true" HorizontalScrollbar="true" Style="max-height: 400px;">
+                    <Columns>
+                        <PropertyColumn Property="x => x.Number" Title="#" StickyLeft="true" Editable="false" CellStyle="max-width: 100px"/>
+                        <PropertyColumn Property="x => x.Name" CellStyle="max-width: 200px">
+                            <EditTemplate>
+                                <MudTextField @bind-Value="context.Item.Name" Variant="Variant.Outlined" Margin="Margin.Dense"/>
+                            </EditTemplate>
+                        </PropertyColumn>
+                    </Columns>
+                </MudDataGrid>
             </MudExpansionPanel>
         }
 
@@ -125,5 +128,4 @@
 
         Device.BacklightBrightness = value;
     }
-
 }

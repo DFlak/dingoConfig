@@ -12,19 +12,19 @@ using Microsoft.Extensions.Logging;
 
 namespace application.Services;
 
-public class DeviceManager(ILogger<DeviceManager> logger, ILoggerFactory loggerFactory)
+public class DeviceManager(ILogger<DeviceManager> logger, ILoggerFactory loggerFactory, SystemLogger systemLogger)
 {
     private readonly Dictionary<Guid, IDevice> _devices = new();
     private ConcurrentDictionary<(int BaseId, int Index, int SubIndex), DeviceCanFrame> _requestQueue = new();
-    private Action<CanFrame>? _transmitCallback;
+    private Action<DeviceCanFrame>? _transmitCallback;
     private readonly Dictionary<Guid, DeviceUiState> _deviceUiState = new();
 
     private readonly Dictionary<Guid, System.Timers.Timer> _cyclicTimers = new();
 
     public int QueueCount => _requestQueue.Count;
 
-    private const int MaxRetries = 10;
-    private const int TimeoutMs = 500;
+    private const int MaxRetries = 2;
+    private const int TimeoutMs = 3000;
 
     public event EventHandler<DeviceEventArgs>? DeviceAdded;
     public event EventHandler<DeviceEventArgs>? DeviceRemoved;
@@ -32,7 +32,7 @@ public class DeviceManager(ILogger<DeviceManager> logger, ILoggerFactory loggerF
     /// <summary>
     /// Set the callback for transmitting frames (called by CommsDataPipeline during setup)
     /// </summary>
-    public void SetTransmitCallback(Action<CanFrame> callback)
+    public void SetTransmitCallback(Action<DeviceCanFrame> callback)
     {
         _transmitCallback = callback;
     }
@@ -221,6 +221,7 @@ public class DeviceManager(ILogger<DeviceManager> logger, ILoggerFactory loggerF
         {
             case PdmDevice pdmDevice:
                 pdmDevice.SetLogger(loggerFactory.CreateLogger<PdmDevice>());
+                pdmDevice.SuccessNotification += msg => systemLogger.Notify(pdmDevice.Name, msg);
                 break;
             case CanboardDevice canboardDevice:
                 canboardDevice.SetLogger(loggerFactory.CreateLogger<CanboardDevice>());
@@ -300,7 +301,7 @@ public class DeviceManager(ILogger<DeviceManager> logger, ILoggerFactory loggerF
         // Queue for transmission
         if (_transmitCallback != null)
         {
-            _transmitCallback(frame.Frame);
+            _transmitCallback(frame);
         }
         else
         {
@@ -313,19 +314,18 @@ public class DeviceManager(ILogger<DeviceManager> logger, ILoggerFactory loggerF
 
         int index = frame.Frame.Payload[2] << 8 | frame.Frame.Payload[1];
         int subIndex = frame.Frame.Payload[3];
-        
+
         //Unique message key, used to find message in transmit queue later
         var key = (frame.DeviceBaseId, index, subIndex);
 
         if (!_requestQueue.TryAdd(key, frame))
         {
-            logger.LogWarning("Message already in queue: BaseId={BaseId}, Prefix={Prefix}, Index={Index}",
+            logger.LogWarning("Message already in queue: BaseId={BaseId}, Prefix={Prefix:X}, Index={Index}",
                 key.Item1, key.Item2, key.Item3);
             return;
         }
 
-        // Start timeout timer
-        StartMessageTimer(key, frame);
+        // NOTE: Timer starts after transmission in OnFrameTransmitted
     }
 
     private void StartMessageTimer((int, int, int) key, DeviceCanFrame frame)
@@ -350,30 +350,43 @@ public class DeviceManager(ILogger<DeviceManager> logger, ILoggerFactory loggerF
             int subIndex = frame.Frame.Payload[3];
             
             var device = GetDeviceByBaseId(key.BaseId);
-            logger.LogError("Message failed after {MaxRetries} retries: {Index:X}:{SubIndex} on {DeviceName} (ID: {BaseId})",
-                MaxRetries, index, subIndex, device?.Name ?? "Unknown", key.BaseId);
+            logger.LogError("Message failed after {MaxRetries} retries: {Index:X}:{SubIndex} on {DeviceName} (ID: {BaseId}) - {Name}",
+                MaxRetries, index, subIndex, device?.Name ?? "Unknown", key.BaseId, frame.Name);
         }
         else
         {
             // Retry - queue again
             if (_transmitCallback != null)
             {
-                _transmitCallback(frame.Frame);
+                _transmitCallback(frame);
             }
 
-            StartMessageTimer(key, frame);
+            // NOTE: Timer restarts after transmission in OnFrameTransmitted
 
-            logger.LogWarning("Message retry {Attempt}/{MaxRetries}: (BaseId={BaseId})",
-                frame.RxAttempts, MaxRetries, key.BaseId);
+            logger.LogWarning("Message retry {Attempt}/{MaxRetries}: (BaseId={BaseId}) - {Name}",
+                frame.RxAttempts, MaxRetries, key.BaseId, frame.Name);
         }
     }
 
-    // ============================================
-    // Device Operations (called by controllers)
-    // ============================================
+    /// <summary>
+    /// Called by CommsDataPipeline after a frame has been physically transmitted.
+    /// Starts the response timeout timer only after the frame is actually sent.
+    /// </summary>
+    public void OnFrameTransmitted(DeviceCanFrame frame)
+    {
+        if (frame.SendOnly) return;
+
+        int index = frame.Frame.Payload[2] << 8 | frame.Frame.Payload[1];
+        int subIndex = frame.Frame.Payload[3];
+        var key = (frame.DeviceBaseId, index, subIndex);
+
+        if (_requestQueue.TryGetValue(key, out var queuedFrame))
+            StartMessageTimer(key, queuedFrame);
+    }
 
     /// <summary>
     /// Read configuration from device to host
+    /// Only modified params
     /// </summary>
     public void ReadDeviceConfig(Guid deviceId)
     {
@@ -383,7 +396,29 @@ public class DeviceManager(ILogger<DeviceManager> logger, ILoggerFactory loggerF
 
         GetDeviceUiState(deviceId).NeedsRead = false;
 
-        var readMsgs = configurable.GetReadMsgs();
+        var readMsgs = configurable.GetReadMsgs(allParams: false);
+        foreach (var msg in readMsgs)
+        {
+            QueueMessage(msg);
+            Thread.Sleep(1); //Slow down to give device time to respond
+        }
+
+        logger.LogInformation("Read started for {DeviceName} (Guid: {Guid})", device.Name, deviceId);
+    }
+    
+    /// <summary>
+    /// Read configuration from device to host
+    /// All parameters
+    /// </summary>
+    public void ReadAllDeviceConfig(Guid deviceId)
+    {
+        var device = GetDevice(deviceId);
+        if (device is not IDeviceConfigurable configurable)
+            return;
+
+        GetDeviceUiState(deviceId).NeedsRead = false;
+
+        var readMsgs = configurable.GetReadMsgs(allParams: true);
         foreach (var msg in readMsgs)
         {
             QueueMessage(msg);
@@ -395,6 +430,7 @@ public class DeviceManager(ILogger<DeviceManager> logger, ILoggerFactory loggerF
 
     /// <summary>
     /// Write configuration to device
+    /// Only modified parameters
     /// </summary>
     /// <returns>
     /// Send write config success
@@ -405,7 +441,31 @@ public class DeviceManager(ILogger<DeviceManager> logger, ILoggerFactory loggerF
         if (device is not IDeviceConfigurable configurable)
             return false;
 
-        var downloadMsgs = configurable.GetWriteMsgs();
+        var downloadMsgs = configurable.GetWriteMsgs(allParams: false);
+        foreach (var msg in downloadMsgs)
+        {
+            QueueMessage(msg);
+            Thread.Sleep(1); //Slow down to give device time to respond
+        }
+
+        logger.LogInformation("Write started for {DeviceName} (Guid: {Guid})", device.Name, deviceId);
+        return true;
+    }
+    
+    /// <summary>
+    /// Write all configuration to device
+    /// Write all parameters
+    /// </summary>
+    /// <returns>
+    /// Send write config success
+    /// </returns>
+    public bool WriteAllDeviceConfig(Guid deviceId)
+    {
+        var device = GetDevice(deviceId);
+        if (device is not IDeviceConfigurable configurable)
+            return false;
+
+        var downloadMsgs = configurable.GetWriteMsgs(allParams: true);
         foreach (var msg in downloadMsgs)
         {
             QueueMessage(msg);

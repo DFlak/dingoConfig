@@ -37,10 +37,9 @@ public class BlinkMarineKeypadDevice : IKeypadDevice
     [JsonPropertyName("numButtons")] public int NumButtons { get; set; }
     [JsonPropertyName("numDials")] public int NumDials { get; set; }
     [JsonPropertyName("numAnalogInputs")] public int NumAnalogInputs { get; set; }
-    [JsonPropertyName("backlightColor")] public BacklightColor BacklightColor { get; set; }
-    [JsonPropertyName("backlightBrightness")] public int BacklightBrightness { get; set; }
-    [JsonIgnore] public int IndicatorBrightness { get; set; }
-    [JsonIgnore] public bool[] CentralLed  { get; set; } = new bool[12];
+    [JsonIgnore] public BacklightColor BacklightColor { get; set; }
+    [JsonIgnore] public int BacklightBrightness { get; set; }
+    [JsonIgnore] private int IndicatorBrightness { get; set; }
     [JsonIgnore] private byte TickTimer { get; set; }
 
     [JsonPropertyName("buttons")] public List<Button> Buttons { get; init; } = [];
@@ -89,55 +88,68 @@ public class BlinkMarineKeypadDevice : IKeypadDevice
         StatusSigs = new Dictionary<int, List<(DbcSignal Signal, Action<double> SetValue)>>();
 
         // Button States
-        StatusSigs[0] = [];
+        StatusSigs[(int)MessageId.ButtonState] = [];
         for (var i = 0; i < NumButtons; i++)
         {
             var button = Buttons[i];
-            StatusSigs[0].Add((
+            StatusSigs[(int)MessageId.ButtonState].Add((
                 new DbcSignal { Name = $"Button{i + 1}.State", StartBit = i, Length = 1 },
                 val => button.State = val != 0
             ));
         }
 
-        // Dial Direction
-        StatusSigs[1] = [];
-        for (var i = 0; i < NumDials; i++)
+        if (NumDials > 0)
         {
-            var dial = Dials[i];
-            StatusSigs[1].Add((
-                new DbcSignal { Name = $"Dial{i + 1}.Direction", StartBit = (i * 32), Length = 1 },
-                val => dial.Direction = (DialDirection)val
-            ));
+            // Dial 1 
+            StatusSigs[(int)MessageId.DialState1] =
+            [
+                //Direction
+                (
+                    new DbcSignal { Name = $"Dial1.Direction", StartBit = 7, Length = 1 },
+                    val => Dials[0].Direction = (DialDirection)val
+                ),
+                //Ticks
+                (
+                    new DbcSignal { Name = $"Dial1.Ticks", StartBit = 0, Length = 7 },
+                    val => Dials[0].Ticks = (int)val
+                ),
+                //Counter
+                (
+                    new DbcSignal { Name = $"Dial1.Counter", StartBit = 8, Length = 16 },
+                    val => Dials[0].Counter = (int)val
+                )
+            ];
         }
 
-        // Dial Position
-        StatusSigs[2] = [];
-        for (var i = 0; i < NumDials; i++)
+        if (NumDials > 1)
         {
-            var dial = Dials[i];
-            StatusSigs[2].Add((
-                new DbcSignal { Name = $"Dial{i + 1}.Position", StartBit = (i * 32) + 1, Length = 7 },
-                val => dial.Position = (int)val
-            ));
-        }
-
-        // Dial Counter
-        StatusSigs[3] = [];
-        for (var i = 0; i < NumDials; i++)
-        {
-            var dial = Dials[i];
-            StatusSigs[3].Add((
-                new DbcSignal { Name = $"Dial{i + 1}.Counter", StartBit = (i * 8), Length = 16 },
-                val => dial.Position = (int)val
-            ));
+            // Dial 2 
+            StatusSigs[(int)MessageId.DialState2] =
+            [
+                //Direction
+                (
+                    new DbcSignal { Name = $"Dial2.Direction", StartBit = 7, Length = 1 },
+                    val => Dials[1].Direction = (DialDirection)val
+                ),
+                //Ticks
+                (
+                    new DbcSignal { Name = $"Dial2.Ticks", StartBit = 0, Length = 7 },
+                    val => Dials[1].Ticks = (int)val
+                ),
+                //Counter
+                (
+                    new DbcSignal { Name = $"Dial2.Counter", StartBit = 8, Length = 16 },
+                    val => Dials[1].Counter = (int)val
+                )
+            ];
         }
 
         // Analog Inputs
-        StatusSigs[4] = [];
+        StatusSigs[(int)MessageId.AnalogInput] = [];
         for (var i = 0; i < NumAnalogInputs; i++)
         {
             var input = AnalogInputs[i];
-            StatusSigs[4].Add((
+            StatusSigs[(int)MessageId.AnalogInput].Add((
                 new DbcSignal
                     { Name = $"AnalogInput{i + 1}.Value", StartBit = i * 16, Length = 16, Factor = 0.01 }, // 5/500
                 val => input.Voltage = val
@@ -158,8 +170,8 @@ public class BlinkMarineKeypadDevice : IKeypadDevice
 
         foreach (var dial in Dials)
         {
-            dial.Position = 0;
-            dial.Delta = 0;
+            dial.Counter = 0;
+            dial.Ticks = 0;
             dial.Direction = DialDirection.Clockwise;
         }
 
@@ -175,9 +187,9 @@ public class BlinkMarineKeypadDevice : IKeypadDevice
         // Message IDs: 0x180 + nodeId, 0x280 + nodeId, etc.
         return id == ((int)MessageId.ButtonState + BaseId) ||
                id == ((int)MessageId.SetLed + BaseId) ||
-               id == ((int)MessageId.DialStateA + BaseId) ||
+               id == ((int)MessageId.DialState1 + BaseId) ||
                id == ((int)MessageId.SetLedBlink + BaseId) ||
-               id == ((int)MessageId.DialStateB + BaseId) ||
+               id == ((int)MessageId.DialState2 + BaseId) ||
                id == ((int)MessageId.LedBrightness + BaseId) ||
                id == ((int)MessageId.AnalogInput + BaseId) ||
                id == ((int)MessageId.Backlight + BaseId) ||
@@ -194,14 +206,14 @@ public class BlinkMarineKeypadDevice : IKeypadDevice
             case MessageId.SetLed:
                 ParseSetLed(data, false);
                 break;
-            case MessageId.DialStateA:
-                ParseDialState(data, firstDialIndex: 0);
+            case MessageId.DialState1:
+                ParseDialState(data, index: 0);
                 break;
             case MessageId.SetLedBlink:
                 ParseSetLed(data, true);
                 break;
-            case MessageId.DialStateB:
-                ParseDialState(data, firstDialIndex: 2);
+            case MessageId.DialState2:
+                ParseDialState(data, index: 1);
                 break;
             case MessageId.LedBrightness:
                 ParseLedBrightness(data);
@@ -278,28 +290,13 @@ public class BlinkMarineKeypadDevice : IKeypadDevice
                 break;
 
             case "pkp3500mt":
-                //13 buttons
+                //15 buttons
                 // Skip bit positions 0, 10 (red), 15-16, 26 (green), 31-32, 42 (blue)
                 ExtractColorWithGaps(data, ledRed, 1, [10]);
                 ExtractColorWithGaps(data, ledGreen, 17, [26]);
                 ExtractColorWithGaps(data, ledBlue, 33, [42]);
                 break;
-
-            case "racepad":
-                //8 buttons
-                //4 dial ring leds
-                ExtractColor(data, ledRed, 0);
-                ExtractColor(data, ledGreen, 8);
-                ExtractColor(data, ledBlue, 16);
-
-                for (var i = 0; i < NumDials; i++)
-                    if (blink)
-                        Dials[i].RingLedBlink = DbcSignalCodec.ExtractSignalInt(data, 24 + i, 1) != 0;
-                    else
-                        Dials[i].RingLed = DbcSignalCodec.ExtractSignalInt(data, 24 + i, 1) != 0;
-
-                break;
-
+            
             default:
                 throw new InvalidOperationException($"Unknown model: {Model}");
         }
@@ -335,17 +332,19 @@ public class BlinkMarineKeypadDevice : IKeypadDevice
 
     private void ParseLedBrightness(byte[] data)
     {
-        if (Model == "racepad")
+        if (Model == "pkp3500mt")
         {
             for (var i = 0; i < NumDials; i++)
-                for (var j = 0; j < Dials[i].Leds.Length; j++)
-                    Dials[i].Leds[j] = DbcSignalCodec.ExtractSignalInt(data, (i * Dials[i].Leds.Length) + j, 1) != 0;
+                for (var j = 0; j < 16; j++) 
+                    Dials[i].RingLeds[j] = DbcSignalCodec.ExtractSignalInt(data, (i * 16) + j, 1) != 0;
 
-            return;
+            IndicatorBrightness = 63; //Indicator brightness not sent on this model
         }
-        
-        IndicatorBrightness =
-            (int)DbcSignalCodec.ExtractSignalInt(data, startBit: 0, length: 8, factor: 1.58); //100% / 63 = 1.58
+        else
+        {
+            IndicatorBrightness =
+                (int)DbcSignalCodec.ExtractSignalInt(data, startBit: 0, length: 8, factor: 1.58); //100% / 63 = 1.58
+        }
 
         foreach (var button in Buttons)
             button.IndicatorBrightness = IndicatorBrightness;
@@ -356,36 +355,29 @@ public class BlinkMarineKeypadDevice : IKeypadDevice
         BacklightBrightness = DbcSignalCodec.ExtractSignalInt(data, startBit: 0, length: 1) > 0 ? 100 : 0;
     }
 
-    private void ParseDialState(byte[] data, int firstDialIndex)
+    private void ParseDialState(byte[] data, int index)
     {
-        // 2 dials per message
-        for (var i = 0; i < 2 && i < Dials.Count; i++)
-        {
-            var dial = Dials[i + firstDialIndex];
+        if (index >= NumDials) return;
+        
+        Dials[index].Ticks = (short)DbcSignalCodec.ExtractSignalInt(
+            data,
+            startBit: 0,
+            length: 7);
+        
+        Dials[index].Direction = (DialDirection)DbcSignalCodec.ExtractSignalInt(
+            data,
+            startBit: 7,
+            length: 1);
+        
+        Dials[index].Counter = (int)DbcSignalCodec.ExtractSignalInt(
+            data,
+            startBit: 8,
+            length: 16);
 
-            var position = (short)DbcSignalCodec.ExtractSignalInt(
-                data,
-                startBit: (i * 32) + 1,
-                length: 7);
-
-            dial.Delta = position - dial.Position;
-            dial.Position = position;
-
-            dial.Direction = (DialDirection)DbcSignalCodec.ExtractSignalInt(
-                data,
-                startBit: i * 32,
-                length: 1);
-
-            dial.Counter = (int)DbcSignalCodec.ExtractSignalInt(
-                data,
-                startBit: (i * 8),
-                length: 16);
-
-            dial.TopPosition = (int)DbcSignalCodec.ExtractSignalInt(
-                data,
-                startBit: (i * 24),
-                length: 8);
-        }
+        Dials[index].TopPosition = (int)DbcSignalCodec.ExtractSignalInt(
+            data,
+            startBit: 24,
+            length: 8);
     }
 
     private void ParseAnalogInput(byte[] data)
@@ -421,31 +413,28 @@ public class BlinkMarineKeypadDevice : IKeypadDevice
         return new CanFrame((int)MessageId.ButtonState + BaseId, 5, data);
     }
 
-    private CanFrame BuildDialState(int firstDialIndex, int numDials)
+    private CanFrame BuildDialState(int index)
     {
         var data = new byte[8];
+        
+        var dial = Dials[index];
+        
+        DbcSignalCodec.InsertSignalInt(data,
+            value: dial.Ticks,
+            startBit: 0,
+            length: 7);
+        DbcSignalCodec.InsertBool(data, dial.Direction == DialDirection.CounterClockwise, startBit: 7);
+        DbcSignalCodec.InsertSignalInt(data,
+            value: dial.Counter,
+            startBit: 8,
+            length: 16);
+        DbcSignalCodec.InsertSignalInt(data,
+            value: dial.TopPosition,
+            startBit: 24,
+            length: 8);
 
-        for (var i = 0; i < numDials && i < Dials.Count; i++)
-        {
-            var dial = Dials[i + firstDialIndex];
-
-            DbcSignalCodec.InsertBool(data, dial.Direction == DialDirection.CounterClockwise, startBit: 0);
-            DbcSignalCodec.InsertSignalInt(data,
-                value: dial.Position,
-                startBit: (i * 32) + 1,
-                length: 7);
-            DbcSignalCodec.InsertSignalInt(data,
-                value: dial.Counter,
-                startBit: (i * 8) + 1,
-                length: 16);
-            DbcSignalCodec.InsertSignalInt(data,
-                value: dial.TopPosition,
-                startBit: (i * 24),
-                length: 8);
-        }
-
-        var id = (int)MessageId.DialStateA;
-        if (firstDialIndex > 0) id = (int)MessageId.DialStateB;
+        var id = (int)MessageId.DialState1;
+        if (index == 1) id = (int)MessageId.DialState2;
 
         return new CanFrame(id, 8, data);
     }
@@ -467,10 +456,10 @@ public class BlinkMarineKeypadDevice : IKeypadDevice
     {
         foreach (var kvp in StatusSigs)
         {
+            // Create a copy with the ID populated
             var messageId = BaseId + kvp.Key;
             foreach (var (signal, _) in kvp.Value)
             {
-                // Create a copy with the ID populated
                 var signalCopy = new DbcSignal
                 {
                     Name = signal.Name,
@@ -498,19 +487,10 @@ public class BlinkMarineKeypadDevice : IKeypadDevice
 
         msgs.Add(BuildButtonState());
 
-        switch (NumDials)
+        if (NumDials > 0)
         {
-            case 1:
-                msgs.Add(BuildDialState(0, 1));
-                break;
-            case 2:
-                msgs.Add(BuildDialState(0, 1));
-                msgs.Add(BuildDialState(1, 1));
-                break;
-            case 4:
-                msgs.Add(BuildDialState(0, 2));
-                msgs.Add(BuildDialState(2, 2));
-                break;
+            msgs.Add(BuildDialState(0));
+            msgs.Add(BuildDialState(1));
         }
 
         if (NumAnalogInputs > 0)

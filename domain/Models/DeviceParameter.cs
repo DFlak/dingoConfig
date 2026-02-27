@@ -10,7 +10,8 @@ public class DeviceParameter
     public int SubIndex { get; init; }
     public Func<object> GetValue { get; init; } = null!;
     public Action<object> SetValue { get; init; } = null!;
-    public Type ValueType { get; init; } = typeof(string);
+    public Type ValueType { get; init; } = typeof(int);
+    public bool IsSignedInt { get; init; } = false;
     public object DefaultValue { get; init; } = null!;
 
     [JsonIgnore]

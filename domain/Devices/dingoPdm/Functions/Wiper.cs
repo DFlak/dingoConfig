@@ -22,10 +22,11 @@ public class Wiper : IDeviceFunction
     [JsonPropertyName("parkStopLevel")] public bool ParkStopLevel { get; set; }
     [JsonPropertyName("swipeInput")] public int SwipeInput { get; set; }
     [JsonPropertyName("washInput")] public int WashInput { get; set; }
-    [JsonPropertyName("washWipeCycles")] public int WashWipeCycles { get; set; }
-    [JsonPropertyName("speedMap")] public WiperSpeed[] SpeedMap { get; set; } = new WiperSpeed[8];
-    [JsonPropertyName("intermitTime")] public double[] IntermitTime { get; set; } = new double[6];
-
+    [JsonPropertyName("washWipeCycles")] public int WashWipeCycles { get; set; } = 3;
+    [JsonPropertyName("speedMap")] public WiperSpeed[] SpeedMap { get; set; } = 
+        [WiperSpeed.Inter1, WiperSpeed.Inter2, WiperSpeed.Inter3, WiperSpeed.Inter4, 
+            WiperSpeed.Inter5, WiperSpeed.Inter6, WiperSpeed.Slow, WiperSpeed.Fast];
+    [JsonPropertyName("intermitTime")] public int[] IntermitTime { get; set; } = [1000, 2000, 3000, 4000, 5000, 6000];
     [JsonIgnore][Plotable(displayName:"SlowState")] public bool SlowState { get; set; }
     [JsonIgnore][Plotable(displayName:"FastState")] public bool FastState { get; set; }
     [JsonIgnore][Plotable(displayName:"State")] public WiperState State { get; set; }
@@ -47,111 +48,113 @@ public class Wiper : IDeviceFunction
         {
             new DeviceParameter
             {
-                ParentName = Name, Name = "enabled", Index = BaseIndex + (Number - 1), SubIndex = subIndex++,
+                ParentName = Name, Name = "wiper.enabled", Index = BaseIndex + (Number - 1), SubIndex = subIndex++,
                 GetValue = () => Enabled, SetValue = val => Enabled = (bool)val,
                 ValueType = Enabled.GetType(),
                 DefaultValue = false
             },
             new DeviceParameter
             {
-                ParentName = Name, Name = "mode", Index = BaseIndex + (Number - 1), SubIndex = subIndex++,
+                ParentName = Name, Name = "wiper.mode", Index = BaseIndex + (Number - 1), SubIndex = subIndex++,
                 GetValue = () => Mode, SetValue = val => Mode = (WiperMode)val,
                 ValueType = Mode.GetType(),
                 DefaultValue = WiperMode.DigIn
             },
             new DeviceParameter
             {
-                ParentName = Name, Name = "slowInput", Index = BaseIndex + (Number - 1), SubIndex = subIndex++,
+                ParentName = Name, Name = "wiper.slowInput", Index = BaseIndex + (Number - 1), SubIndex = subIndex++,
                 GetValue = () => SlowInput, SetValue = val => SlowInput = (int)val,
                 ValueType = SlowInput.GetType(),
                 DefaultValue = 0
             },
             new DeviceParameter
             {
-                ParentName = Name, Name = "fastInput", Index = BaseIndex + (Number - 1), SubIndex = subIndex++,
+                ParentName = Name, Name = "wiper.fastInput", Index = BaseIndex + (Number - 1), SubIndex = subIndex++,
                 GetValue = () => FastInput, SetValue = val => FastInput = (int)val,
                 ValueType = FastInput.GetType(),
                 DefaultValue = 0
             },
             new DeviceParameter
             {
-                ParentName = Name, Name = "interInput", Index = BaseIndex + (Number - 1), SubIndex = subIndex++,
+                ParentName = Name, Name = "wiper.interInput", Index = BaseIndex + (Number - 1), SubIndex = subIndex++,
                 GetValue = () => InterInput, SetValue = val => InterInput = (int)val,
                 ValueType = InterInput.GetType(),
                 DefaultValue = 0
             },
             new DeviceParameter
             {
-                ParentName = Name, Name = "onInput", Index = BaseIndex + (Number - 1), SubIndex = subIndex++,
+                ParentName = Name, Name = "wiper.onInput", Index = BaseIndex + (Number - 1), SubIndex = subIndex++,
                 GetValue = () => OnInput, SetValue = val => OnInput = (int)val,
                 ValueType = OnInput.GetType(),
                 DefaultValue = 0
             },
             new DeviceParameter
             {
-                ParentName = Name, Name = "speedInput", Index = BaseIndex + (Number - 1), SubIndex = subIndex++,
+                ParentName = Name, Name = "wiper.speedInput", Index = BaseIndex + (Number - 1), SubIndex = subIndex++,
                 GetValue = () => SpeedInput, SetValue = val => SpeedInput = (int)val,
                 ValueType = SpeedInput.GetType(),
                 DefaultValue = 0
             },
             new DeviceParameter
             {
-                ParentName = Name, Name = "parkInput", Index = BaseIndex + (Number - 1), SubIndex = subIndex++,
+                ParentName = Name, Name = "wiper.parkInput", Index = BaseIndex + (Number - 1), SubIndex = subIndex++,
                 GetValue = () => ParkInput, SetValue = val => ParkInput = (int)val,
                 ValueType = ParkInput.GetType(),
                 DefaultValue = 0
             },
             new DeviceParameter
             {
-                ParentName = Name, Name = "parkStopLevel", Index = BaseIndex + (Number - 1), SubIndex = subIndex++,
+                ParentName = Name, Name = "wiper.parkStopLevel", Index = BaseIndex + (Number - 1), SubIndex = subIndex++,
                 GetValue = () => ParkStopLevel, SetValue = val => ParkStopLevel = (bool)val,
                 ValueType = ParkStopLevel.GetType(),
                 DefaultValue = false
             },
             new DeviceParameter
             {
-                ParentName = Name, Name = "swipeInput", Index = BaseIndex + (Number - 1), SubIndex = subIndex++,
+                ParentName = Name, Name = "wiper.swipeInput", Index = BaseIndex + (Number - 1), SubIndex = subIndex++,
                 GetValue = () => SwipeInput, SetValue = val => SwipeInput = (int)val,
                 ValueType = SwipeInput.GetType(),
                 DefaultValue = 0
             },
             new DeviceParameter
             {
-                ParentName = Name, Name = "washInput", Index = BaseIndex + (Number - 1), SubIndex = subIndex++,
+                ParentName = Name, Name = "wiper.washInput", Index = BaseIndex + (Number - 1), SubIndex = subIndex++,
                 GetValue = () => WashInput, SetValue = val => WashInput = (int)val,
                 ValueType = WashInput.GetType(),
                 DefaultValue = 0
             },
             new DeviceParameter
             {
-                ParentName = Name, Name = "washWipeCycles", Index = BaseIndex + (Number - 1), SubIndex = subIndex++,
+                ParentName = Name, Name = "wiper.washWipeCycles", Index = BaseIndex + (Number - 1), SubIndex = subIndex++,
                 GetValue = () => WashWipeCycles, SetValue = val => WashWipeCycles = (int)val,
                 ValueType = WashWipeCycles.GetType(),
-                DefaultValue = 0
+                DefaultValue = 3
             }
         };
 
+        WiperSpeed[] speedMapDefaults = [WiperSpeed.Inter1, WiperSpeed.Inter2, WiperSpeed.Inter3, WiperSpeed.Inter4, WiperSpeed.Inter5, WiperSpeed.Inter6, WiperSpeed.Slow, WiperSpeed.Fast];
         for (var i = 0; i < 8; i++)
         {
             var idx = i;
             parameters.Add(new DeviceParameter
             {
-                ParentName = Name, Name = $"speedMap[{i}]", Index = BaseIndex + (Number - 1), SubIndex = subIndex++,
+                ParentName = Name, Name = $"wiper.speedMap[{i}]", Index = BaseIndex + (Number - 1), SubIndex = subIndex++,
                 GetValue = () => SpeedMap[idx], SetValue = val => SpeedMap[idx] = (WiperSpeed)val,
                 ValueType = SpeedMap[idx].GetType(),
-                DefaultValue = WiperSpeed.Park
+                DefaultValue = speedMapDefaults[idx]
             });
         }
 
+        int[] intermitDefaults = [1000, 2000, 3000, 4000, 5000, 6000];
         for (var i = 0; i < 6; i++)
         {
             var idx = i;
             parameters.Add(new DeviceParameter
             {
-                ParentName = Name, Name = $"intermitTime[{i}]", Index = BaseIndex + (Number - 1), SubIndex = subIndex++,
-                GetValue = () => IntermitTime[idx], SetValue = val => IntermitTime[idx] = (double)val,
+                ParentName = Name, Name = $"wiper.intermitTime[{i}]", Index = BaseIndex + (Number - 1), SubIndex = subIndex++,
+                GetValue = () => IntermitTime[idx], SetValue = val => IntermitTime[idx] = (int)val,
                 ValueType = IntermitTime[idx].GetType(),
-                DefaultValue = 0.0
+                DefaultValue = intermitDefaults[idx]
             });
         }
 

@@ -4,15 +4,13 @@
 <div
     style="overflow-y: auto; height: calc(100vh - 250px); padding: 24px; scrollbar-width: auto; scrollbar-color: #888 transparent;">
 
+    <MudStack>
+        <MudSwitch @bind-Value="@Device.IsSim"
+                   Color="Color.Success"
+                   Label="Simulated"/>        
+    </MudStack>
+    
     <MudExpansionPanels MultiExpansion="true">
-        <MudExpansionPanel Text="Device" Expanded="true">
-            <MudStack>
-                <MudSwitch @bind-Value="@Device.IsSim"
-                           Color="Color.Success"
-                           Label="Simulated"/>        
-            </MudStack>
-        </MudExpansionPanel>
-        
         <MudExpansionPanel Text="Buttons" Expanded="true">
             <MudDataGrid Items="@Device.Buttons" Dense="true" Hover="true" Striped="false" EditMode="DataGridEditMode.Cell" ReadOnly="false"
              SortMode="SortMode.None" ColumnResizeMode="ResizeMode.Container" Virtualize="false" 

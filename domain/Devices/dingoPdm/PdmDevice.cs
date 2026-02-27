@@ -8,7 +8,6 @@ using domain.Enums;
 using domain.Interfaces;
 using domain.Models;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using static domain.Common.DbcSignalCodec;
 // ReSharper disable MemberCanBePrivate.Global
 // ReSharper disable VirtualMemberCallInConstructor
@@ -33,7 +32,7 @@ public class PdmDevice : IDeviceConfigurable
     [JsonIgnore] protected virtual int NumConditions => 32;
     [JsonIgnore] protected virtual int NumKeypads => 2;
     [JsonIgnore] protected virtual int KeypadMaxButtons => 20;
-    [JsonIgnore] protected virtual int KeypadMaxDials => 4;
+    [JsonIgnore] protected virtual int KeypadMaxDials => 2;
     [JsonIgnore] protected virtual int KeypadMaxAnalogInputs => 4;
 
     [JsonIgnore] public const int BaseIndex = 0x0000;
@@ -42,6 +41,7 @@ public class PdmDevice : IDeviceConfigurable
     
     [JsonIgnore] public Guid Guid { get; }
     [JsonIgnore] public virtual string Type => "dingoPDM";
+    [JsonIgnore] public int ConfigVersion { get; set; }
     [JsonPropertyName("name")] public string Name { get; set; }
     [JsonPropertyName("baseId")] public int BaseId { get; set; }
     [JsonIgnore] public List<DeviceVariable> VarMap { get; set; } = null!;
@@ -53,10 +53,11 @@ public class PdmDevice : IDeviceConfigurable
     [JsonIgnore][Plotable(displayName:"BatteryVoltage", unit:"V")] public double BatteryVoltage { get; private set; }
     [JsonIgnore][Plotable(displayName:"Temperature", unit:"degC")] public double BoardTempC { get; private set; }
     [JsonIgnore] public string Version { get; private set; } = "v0.0.0";
+    public event Action<string>? SuccessNotification;
     
     [JsonPropertyName("sleepEnabled")] public bool SleepEnabled { get; set; }
     [JsonPropertyName("filtersEnabled")] public bool CanFiltersEnabled { get; set; }
-    [JsonPropertyName("bitrate")] public CanBitRate BitRate { get; set; }
+    [JsonPropertyName("bitrate")] public CanBitRate BitRate { get; set; } = CanBitRate.BitRate500K;
     [JsonIgnore] public TimeSpan CyclicGap { get; } =  TimeSpan.FromSeconds(0);
     [JsonIgnore] public TimeSpan CyclicPause { get; } = TimeSpan.FromMilliseconds(0);
     
@@ -76,9 +77,7 @@ public class PdmDevice : IDeviceConfigurable
 
     [JsonIgnore] private Dictionary<int, List<(DbcSignal Signal, Action<double> SetValue)>> StatusSigs { get; set; } = null!;
 
-    [JsonIgnore] private Dictionary<(int Index, int SubIndex), object> TempParamValues { get; set; } = new();
-    [JsonIgnore] private int _readAllCount;
-    [JsonIgnore] private int _writeAllCount;
+    [JsonIgnore] private ParamProtocol _paramProtocol = null!;
 
     [JsonIgnore]
     public bool Connected
@@ -110,6 +109,7 @@ public class PdmDevice : IDeviceConfigurable
     public void SetLogger(ILogger<PdmDevice> logger)
     {
         Logger = logger;
+        _paramProtocol.SetLogger(logger);
     }
 
     protected virtual void InitFunctions()
@@ -619,6 +619,46 @@ public class PdmDevice : IDeviceConfigurable
     private void InitParams()
     {
         var allParams = new List<DeviceParameter>();
+        var subIndex = 0;
+        allParams.AddRange(
+        [
+            new DeviceParameter
+            {
+                ParentName = Name, Name = "device.configVersion", Index = BaseIndex, SubIndex = subIndex++,
+                GetValue = () => ConfigVersion, SetValue = val => ConfigVersion = (int)val,
+                ValueType = ConfigVersion.GetType(),
+                DefaultValue = 0
+            },
+            new DeviceParameter
+            {
+                ParentName = Name, Name = "device.baseId", Index = BaseIndex, SubIndex = subIndex++,
+                GetValue = () => BaseId, SetValue = val => BaseId = (int)val,
+                ValueType = BaseId.GetType(),
+                DefaultValue = 0x7D0
+            },
+            new DeviceParameter
+            {
+                ParentName = Name, Name = "device.canSpeed", Index = BaseIndex, SubIndex = subIndex++,
+                GetValue = () => BitRate, SetValue = val => BitRate = (CanBitRate)val,
+                ValueType = BitRate.GetType(),
+                DefaultValue = CanBitRate.BitRate500K
+            },
+            new DeviceParameter
+            {
+                ParentName = Name, Name = "device.sleepEnabled", Index = BaseIndex, SubIndex = subIndex++,
+                GetValue = () => SleepEnabled, SetValue = val => SleepEnabled = (bool)val,
+                ValueType = SleepEnabled.GetType(),
+                DefaultValue = false
+            },
+            new DeviceParameter
+            {
+                ParentName = Name, Name = "device.canFiltersEnabled", Index = BaseIndex, SubIndex = subIndex++,
+                GetValue = () => CanFiltersEnabled, SetValue = val => CanFiltersEnabled = (bool)val,
+                ValueType = CanFiltersEnabled.GetType(),
+                DefaultValue = false
+            }
+        ]);
+        
         foreach (var input in Inputs) allParams.AddRange(input.Params);
         foreach (var output in Outputs) allParams.AddRange(output.Params);
         foreach (var canInput in CanInputs) allParams.AddRange(canInput.Params);
@@ -631,6 +671,9 @@ public class PdmDevice : IDeviceConfigurable
         allParams.AddRange(StarterDisable.Params);
         foreach (var keypad in Keypads) allParams.AddRange(keypad.Params);
         Params = allParams;
+
+        _paramProtocol = new ParamProtocol(Params);
+        _paramProtocol.NotifySuccess = msg => SuccessNotification?.Invoke(msg);
     }
 
     private void Clear()
@@ -670,7 +713,7 @@ public class PdmDevice : IDeviceConfigurable
     {
         var offset = id - BaseId;
 
-        // Use dictionary lookup for status messages 0-15
+        // Use dictionary lookup for status messages
         if (StatusSigs.TryGetValue(offset, out var signals))
         {
             foreach (var (signal, setValue) in signals)
@@ -679,12 +722,18 @@ public class PdmDevice : IDeviceConfigurable
                 setValue(value);
             }
         }
-        // Handle special messages with custom logic
+        // Handle special messages
         else
         {
             switch (offset)
             {
-                case 30: ReadParamResponse(data, queue, outgoing); break;
+                case 30:
+                {
+                    if (((MessageCommand)data[0]) == MessageCommand.Version)
+                        ReadVersion(BaseId, Name, data, queue);
+                    
+                    _paramProtocol.HandleMessage(BaseId, Name, data, queue, outgoing); break;
+                }
                 case 31: ReadInfoWarnErrorMessage(data); break;
             }
         }
@@ -718,282 +767,6 @@ public class PdmDevice : IDeviceConfigurable
             }
         }
     }
-
-    protected void ReadParamResponse(byte[] data, 
-                    ConcurrentDictionary<(int BaseId, int Index, int SubIndex), DeviceCanFrame> queue, 
-                    List<DeviceCanFrame> outgoing)
-    {
-        DeviceCanFrame canFrame;
-        int index, subIndex;
-        DeviceParameter? matchingParam;
-        double rawValue;
-        object convertedValue;
-        (int BaseId, int, int) key;
-
-        switch ((MessageCommand)data[0])
-        {
-            case MessageCommand.Read:
-            case MessageCommand.Write:
-            case MessageCommand.WriteAllVal:
-                if (data.Length != 8) return;
-
-                index = data[2] << 8 | data[1];
-                subIndex = data[3];
-
-                matchingParam = Params.FirstOrDefault(p => p.Index == index && p.SubIndex == subIndex);
-                if (matchingParam is null) break;
-
-                rawValue = DbcSignalCodec.ExtractSignal(data, startBit: 32, length: 32);
-
-                // Convert to the appropriate type based on param.ValueType
-                convertedValue = matchingParam.ValueType switch
-                {
-                    { } t when t == typeof(bool) => rawValue != 0,
-                    { } t when t == typeof(int) => (int)rawValue,
-                    { } t when t == typeof(uint) => (uint)rawValue,
-                    { } t when t == typeof(float) => (float)rawValue,
-                    { } t when t == typeof(double) => rawValue,
-                    { IsEnum: true } t => Enum.ToObject(t, (int)rawValue),
-                    _ => rawValue
-                };
-                
-                matchingParam.SetValue(convertedValue);
-
-                key = (BaseId, index, subIndex);
-                if (queue.TryGetValue(key, out canFrame!))
-                {
-                    canFrame.TimeSentTimer?.Dispose();
-                    queue.TryRemove(key, out _);
-                }
-
-                break;
-
-            case MessageCommand.ReadAll:
-                if (data.Length != 8) return;
-
-                index = data[2] << 8 | data[1];
-                subIndex = data[3];
-                
-                TempParamValues.Clear();
-                foreach (var param in Params)
-                    TempParamValues[(param.Index, param.SubIndex)] = param.DefaultValue;
-
-                _readAllCount = 0;
-                
-                key = (BaseId, index, subIndex);
-                if (queue.TryGetValue(key, out canFrame!))
-                {
-                    canFrame.TimeSentTimer?.Dispose();
-                    queue.TryRemove(key, out _);
-                }
-                
-                Logger.LogInformation("{Name} ID: {BaseId}, Read All Started", Name, BaseId);
-
-                break;
-                
-            case MessageCommand.ReadAllRsp:
-                if (data.Length != 8) return;
-
-                index = data[2] << 8 | data[1];
-                subIndex = data[3];
-                
-                matchingParam = Params.FirstOrDefault(p => p.Index == index && p.SubIndex == subIndex);
-                if (matchingParam is null) break;
-
-                rawValue = DbcSignalCodec.ExtractSignal(data, startBit: 32, length: 32);
-
-                // Convert to the appropriate type based on param.ValueType
-                convertedValue = matchingParam.ValueType switch
-                {
-                    { } t when t == typeof(bool) => rawValue != 0,
-                    { } t when t == typeof(int) => (int)rawValue,
-                    { } t when t == typeof(uint) => (uint)rawValue,
-                    { } t when t == typeof(float) => (float)rawValue,
-                    { } t when t == typeof(double) => rawValue,
-                    { IsEnum: true } t => Enum.ToObject(t, (int)rawValue),
-                    _ => rawValue
-                };
-                
-                TempParamValues[(index, subIndex)] = convertedValue;
-
-                _readAllCount++;
-                
-                break;
-            
-            case MessageCommand.ReadAllComplete:
-                if (data.Length != 8) return;
-
-                var readAllCount = data[2] << 8 | data[1];
-
-                if (readAllCount == _readAllCount)
-                {
-                    // End of params, apply all temporary values to actual properties
-                    foreach (var param in Params)
-                    {
-                        var paramKey = (param.Index, param.SubIndex);
-                        if (TempParamValues.TryGetValue(paramKey, out var value))
-                        {
-                            param.SetValue(value);
-                        }
-                    }
-
-                    TempParamValues.Clear();
-                    Logger.LogInformation("{Name} ID: {BaseId}, Read All Complete", Name, BaseId);
-                }
-                else
-                {
-                    TempParamValues.Clear();
-                    Logger.LogWarning("{Name} ID: {BaseId}, Read All Incomplete {fromPdm} vs {received}", 
-                                        Name, BaseId, readAllCount, _readAllCount);
-
-                    outgoing.Add(new DeviceCanFrame
-                    {
-                        DeviceBaseId = BaseId,
-                        Frame = new CanFrame(
-                            Id: BaseId - 1,
-                            Len: 8,
-                            Payload: [Convert.ToByte(MessageCommand.ReadAll), 0, 0, 0, 0, 0, 0, 0])
-                    });
-                }
-
-                break;
-            
-            case MessageCommand.WriteAll:
-                if (data.Length != 8) return;
-
-                index = data[2] << 8 | data[1];
-                subIndex = data[3];
-
-                key = (BaseId, index, subIndex);
-                if (queue.TryGetValue(key, out canFrame!))
-                {
-                    canFrame.TimeSentTimer?.Dispose();
-                    queue.TryRemove(key, out _);
-                }
-                
-                Logger.LogInformation("{Name} ID: {BaseId}, Write All Started", Name, BaseId);
-                
-                //Write all modified values
-                var modifiedParams = Params.Where(p => p.IsModified).ToList();
-                List<DeviceCanFrame> msgs = [];
-                _writeAllCount = modifiedParams.Count;
-
-                foreach (var parameter in modifiedParams)
-                {
-                    msgs.Add(new DeviceCanFrame
-                    {
-                        DeviceBaseId = BaseId,
-                        Frame = ParamCodec.ToFrame(MessageCommand.WriteAllVal, parameter, BaseId - 1)
-                    });
-                }
-
-                //Write all complete, with num params
-                msgs.Add(new DeviceCanFrame
-                {
-                    DeviceBaseId = BaseId,
-                    SendOnly = true,
-                    Frame = new CanFrame(
-                        Id: BaseId - 1,
-                        Len: 8,
-                        Payload:[   Convert.ToByte(MessageCommand.WriteAllComplete),
-                                    Convert.ToByte(_writeAllCount & 0xFF),
-                                    Convert.ToByte((_writeAllCount >> 8) & 0xFF),
-                                    0, 0, 0, 0, 0])
-                });
-
-                outgoing.AddRange(msgs);
-                
-                break;
-            
-            case MessageCommand.WriteAllComplete:
-                if (data.Length != 8) return;
-                
-                var writeAllCount = data[2] << 8 | data[1];
-
-                if (writeAllCount == _writeAllCount)
-                {
-                    Logger.LogInformation("{Name} ID: {BaseId}, Write All Completed", Name, BaseId);
-                }
-                else
-                {
-                    Logger.LogWarning("{Name} ID: {BaseId}, Write All Incomplete {fromPdm} vs {received}", 
-                                        Name, BaseId, writeAllCount, _writeAllCount);
-
-                    outgoing.Add(new DeviceCanFrame
-                    {
-                        DeviceBaseId = BaseId,
-                        Frame = new CanFrame(
-                            Id: BaseId - 1,
-                            Len: 8,
-                            Payload: [Convert.ToByte(MessageCommand.WriteAll), 0, 0, 0, 0, 0, 0, 0])
-                    });
-                }
-                break;
-            
-            case MessageCommand.Version:
-                if (data.Length != 8) return;
-                
-                Version = $"v{data[1]}.{data[2]}.{(data[3] << 8) + (data[4])}";
-                
-                key = (BaseId, (int)MessageCommand.Version, 0);
-                if (queue.TryGetValue(key, out canFrame!))
-                {
-                    canFrame.TimeSentTimer?.Dispose();
-                    queue.TryRemove(key, out _);
-                }
-                
-                Logger.LogInformation("{Name} FW version received: {Version}", Name, Version);
-                
-                if (!CheckVersion(data[1], data[2], (data[3] << 8) + (data[4])))
-                {
-                    Logger.LogError("{Name} ID: {BaseId}, Firmware needs to be updated. V{MinMajorVersion}.{MinMinorVersion}.{MinBuildVersion} or greater", 
-                                        Name, BaseId, MinMajorVersion, MinMinorVersion, MinBuildVersion);
-                }
-
-                break;
-
-			case MessageCommand.BurnParams:
-                if (data.Length != 8) return;
-                
-                if (data[1] == 1) //Successful burn
-                {
-                    Logger.LogInformation("{Name} ID: {BaseId}, Burn Successful", Name, BaseId);
-
-                    key = (BaseId, (int)MessageCommand.BurnParams, 0);
-                    if (queue.TryGetValue(key, out canFrame!))
-                    {
-                        canFrame.TimeSentTimer?.Dispose();
-                        queue.TryRemove(key, out _);
-                    }
-                }
-
-                if (data[1] == 0) //Unsuccessful burn
-                    Logger.LogError("{Name} ID: {BaseId}, Burn Failed", Name, BaseId);
-                
-                break;
-
-            case MessageCommand.Sleep:
-                if (data.Length != 8) return;
-                
-                if (data[1] == 1) //Successful sleep
-                {
-                    Logger.LogInformation("{Name} ID: {BaseId}, Sleep Successful", Name, BaseId);
-
-                    key = (BaseId, (int)MessageCommand.Sleep, 0);
-                    if (queue.TryGetValue(key, out canFrame!))
-                    {
-                        canFrame.TimeSentTimer?.Dispose();
-                        queue.TryRemove(key, out _);
-                    }
-                }
-
-                if (data[1] == 0) //Unsuccessful sleep
-                    Logger.LogError("{Name} ID: {BaseId}, Sleep Failed", Name, BaseId);
-                
-                break;
-        }
-    }
-
     protected void ReadInfoWarnErrorMessage(byte[] data)
     {
         //Response is lowercase version of set/get prefix
@@ -1017,10 +790,13 @@ public class PdmDevice : IDeviceConfigurable
         }
     }
 
-    public List<DeviceCanFrame> GetReadMsgs()
+    public List<DeviceCanFrame> GetReadMsgs(bool allParams)
     {
         var id = BaseId;
 
+        var cmd = allParams ? MessageCommand.ReadAll : MessageCommand.ReadAllModified;
+        var name = allParams ? "ReadAll" : "ReadAllModified";
+        
         List<DeviceCanFrame>  msgs =
         [
             GetVersionMsg(),
@@ -1031,16 +807,19 @@ public class PdmDevice : IDeviceConfigurable
                 Frame = new CanFrame(
                     Id: id - 1,
                     Len: 8,
-                    Payload: [Convert.ToByte(MessageCommand.ReadAll), 0, 0, 0, 0, 0, 0, 0]),
+                    Payload: [Convert.ToByte(cmd), 0, 0, 0, 0, 0, 0, 0]),
+                Name = name
             }
         ];
 
 		return msgs;
     }
 
-    public List<DeviceCanFrame> GetWriteMsgs()
+    public List<DeviceCanFrame> GetWriteMsgs(bool allParams)
     {
-        //Start WriteAll 
+        var cmd = allParams ? MessageCommand.WriteAll : MessageCommand.WriteAllModified;
+        var name = allParams ? "WriteAll" : "WriteAllModified";
+        
         List<DeviceCanFrame> msgs =
         [
             new()
@@ -1050,8 +829,9 @@ public class PdmDevice : IDeviceConfigurable
                 (
                     Id: BaseId - 1,
                     Len: 8,
-                    Payload: [Convert.ToByte(MessageCommand.WriteAll), 0, 0, 0, 0, 0, 0, 0]
-                )
+                    Payload: [Convert.ToByte(cmd), 0, 0, 0, 0, 0, 0, 0]
+                ),
+                Name = name
             }
         ];
 
@@ -1070,7 +850,8 @@ public class PdmDevice : IDeviceConfigurable
             {
                 SendOnly = true,
                 DeviceBaseId = newId,
-                Frame = ParamCodec.ToFrame(MessageCommand.Write, parameter, BaseId - 1)
+                Frame = ParamCodec.ToFrame(MessageCommand.Write, parameter, BaseId - 1),
+                Name = $"Modify {parameter.Index}:{parameter.SubIndex}"
             });
         }
         
@@ -1087,7 +868,8 @@ public class PdmDevice : IDeviceConfigurable
                 Id: BaseId - 1,
                 Len: 8,
                 Payload: [Convert.ToByte(MessageCommand.BurnParams), 1, 3, 8, 0, 0, 0, 0]
-            )
+            ),
+            Name = "Burn"
         };
     }
 
@@ -1104,7 +886,8 @@ public class PdmDevice : IDeviceConfigurable
                 Payload: [Convert.ToByte(MessageCommand.Sleep), Convert.ToByte('Q'), Convert.ToByte('U'), 
                             Convert.ToByte('I'), Convert.ToByte('T'), 0, 0, 0
                 ]
-            )
+            ),
+            Name = "Sleep"
         };
     }
 
@@ -1118,7 +901,8 @@ public class PdmDevice : IDeviceConfigurable
                 Id: BaseId - 1,
                 Len: 8,
                 Payload: [Convert.ToByte(MessageCommand.Version), 0, 0, 0, 0, 0, 0, 0]
-            )
+            ),
+            Name = "Version"
         };
     }
 
@@ -1133,7 +917,8 @@ public class PdmDevice : IDeviceConfigurable
                 Id: BaseId - 1,
                 Len: 8,
                 Payload: [Convert.ToByte('!'), 0, 0, 0, 0, 0, 0, 0]
-            )
+            ),
+            Name = "Wakeup"
         };
     }
 
@@ -1151,7 +936,8 @@ public class PdmDevice : IDeviceConfigurable
                     Convert.ToByte(MessageCommand.Bootloader), (byte)'B', (byte)'O', (byte)'O', (byte)'T', (byte)'L', 0,
                     0
                 ]
-            )
+            ),
+            Name = "Bootloader"
         };
     }
     
@@ -1170,20 +956,32 @@ public class PdmDevice : IDeviceConfigurable
         return true;
     }
 
-    // Collection accessors
-    public IReadOnlyList<Input> GetInputs() => Inputs.AsReadOnly();
-    public IReadOnlyList<Output> GetOutputs() => Outputs.AsReadOnly();
-    public IReadOnlyList<CanInput> GetCanInputs() => CanInputs.AsReadOnly();
-    public IReadOnlyList<CanOutput> GetCanOutputs() => CanOutputs.AsReadOnly();
-    public IReadOnlyList<VirtualInput> GetVirtualInputs() => VirtualInputs.AsReadOnly();
-    public IReadOnlyList<Flasher> GetFlashers() => Flashers.AsReadOnly();
-    public IReadOnlyList<Counter> GetCounters() => Counters.AsReadOnly();
-    public IReadOnlyList<Condition> GetConditions() => Conditions.AsReadOnly();
-    public Wiper GetWipers() => Wipers;
-    public StarterDisable GetStarterDisable() => StarterDisable;
-    public IReadOnlyList<KeypadMaster> GetKeypads() => Keypads.AsReadOnly();
+    private void ReadVersion(int baseId, string name, byte[] data,
+        ConcurrentDictionary<(int BaseId, int Index, int SubIndex), DeviceCanFrame> queue)
+    {
+        if (data.Length != 8) return;
+
+        var version = $"v{data[4]}.{data[5]}.{(data[6] << 8) + (data[7])}";
+
+        if (!CheckVersion(data[4], data[5], (data[6] << 8) + (data[7])))
+        {
+            Logger.LogError("{Name} ID: {BaseId}, Firmware needs to be updated. V{MinMajorVersion}.{MinMinorVersion}.{MinBuildVersion} or greater",
+                name, baseId, MinMajorVersion, MinMinorVersion, MinBuildVersion);
+        }
+        
+        (int BaseId, int, int) key = (baseId, 0, 0); //Version request message index =0, subindex = 0
+        if (queue.TryGetValue(key, out var canFrame))
+        {
+            canFrame.TimeSentTimer?.Dispose();
+            queue.TryRemove(key, out _);
+        }
+
+        Logger.LogInformation("{Name} FW version received: {Version}", name, version);
+
+        Version = version;
+    }
     
-    protected bool CheckVersion(int major, int minor, int build)
+    private bool CheckVersion(int major, int minor, int build)
     {
         if (major > MinMajorVersion)
             return true;
@@ -1196,4 +994,17 @@ public class PdmDevice : IDeviceConfigurable
 
         return false;
     }
+
+    // Collection accessors
+    public IReadOnlyList<Input> GetInputs() => Inputs.AsReadOnly();
+    public IReadOnlyList<Output> GetOutputs() => Outputs.AsReadOnly();
+    public IReadOnlyList<CanInput> GetCanInputs() => CanInputs.AsReadOnly();
+    public IReadOnlyList<CanOutput> GetCanOutputs() => CanOutputs.AsReadOnly();
+    public IReadOnlyList<VirtualInput> GetVirtualInputs() => VirtualInputs.AsReadOnly();
+    public IReadOnlyList<Flasher> GetFlashers() => Flashers.AsReadOnly();
+    public IReadOnlyList<Counter> GetCounters() => Counters.AsReadOnly();
+    public IReadOnlyList<Condition> GetConditions() => Conditions.AsReadOnly();
+    public Wiper GetWipers() => Wipers;
+    public StarterDisable GetStarterDisable() => StarterDisable;
+    public IReadOnlyList<KeypadMaster> GetKeypads() => Keypads.AsReadOnly();
 }

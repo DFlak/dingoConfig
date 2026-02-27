@@ -58,33 +58,17 @@
                 </MudSelect>
             </EditTemplate>
         </PropertyColumn>
-        <TemplateColumn Title="Argument" Resizable="true" CellStyle="max-width: 200px">
+        <PropertyColumn Property="x => x.Arg" Title="Argument" Resizable="true" CellStyle="max-width: 100px">
             <EditTemplate>
-                <MudNumericField @key="@($"arg-{context.Item.Number}-{_refreshCounter}")"
-                                 Value="@context.Item.Arg"
-                                 Disabled="!context.Item.Enabled"
-                                 ValueChanged="@((int val) => OnArgChanged(context.Item, val))"/>
+                <MudNumericField Value="@context.Item.Arg"
+                                 Disabled="!context.Item.Enabled"/>
             </EditTemplate>
-        </TemplateColumn>
+        </PropertyColumn>
     </Columns>
 </MudDataGrid>
 
 @code {
     [Parameter, EditorRequired]
     public List<Condition> Conditions { get; set; } = null!;
-
-    private int _refreshCounter = 0;
-    
-    private void OnArgChanged(Condition item, int value)
-    {
-        const int min = 0;
-        const int max = 65536;
-        if (value < min || value > max)
-        {
-            Notification.NewWarning($"{item.Name}.Arg must be {min} to {max}");
-        }
-        item.Arg = Math.Clamp(value, min, max);
-        _refreshCounter++;
-    }
 
 }

@@ -51,7 +51,7 @@
                 </MudStack>
             </EditTemplate>
         </PropertyColumn>
-        <TemplateColumn Title="On Time (s)" Resizable="true" CellStyle="max-width: 100px">
+        <TemplateColumn Title="On Time (ms)" Resizable="true" CellStyle="max-width: 100px">
             <EditTemplate>
                 <MudNumericField @key="@($"onTime-{context.Item.Number}-{_refreshCounter}")"
                                  Value="@context.Item.OnTime"
@@ -59,7 +59,7 @@
                                  ValueChanged="@((int val) => OnTimeChanged(context.Item, val))"/>
             </EditTemplate>
         </TemplateColumn>
-        <TemplateColumn Title="Off Time (s)" Resizable="true" CellStyle="max-width: 100px">
+        <TemplateColumn Title="Off Time (ms)" Resizable="true" CellStyle="max-width: 100px">
             <EditTemplate>
                 <MudNumericField @key="@($"offTime-{context.Item.Number}-{_refreshCounter}")"
                                  Value="@context.Item.OffTime"
@@ -79,7 +79,7 @@
     private void OnTimeChanged(Flasher item, int value)
     {
         const int min = 0;
-        const int max = 25;
+        const int max = 5000;
         if (value < min || value > max)
         {
             Notification.NewWarning($"{item.Name}.OnTime must be {min} to {max}");
@@ -91,7 +91,7 @@
     private void OffTimeChanged(Flasher item, int value)
     {
         const int min = 0;
-        const int max = 25;
+        const int max = 5000;
         if (value < min || value > max)
         {
             Notification.NewWarning($"{item.Name}.OffTime must be {min} to {max}");

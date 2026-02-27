@@ -19,8 +19,7 @@ public static class BlinkMarineModels
             "pkp1100" => (1, 0, 0),
             "pkp1200" => (2, 0, 0),
             "pkp1500" => (5, 0, 0),
-            "pkp3500mt" => (13, 2, 4),
-            "racepad" => (8, 4, 4),
+            "pkp3500mt" => (15, 2, 4),
             _ => (0, 0, 0)
         };
     }
