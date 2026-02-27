@@ -4,6 +4,8 @@ namespace domain.Interfaces;
 
 public interface IDeviceConfigurable : IDevice
 {
+    int ParamTxId {get; set; }
+    int ParamRxId {get; set; }
     List<DeviceVariable> VarMap { get; set; }
     List<DeviceParameter> Params { get; set; }
     List<DeviceCanFrame> GetReadMsgs(bool allParams);

@@ -29,6 +29,7 @@ internal class ParamProtocol
 
     public void HandleMessage(
         int baseId,
+        int txId,
         string name,
         byte[] data,
         ConcurrentDictionary<(int BaseId, int Index, int SubIndex), DeviceCanFrame> queue,
@@ -206,7 +207,7 @@ internal class ParamProtocol
                 else
                 {
                     _tempParamValues.Clear();
-                    _logger.LogWarning("{Name} ID: {BaseId}, Read All Incomplete {fromPdm} vs {received}",
+                    _logger.LogError("{Name} ID: {BaseId}, Read All Incomplete {fromPdm} vs {received}",
                                         name, baseId, readAllCount, _readAllCount);
                 }
 
@@ -226,7 +227,7 @@ internal class ParamProtocol
                 }
 
                 //Write all modified values
-                outgoing.AddRange(BuildWriteAllMsgs(baseId, allParams: true));
+                outgoing.AddRange(BuildWriteAllMsgs(baseId, txId, allParams: true));
 
                 _logger.LogInformation("{Name} ID: {BaseId}, Write All Started {Count}", name, baseId, _writeAllCount);
 
@@ -246,7 +247,7 @@ internal class ParamProtocol
                 }
 
                 //Write all modified values
-                outgoing.AddRange(BuildWriteAllMsgs(baseId, allParams: false));
+                outgoing.AddRange(BuildWriteAllMsgs(baseId, txId, allParams: false));
 
                 _logger.LogInformation("{Name} ID: {BaseId}, Write All Started {Count}", name, baseId, _writeAllCount);
 
@@ -313,7 +314,7 @@ internal class ParamProtocol
         }
     }
 
-    private List<DeviceCanFrame> BuildWriteAllMsgs(int baseId, bool allParams)
+    private List<DeviceCanFrame> BuildWriteAllMsgs(int baseId, int txId, bool allParams)
     {
         var writeParams = allParams ? _params : _params.Where(p => p.IsModified).ToList();
         
@@ -326,7 +327,7 @@ internal class ParamProtocol
             {
                 DeviceBaseId = baseId,
                 SendOnly = true,
-                Frame = ParamCodec.ToFrame(MessageCommand.WriteAllVal, parameter, baseId - 1),
+                Frame = ParamCodec.ToFrame(MessageCommand.WriteAllVal, parameter, txId),
                 Name = parameter.Name
             });
         }
@@ -337,7 +338,7 @@ internal class ParamProtocol
             DeviceBaseId = baseId,
             SendOnly = true,
             Frame = new CanFrame(
-                Id: baseId - 1,
+                Id: txId,
                 Len: 8,
                 Payload: [  Convert.ToByte(MessageCommand.WriteAllComplete),
                     Convert.ToByte(_writeAllCount & 0xFF),

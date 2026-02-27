@@ -44,6 +44,8 @@ public class PdmDevice : IDeviceConfigurable
     [JsonIgnore] public int ConfigVersion { get; set; }
     [JsonPropertyName("name")] public string Name { get; set; }
     [JsonPropertyName("baseId")] public int BaseId { get; set; }
+    [JsonPropertyName("paramTxId")] public int ParamTxId { get; set; } = 0x080;
+    [JsonPropertyName("paramRxId")] public int ParamRxId { get; set; } = 0x081;
     [JsonIgnore] public List<DeviceVariable> VarMap { get; set; } = null!;
     [JsonIgnore] public List<DeviceParameter> Params { get; set; } = null!;
 
@@ -704,7 +706,7 @@ public class PdmDevice : IDeviceConfigurable
     
     public bool InIdRange(int id)
     {
-        return (id >= BaseId - 1) && (id <= BaseId + 31);
+        return ((id >= BaseId - 1) && (id <= BaseId + 31)) || (id == ParamRxId);
     }
     
     public void Read(int id, byte[] data, 
@@ -732,9 +734,17 @@ public class PdmDevice : IDeviceConfigurable
                     if (((MessageCommand)data[0]) == MessageCommand.Version)
                         ReadVersion(BaseId, Name, data, queue);
                     
-                    _paramProtocol.HandleMessage(BaseId, Name, data, queue, outgoing); break;
+                    _paramProtocol.HandleMessage(BaseId, ParamTxId, Name, data, queue, outgoing); break;
                 }
                 case 31: ReadInfoWarnErrorMessage(data); break;
+            }
+
+            if (id == ParamRxId)
+            {
+                if (((MessageCommand)data[0]) == MessageCommand.Version)
+                    ReadVersion(BaseId, Name, data, queue);
+                    
+                _paramProtocol.HandleMessage(BaseId, ParamTxId, Name, data, queue, outgoing);
             }
         }
 
@@ -805,7 +815,7 @@ public class PdmDevice : IDeviceConfigurable
                 DeviceBaseId = BaseId,
                 SendOnly = true,
                 Frame = new CanFrame(
-                    Id: id - 1,
+                    Id: ParamTxId,
                     Len: 8,
                     Payload: [Convert.ToByte(cmd), 0, 0, 0, 0, 0, 0, 0]),
                 Name = name
@@ -827,7 +837,7 @@ public class PdmDevice : IDeviceConfigurable
                 DeviceBaseId = BaseId,
                 Frame = new CanFrame
                 (
-                    Id: BaseId - 1,
+                    Id: ParamTxId,
                     Len: 8,
                     Payload: [Convert.ToByte(cmd), 0, 0, 0, 0, 0, 0, 0]
                 ),
@@ -850,7 +860,7 @@ public class PdmDevice : IDeviceConfigurable
             {
                 SendOnly = true,
                 DeviceBaseId = newId,
-                Frame = ParamCodec.ToFrame(MessageCommand.Write, parameter, BaseId - 1),
+                Frame = ParamCodec.ToFrame(MessageCommand.Write, parameter, ParamTxId),
                 Name = $"Modify {parameter.Index}:{parameter.SubIndex}"
             });
         }
@@ -865,7 +875,7 @@ public class PdmDevice : IDeviceConfigurable
             DeviceBaseId = BaseId,
             Frame = new CanFrame
             (
-                Id: BaseId - 1,
+                Id: ParamTxId,
                 Len: 8,
                 Payload: [Convert.ToByte(MessageCommand.BurnParams), 1, 3, 8, 0, 0, 0, 0]
             ),
@@ -881,7 +891,7 @@ public class PdmDevice : IDeviceConfigurable
             DeviceBaseId = BaseId,
             Frame = new CanFrame
             (
-                Id: BaseId - 1,
+                Id: ParamTxId,
                 Len: 8,
                 Payload: [Convert.ToByte(MessageCommand.Sleep), Convert.ToByte('Q'), Convert.ToByte('U'), 
                             Convert.ToByte('I'), Convert.ToByte('T'), 0, 0, 0
@@ -898,7 +908,7 @@ public class PdmDevice : IDeviceConfigurable
             DeviceBaseId = BaseId,
             Frame = new CanFrame
             (
-                Id: BaseId - 1,
+                Id: ParamTxId,
                 Len: 8,
                 Payload: [Convert.ToByte(MessageCommand.Version), 0, 0, 0, 0, 0, 0, 0]
             ),
@@ -914,7 +924,7 @@ public class PdmDevice : IDeviceConfigurable
             DeviceBaseId = BaseId,
             Frame = new CanFrame
             (
-                Id: BaseId - 1,
+                Id: ParamTxId,
                 Len: 8,
                 Payload: [Convert.ToByte('!'), 0, 0, 0, 0, 0, 0, 0]
             ),
@@ -930,7 +940,7 @@ public class PdmDevice : IDeviceConfigurable
             DeviceBaseId = BaseId,
             Frame = new CanFrame
             (
-                Id: BaseId - 1,
+                Id: ParamTxId,
                 Len: 8,
                 Payload: [
                     Convert.ToByte(MessageCommand.Bootloader), (byte)'B', (byte)'O', (byte)'O', (byte)'T', (byte)'L', 0,
