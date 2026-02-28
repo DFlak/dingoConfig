@@ -12,12 +12,12 @@ public abstract class PdmFunctionComponentBase<TDevice> : ComponentBase
     [Parameter, EditorRequired] public TDevice Device { get; set; } = default!;
     [Inject] protected IDialogService DialogService { get; set; } = null!;
 
-    protected async Task OpenVariableSelectorAsync(string datatype, Action<int> setter)
+    protected async Task OpenVariableSelectorAsync(string[] datatypes, Action<int> setter)
     {
         var parameters = new DialogParameters<VarMapSelectionDialog>
         {
             { x => x.Device, Device },
-            { x => x.Datatype, datatype }
+            { x => x.Datatypes, datatypes }
         };
 
         var dialog = await DialogService.ShowAsync<VarMapSelectionDialog>("Select Variable", parameters);

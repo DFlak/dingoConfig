@@ -41,7 +41,7 @@
                                    Size="Size.Small"
                                    Disabled="(!context.Item.Enabled)"
                                    Style="max-width: 20px"
-                                   OnClick="@(() => OpenVariableSelectorAsync("bool", v => context.Item.Input = v))">
+                                   OnClick="@(() => OpenVariableSelectorAsync(["bool", "int", "float"], v => context.Item.Input = v))">
                     </MudIconButton>
                     <MudText>@GetSelectedVarText(context.Item.Input)</MudText>
                 </MudStack>
@@ -58,12 +58,14 @@
                 </MudSelect>
             </EditTemplate>
         </PropertyColumn>
-        <PropertyColumn Property="x => x.Arg" Title="Argument" Resizable="true" CellStyle="max-width: 100px">
+        <TemplateColumn Title="Argument" Resizable="true" CellStyle="max-width: 100px">
             <EditTemplate>
-                <MudNumericField Value="@context.Item.Arg"
-                                 Disabled="!context.Item.Enabled"/>
+                <MudNumericField @key="@($"arg-{context.Item.Number}-{_refreshCounter}")"
+                                 Value="@context.Item.Arg"
+                                 Disabled="!context.Item.Enabled"
+                                 ValueChanged="@((double val) => ArgChanged(context.Item, val))"/>
             </EditTemplate>
-        </PropertyColumn>
+        </TemplateColumn>
     </Columns>
 </MudDataGrid>
 
@@ -71,4 +73,17 @@
     [Parameter, EditorRequired]
     public List<Condition> Conditions { get; set; } = null!;
 
+    private int _refreshCounter;
+    
+    private void ArgChanged(Condition item, double value)
+    {
+        const double min = double.MinValue;
+        const double max = double.MaxValue;
+        if (value < min || value > max)
+        {
+            Notification.NewWarning($"{item.Name}.Arg must be {min} to {max}");
+        }
+        item.Arg = Math.Clamp(value, min, max);
+        _refreshCounter++;
+    }
 }

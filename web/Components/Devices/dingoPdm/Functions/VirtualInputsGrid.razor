@@ -56,7 +56,7 @@
                                    Size="Size.Small"
                                    Disabled="(!context.Item.Enabled)"
                                    Style="max-width: 20px"
-                                   OnClick="@(() => OpenVariableSelectorAsync("bool", v => context.Item.Var0 = v))">
+                                   OnClick="@(() => OpenVariableSelectorAsync(["bool"], v => context.Item.Var0 = v))">
                     </MudIconButton>
                     <MudText>@GetSelectedVarText(context.Item.Var0)</MudText>
                 </MudStack>
@@ -78,7 +78,7 @@
                 <MudCheckBox @bind-Value="context.Item.Not1" Dense="true" Disabled="!context.Item.Enabled"/>
             </EditTemplate>
         </PropertyColumn>
-        <PropertyColumn Property="x => x.Var1" Title="DC Var" CellStyle="max-width: 250px;">
+        <PropertyColumn Property="x => x.Var1" Title="Var 1" CellStyle="max-width: 250px;">
             <EditTemplate>
                 <MudStack Row="true">
                     <MudIconButton Icon="@Icons.Material.Filled.Search"
@@ -86,7 +86,7 @@
                                    Size="Size.Small"
                                    Disabled="(!context.Item.Enabled)"
                                    Style="max-width: 20px"
-                                   OnClick="@(() => OpenVariableSelectorAsync("bool", v => context.Item.Var1 = v))">
+                                   OnClick="@(() => OpenVariableSelectorAsync(["bool"], v => context.Item.Var1 = v))">
                     </MudIconButton>
                     <MudText>@GetSelectedVarText(context.Item.Var1)</MudText>
                 </MudStack>
@@ -108,7 +108,7 @@
                 <MudCheckBox @bind-Value="context.Item.Not2" Dense="true" Disabled="!context.Item.Enabled"/>
             </EditTemplate>
         </PropertyColumn>
-        <PropertyColumn Property="x => x.Var2" Title="DC Var" CellStyle="max-width: 250px;">
+        <PropertyColumn Property="x => x.Var2" Title="Var 2" CellStyle="max-width: 250px;">
             <EditTemplate>
                 <MudStack Row="true">
                     <MudIconButton Icon="@Icons.Material.Filled.Search"
@@ -116,7 +116,7 @@
                                    Size="Size.Small"
                                    Disabled="(!context.Item.Enabled)"
                                    Style="max-width: 20px"
-                                   OnClick="@(() => OpenVariableSelectorAsync("bool", v => context.Item.Var2 = v))">
+                                   OnClick="@(() => OpenVariableSelectorAsync(["bool"], v => context.Item.Var2 = v))">
                     </MudIconButton>
                     <MudText>@GetSelectedVarText(context.Item.Var2)</MudText>
                 </MudStack>

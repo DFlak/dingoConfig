@@ -30,7 +30,7 @@
                                                    Size="Size.Small"
                                                    Disabled="(!StarterDisable.Enabled)"
                                                    Style="max-width: 20px"
-                                                   OnClick="@(() => OpenVariableSelectorAsync("bool", v => StarterDisable.Input = v))">
+                                                   OnClick="@(() => OpenVariableSelectorAsync(["bool"], v => StarterDisable.Input = v))">
                                     </MudIconButton>
                                     <MudText>@GetSelectedVarText(StarterDisable.Input)</MudText>
                                 </MudStack>

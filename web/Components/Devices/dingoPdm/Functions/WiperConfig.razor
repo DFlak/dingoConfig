@@ -70,7 +70,7 @@
                                                    Size="Size.Small"
                                                    Disabled="(!Wiper.Enabled)"
                                                    Style="max-width: 20px"
-                                                   OnClick="@(() => OpenVariableSelectorAsync("bool", v => Wiper.ParkInput = v))">
+                                                   OnClick="@(() => OpenVariableSelectorAsync(["bool"], v => Wiper.ParkInput = v))">
                                     </MudIconButton>
                                     <MudText>@GetSelectedVarText(Wiper.ParkInput)</MudText>
                                 </MudStack>
@@ -97,7 +97,7 @@
                                                        Size="Size.Small"
                                                        Disabled="(!Wiper.Enabled || _slowInputDisabled)"
                                                        Style="max-width: 20px"
-                                                       OnClick="@(() => OpenVariableSelectorAsync("bool", v => Wiper.SlowInput = v))">
+                                                       OnClick="@(() => OpenVariableSelectorAsync(["bool"], v => Wiper.SlowInput = v))">
                                         </MudIconButton>
                                         <MudText>@GetSelectedVarText(Wiper.SlowInput)</MudText>
                                     </MudStack>
@@ -114,7 +114,7 @@
                                                        Size="Size.Small"
                                                        Disabled="(!Wiper.Enabled || _fastInputDisabled)"
                                                        Style="max-width: 20px"
-                                                       OnClick="@(() => OpenVariableSelectorAsync("bool", v => Wiper.FastInput = v))">
+                                                       OnClick="@(() => OpenVariableSelectorAsync(["bool"], v => Wiper.FastInput = v))">
                                         </MudIconButton>
                                         <MudText>@GetSelectedVarText(Wiper.FastInput)</MudText>
                                     </MudStack>
@@ -131,7 +131,7 @@
                                                        Size="Size.Small"
                                                        Disabled="(!Wiper.Enabled || _interInputDisabled)"
                                                        Style="max-width: 20px"
-                                                       OnClick="@(() => OpenVariableSelectorAsync("bool", v => Wiper.InterInput = v))">
+                                                       OnClick="@(() => OpenVariableSelectorAsync(["bool"], v => Wiper.InterInput = v))">
                                         </MudIconButton>
                                         <MudText>@GetSelectedVarText(Wiper.InterInput)</MudText>
                                     </MudStack>
@@ -148,7 +148,7 @@
                                                        Size="Size.Small"
                                                        Disabled="(!Wiper.Enabled || _onInputDisabled)"
                                                        Style="max-width: 20px"
-                                                       OnClick="@(() => OpenVariableSelectorAsync("bool", v => Wiper.OnInput = v))">
+                                                       OnClick="@(() => OpenVariableSelectorAsync(["bool"], v => Wiper.OnInput = v))">
                                         </MudIconButton>
                                         <MudText>@GetSelectedVarText(Wiper.OnInput)</MudText>
                                     </MudStack>
@@ -165,7 +165,7 @@
                                                        Size="Size.Small"
                                                        Disabled="(!Wiper.Enabled || _speedInputDisabled)"
                                                        Style="max-width: 20px"
-                                                       OnClick="@(() => OpenVariableSelectorAsync("bool", v => Wiper.SpeedInput = v))">
+                                                       OnClick="@(() => OpenVariableSelectorAsync(["int"], v => Wiper.SpeedInput = v))">
                                         </MudIconButton>
                                         <MudText>@GetSelectedVarText(Wiper.SpeedInput)</MudText>
                                     </MudStack>
@@ -194,7 +194,7 @@
                                                            Size="Size.Small"
                                                            Disabled="(!Wiper.Enabled)"
                                                            Style="max-width: 20px"
-                                                           OnClick="@(() => OpenVariableSelectorAsync("bool", v => Wiper.SwipeInput = v))">
+                                                           OnClick="@(() => OpenVariableSelectorAsync(["bool"], v => Wiper.SwipeInput = v))">
                                             </MudIconButton>
                                             <MudText>@GetSelectedVarText(Wiper.SwipeInput)</MudText>
                                         </MudStack>
@@ -211,7 +211,7 @@
                                                            Size="Size.Small"
                                                            Disabled="(!Wiper.Enabled)"
                                                            Style="max-width: 20px"
-                                                           OnClick="@(() => OpenVariableSelectorAsync("bool", v => Wiper.WashInput = v))">
+                                                           OnClick="@(() => OpenVariableSelectorAsync(["bool"], v => Wiper.WashInput = v))">
                                             </MudIconButton>
                                             <MudText>@GetSelectedVarText(Wiper.WashInput)</MudText>
                                         </MudStack>

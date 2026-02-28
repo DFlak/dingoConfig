@@ -47,7 +47,7 @@
                                                Size="Size.Small"
                                                Disabled="(!Keypad.Enabled)"
                                                Style="max-width: 20px"
-                                               OnClick="@(() => OpenVariableSelectorAsync("bool", v => Keypad.DimmingVar = v))">
+                                               OnClick="@(() => OpenVariableSelectorAsync(["bool"], v => Keypad.DimmingVar = v))">
                                 </MudIconButton>
                                 <MudText>@GetSelectedVarText(Keypad.DimmingVar)</MudText>
 

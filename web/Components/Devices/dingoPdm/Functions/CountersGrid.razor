@@ -61,7 +61,7 @@
                                Size="Size.Small"
                                Disabled="(!context.Item.Enabled)"
                                Style="max-width: 20px"
-                               OnClick="@(() => OpenVariableSelectorAsync("bool", v => context.Item.IncInput = v))">
+                               OnClick="@(() => OpenVariableSelectorAsync(["bool"], v => context.Item.IncInput = v))">
                     </MudIconButton>
                     <MudText>@GetSelectedVarText(context.Item.IncInput)</MudText>
                 </MudStack>
@@ -86,7 +86,7 @@
                                    Size="Size.Small"
                                    Disabled="(!context.Item.Enabled)"
                                    Style="max-width: 20px"
-                                   OnClick="@(() => OpenVariableSelectorAsync("bool", v => context.Item.DecInput = v))">
+                                   OnClick="@(() => OpenVariableSelectorAsync(["bool"], v => context.Item.DecInput = v))">
                     </MudIconButton>
                     <MudText>@GetSelectedVarText(context.Item.DecInput)</MudText>
                 </MudStack>
@@ -111,7 +111,7 @@
                                    Size="Size.Small"
                                    Disabled="(!context.Item.Enabled)"
                                    Style="max-width: 20px"
-                                   OnClick="@(() => OpenVariableSelectorAsync("bool", v => context.Item.ResetInput = v))">
+                                   OnClick="@(() => OpenVariableSelectorAsync(["bool"], v => context.Item.ResetInput = v))">
                     </MudIconButton>
                     <MudText>@GetSelectedVarText(context.Item.ResetInput)</MudText>
                 </MudStack>

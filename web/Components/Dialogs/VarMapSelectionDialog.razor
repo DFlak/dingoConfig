@@ -85,7 +85,7 @@
 @code {
     [CascadingParameter] IMudDialogInstance MudDialog { get; set; } = null!;
     [Parameter, EditorRequired] public IDeviceConfigurable Device { get; set; }
-    [Parameter, EditorRequired] public string Datatype { get; set; }
+    [Parameter, EditorRequired] public string[] Datatypes { get; set; }
 
     private DeviceVariable? _selectedVar;
     private string _searchText = "";
@@ -94,7 +94,7 @@
     {
         return Device.VarMap.Where(n => (n.FunctionName.ToLower().Contains(_searchText.ToLower()) ||
                                         n.PropertyName.ToLower().Contains(_searchText.ToLower())) &&
-                                        n.DataType.ToLower().Contains(Datatype.ToLower())).ToList();
+                                        Datatypes.Any(dt => string.Equals(n.DataType, dt))).ToList();
     }
 
     private bool IsSelected(DeviceVariable variable)
