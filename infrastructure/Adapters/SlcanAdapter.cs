@@ -38,6 +38,7 @@ public class SlcanAdapter : SerialAdapter
             }
 
             StartConnectionMonitor();
+            StartReadLoop();
         }
         catch(Exception e)
         {
@@ -50,6 +51,7 @@ public class SlcanAdapter : SerialAdapter
 
     public override Task<bool> StopAsync()
     {
+        StopReadLoop();
         StopConnectionMonitor();
 
         if (Serial is { IsOpen: false }) return Task.FromResult(false);

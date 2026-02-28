@@ -17,7 +17,10 @@ public abstract class SerialAdapter : ICommsAdapter
     protected Stopwatch? RxStopwatch;
     protected Timer? ConnectionMonitorTimer;
     protected TimeSpan RxTimeDelta { get; set; }
-    
+
+    private CancellationTokenSource? _readCts;
+    private Task? _readTask;
+
     public bool IsConnected => RxTimeDelta < TimeSpan.FromMilliseconds(500);
 
     public event DataReceivedHandler? DataReceived;
@@ -27,11 +30,12 @@ public abstract class SerialAdapter : ICommsAdapter
     {
         try
         {
-            PortName = port; // Store port name for disconnection detection
+            PortName = port;
             Serial = new SerialPort(port, 115200, Parity.None, 8, StopBits.One);
             Serial.Handshake = Handshake.None;
             Serial.NewLine = "\r";
-            Serial.DataReceived += _serial_DataReceived;
+            Serial.ReadBufferSize = 65536;
+            Serial.ReadTimeout = 500;
             Serial.ErrorReceived += _serial_ErrorReceived;
             Serial.Open();
 
@@ -39,7 +43,6 @@ public abstract class SerialAdapter : ICommsAdapter
         }
         catch
         {
-            Serial?.DataReceived -= _serial_DataReceived;
             Serial?.ErrorReceived -= _serial_ErrorReceived;
             Serial?.Close();
 
@@ -55,14 +58,16 @@ public abstract class SerialAdapter : ICommsAdapter
     public virtual Task<bool> StartAsync(CancellationToken ct)
     {
         if (Serial is { IsOpen: false }) return Task.FromResult(false);
-        
+
         StartConnectionMonitor();
+        StartReadLoop();
 
         return Task.FromResult(true);
     }
-    
+
     public virtual Task<bool> StopAsync()
     {
+        StopReadLoop();
         StopConnectionMonitor();
 
         Serial?.Close();
@@ -70,7 +75,7 @@ public abstract class SerialAdapter : ICommsAdapter
         RxStopwatch?.Stop();
 
         //Set time delta to a high value to set IsConnected to false
-        RxTimeDelta = new TimeSpan(1, 0, 0); 
+        RxTimeDelta = new TimeSpan(1, 0, 0);
 
         return Task.FromResult(true);
     }
@@ -114,92 +119,83 @@ public abstract class SerialAdapter : ICommsAdapter
         return Task.FromResult(true);
     }
 
-    protected virtual void _serial_DataReceived(object sender, SerialDataReceivedEventArgs e)
+    protected void StartReadLoop()
     {
-        var ser = (SerialPort)sender;
-        if (!ser.IsOpen)
+        _readCts = new CancellationTokenSource();
+        _readTask = Task.Run(() => ReadLoop(_readCts.Token));
+    }
+
+    protected void StopReadLoop()
+    {
+        _readCts?.Cancel();
+        try { _readTask?.Wait(TimeSpan.FromSeconds(2)); } catch { }
+        _readCts?.Dispose();
+        _readCts = null;
+        _readTask = null;
+    }
+
+    private void ReadLoop(CancellationToken ct)
+    {
+        while (!ct.IsCancellationRequested && (Serial?.IsOpen ?? false))
         {
-            HandleDisconnection();
-            return;
+            try
+            {
+                var raw = Serial.ReadLine(); // Blocks until '\r'; Serial.NewLine = "\r"
+                ProcessFrame(raw);
+            }
+            catch (TimeoutException) { continue; }
+            catch (InvalidOperationException) { HandleDisconnection(); return; }
+            catch (IOException) { HandleDisconnection(); return; }
         }
+    }
+
+    // '0'-'9' → 0-9, 'A'-'F'/'a'-'f' → 10-15; no string allocation
+    private static int HexCharToInt(char c) =>
+        c <= '9' ? c - '0' : (c & 0x1F) + 9;
+
+    private void ProcessFrame(string raw)
+    {
+        if (raw.Length < 5) return; //'t' msg is always at least 5 bytes long (t + ID ID ID + DLC)
+        if (raw[0] != 't') return; // Skip non-message frames (acknowledgments, status, etc.)
 
         try
         {
-            var data = ser.ReadExisting();
-            foreach (var raw in data.Split('\r'))
+            if (RxStopwatch != null)
             {
-                if (raw.Length < 5) continue; //'t' msg is always at least 5 bytes long (t + ID ID ID + DLC)
-                if (raw[..1] != "t") continue; // Skip non-message frames (e.g., acknowledgments, status)
+                RxTimeDelta = new TimeSpan(RxStopwatch.ElapsedMilliseconds);
+                RxStopwatch.Restart();
+            }
 
-                try
+            var id = (HexCharToInt(raw[1]) << 8) | (HexCharToInt(raw[2]) << 4) | HexCharToInt(raw[3]);
+            var len = HexCharToInt(raw[4]);
+
+            byte[] payload;
+            if (len > 0 && raw.Length >= 5 + len * 2)
+            {
+                payload = new byte[len];
+                for (var i = 0; i < len; i++)
                 {
-                    if (RxStopwatch != null)
-                    {
-                        RxTimeDelta = new TimeSpan(RxStopwatch.ElapsedMilliseconds);
-                        RxStopwatch.Restart();
-                    }
-
-                    var id = int.Parse(raw.Substring(1, 3), System.Globalization.NumberStyles.HexNumber);
-                    var len = int.Parse(raw.Substring(4, 1), System.Globalization.NumberStyles.HexNumber);
-
-                    //Msg comes in as a hex string
-                    //For example, an ID of 2008(0x7D8) will be sent as "t7D8...."
-                    //The string needs to be parsed into an int using int.Parse
-                    //The payload bytes are split across 2 bytes (a nibble each)
-                    //For example, a payload byte of 28 (0001 1100) would be split into "1C"
-                    byte[] payload;
-                    if ((len > 0) && (raw.Length >= 5 + len * 2))
-                    {
-                        payload = new byte[len];
-                        for (var i = 0; i < payload.Length; i++)
-                        {
-                            var highNibble = int.Parse(raw.Substring(i * 2 + 5, 1), System.Globalization.NumberStyles.HexNumber);
-                            var lowNibble = int.Parse(raw.Substring(i * 2 + 6, 1), System.Globalization.NumberStyles.HexNumber);
-                            payload[i] = (byte)(((highNibble & 0x0F) << 4) + (lowNibble & 0x0F));
-                        }
-                    }
-                    else
-                    {
-                        //Length was 0, create empty data
-                        payload = new byte[8];
-                    }
-
-                    var frame = new CanFrame(id, len, payload);
-
-                    DataReceived?.Invoke(this, new CanFrameEventArgs(frame));
+                    var high = HexCharToInt(raw[5 + i * 2]);
+                    var low  = HexCharToInt(raw[6 + i * 2]);
+                    payload[i] = (byte)((high << 4) | low);
                 }
-                catch (FormatException ex)
-                {
-                    // Skip malformed frames - log for debugging if needed
-                    Console.WriteLine($"SlcanAdapter: Malformed frame skipped: '{raw}' - {ex.Message}");
-                }
-                catch (ArgumentOutOfRangeException ex)
-                {
-                    // Skip frames with invalid indices
-                    Console.WriteLine($"SlcanAdapter: Invalid frame format: '{raw}' - {ex.Message}");
-                }
-            } // end foreach
+            }
+            else
+            {
+                payload = new byte[8];
+            }
+
+            var frame = new CanFrame(id, len, payload);
+            DataReceived?.Invoke(this, new CanFrameEventArgs(frame));
         }
-        catch (InvalidOperationException)
+        catch (IndexOutOfRangeException)
         {
-            // Port has been closed or device unplugged
-            HandleDisconnection();
-        }
-        catch (IOException)
-        {
-            // I/O error - device likely unplugged
-            HandleDisconnection();
-        }
-        catch (UnauthorizedAccessException)
-        {
-            // Access denied - port may have been disconnected
-            HandleDisconnection();
+            // Skip malformed frames
         }
     }
 
     private void _serial_ErrorReceived(object sender, SerialErrorReceivedEventArgs e)
     {
-        // Serial port error detected - likely disconnection
         HandleDisconnection();
     }
 
