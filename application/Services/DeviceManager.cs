@@ -1,6 +1,7 @@
 using System.Collections.Concurrent;
 using application.Models;
 using domain.Devices.Canboard;
+using domain.Devices.dingoAux;
 using domain.Devices.dingoPdm;
 using domain.Devices.dingoPdmMax;
 using domain.Devices.Generic;
@@ -54,6 +55,7 @@ public class DeviceManager(ILogger<DeviceManager> logger, ILoggerFactory loggerF
         {
             "pdm" => new PdmDevice(name, baseId),
             "pdmmax" => new PdmMaxDevice(name, baseId),
+            "dingoaux" => new DingoAuxDevice(name, baseId),
             "canboard" => new CanboardDevice(name, baseId),
             "dbcdevice" => new DbcDevice(name, baseId),
             _ => throw new ArgumentException($"Unknown device type: {deviceType}")

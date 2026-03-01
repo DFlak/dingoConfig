@@ -4,6 +4,7 @@
 @using application.Services
 @using api.Services
 @using domain.Devices.Canboard
+@using domain.Devices.dingoAux
 @using domain.Devices.dingoPdm
 @using domain.Devices.dingoPdmMax
 @using domain.Devices.Generic
@@ -81,6 +82,10 @@
             @*PdmMax uses same tabs as Pdm*@
             <PdmDeviceTabs TDevice="PdmMaxDevice" Device="pdmMaxDevice"/>
             break;
+            
+        case DingoAuxDevice dingoAuxDevice:
+            <PdmDeviceTabs TDevice="DingoAuxDevice" Device="dingoAuxDevice"/>
+            break;
 
         case PdmDevice pdmDevice:
             <PdmDeviceTabs TDevice="PdmDevice" Device="pdmDevice" />
@@ -109,6 +114,7 @@
 
     private string DeviceName => Device switch
     {
+        DingoAuxDevice => "dingoAUX",
         PdmMaxDevice => "dingoPDM-Max",
         PdmDevice => "dingoPDM",
         CanboardDevice => "CANBoard",

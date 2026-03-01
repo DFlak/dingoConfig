@@ -2,6 +2,7 @@
 @using domain.Interfaces
 @using domain.Devices.dingoPdm
 @using domain.Devices.dingoPdmMax
+@using domain.Devices.dingoAux
 @using domain.Devices.Canboard
 @using domain.Devices.Generic
 @using application.Services
@@ -20,6 +21,12 @@
             case PdmMaxDevice pdmMaxDevice:
                 <BaseDeviceView TDevice="PdmMaxDevice"
                                Device="pdmMaxDevice"
+                               AdapterConnected="@AdapterManager.IsConnected" />
+                break;
+            
+            case DingoAuxDevice dingoAuxDevice:
+                <BaseDeviceView TDevice="DingoAuxDevice"
+                               Device="dingoAuxDevice"
                                AdapterConnected="@AdapterManager.IsConnected" />
                 break;
 

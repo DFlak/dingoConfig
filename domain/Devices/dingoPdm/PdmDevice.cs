@@ -39,10 +39,10 @@ public class PdmDevice : IDevice
     [JsonPropertyName("baseId")] public int BaseId { get; set; }
 
     
-    [JsonIgnore][Plotable(displayName:"DevState")] public DeviceState DeviceState { get; private set; }
-    [JsonIgnore][Plotable(displayName:"TotalCurrent", unit:"A")] public double TotalCurrent { get; private set; }
-    [JsonIgnore][Plotable(displayName:"BatteryVoltage", unit:"V")] public double BatteryVoltage { get; private set; }
-    [JsonIgnore][Plotable(displayName:"Temperature", unit:"degC")] public double BoardTempC { get; private set; }
+    [JsonIgnore][Plotable(displayName:"DevState")] public DeviceState DeviceState { get; protected set; }
+    [JsonIgnore][Plotable(displayName:"TotalCurrent", unit:"A")] public double TotalCurrent { get; protected set; }
+    [JsonIgnore][Plotable(displayName:"BatteryVoltage", unit:"V")] public double BatteryVoltage { get; protected set; }
+    [JsonIgnore][Plotable(displayName:"Temperature", unit:"degC")] public double BoardTempC { get; protected set; }
     [JsonIgnore] public string Version { get; private set; } = "v0.0.0";
     
     [JsonIgnore] public bool SleepEnabled { get; set; }
@@ -61,7 +61,7 @@ public class PdmDevice : IDevice
     
     [JsonIgnore] private DateTime LastRxTime { get; set; }
 
-    [JsonIgnore] private Dictionary<int, List<(DbcSignal Signal, Action<double> SetValue)>> StatusMessageSignals { get; set; } = null!;
+    [JsonIgnore] protected Dictionary<int, List<(DbcSignal Signal, Action<double> SetValue)>> StatusMessageSignals { get; set; } = null!;
 
     [JsonIgnore] public bool Configurable => true;
 

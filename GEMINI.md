@@ -1,10 +1,11 @@
-# CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+Here's a piece of software called dingoConfig. It is working and has support for 3 devices - dingoPDM, dingoPDM-Max and CANBoard. I want to add another device called dingoAUX. It is a PDM board, has 15 outputs and 4 inputs. It should have similliar functionality to the existing PDM's. My changes should NOT break original functionality. My changes should influence the original code as little as possible. 
+
+
 
 ## Project Overview
 
-dingoConfig is a .NET 10.0 Blazor Server application for managing dingo CAN devices (dingoPDM, dingoPDM-Max, CANBoard) through various communication adapters (USB, SLCAN, PCAN, Simulated). The system handles real-time CAN data at 1,000-3,000 messages/second, provides device configuration management (~100 parameters per device), and offers web-based monitoring with timer-based UI updates at 20 Hz.
+dingoConfig is a .NET 10.0 Blazor Server application for managing dingo CAN devices (dingoPDM, dingoPDM-Max, CANBoard, dingoAUX) through various communication adapters (USB, SLCAN, PCAN, Simulated). The system handles real-time CAN data at 1,000-3,000 messages/second, provides device configuration management (~100 parameters per device), and offers web-based monitoring with timer-based UI updates at 20 Hz.
 
 **Important**: This is a **pure Blazor Server application** using interactive server-side rendering. There are NO REST API controllers - all interactions happen through Blazor components with direct service injection.
 

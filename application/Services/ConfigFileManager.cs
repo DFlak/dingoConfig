@@ -1,6 +1,7 @@
 using System.Text.Json;
 using application.Models;
 using domain.Devices.Canboard;
+using domain.Devices.dingoAux;
 using domain.Devices.dingoPdm;
 using domain.Devices.dingoPdmMax;
 using domain.Devices.Generic;
@@ -94,6 +95,7 @@ public class ConfigFileManager(ILogger<ConfigFileManager> logger)
             {
                 PdmDevices = devices.Where(d => d.GetType() == typeof(PdmDevice)).Cast<PdmDevice>().ToList(),
                 PdmMaxDevices = devices.Where(d => d.GetType() == typeof(PdmMaxDevice)).Cast<PdmMaxDevice>().ToList(),
+                DingoAuxDevices = devices.Where(d => d.GetType() == typeof(DingoAuxDevice)).Cast<DingoAuxDevice>().ToList(),
                 CanboardDevices = devices.Where(d => d.GetType() == typeof(CanboardDevice)).Cast<CanboardDevice>().ToList(),
                 DbcDevices = devices.Where(d => d.GetType() == typeof(DbcDevice)).Cast<DbcDevice>().ToList()
             };
@@ -140,6 +142,10 @@ public class ConfigFileManager(ILogger<ConfigFileManager> logger)
             var allDevices = new List<IDevice>();
             allDevices.AddRange(config.PdmDevices);
             allDevices.AddRange(config.PdmMaxDevices);
+            if (config.DingoAuxDevices != null)
+            {
+                allDevices.AddRange(config.DingoAuxDevices);
+            }
             allDevices.AddRange(config.CanboardDevices);
             allDevices.AddRange(config.DbcDevices);
 
