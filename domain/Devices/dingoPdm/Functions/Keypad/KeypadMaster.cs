@@ -8,6 +8,9 @@ namespace domain.Devices.dingoPdm.Functions.Keypad;
 
 public class KeypadMaster : IDeviceFunction
 {
+    [JsonIgnore] public static int MaxButtons => 20;
+    [JsonIgnore] public static int MaxDials => 2;
+    [JsonIgnore] public static int MaxAnalogInputs => 4;
     
     [JsonIgnore] public const int BaseIndex = 0x3000;
     [JsonPropertyName("name")] public string Name {get; set; }
@@ -38,21 +41,21 @@ public class KeypadMaster : IDeviceFunction
     [JsonIgnore]public List<DeviceParameter> Params { get; set; } = null!;
     
     [JsonConstructor]
-    public KeypadMaster(int number, string name, int maxButtons, int maxDials)
+    public KeypadMaster(int number, string name)
     {
         Number = number;
         Name = name;
 
-        InitFunctions(maxButtons, maxDials);
+        InitFunctions();
         InitParams();
     }
 
-    private void InitFunctions(int maxButtons, int maxDials)
+    private void InitFunctions()
     {
-        for (var i = 0; i < maxButtons; i++)
+        for (var i = 0; i < MaxButtons; i++)
             Buttons.Add(new Button(Number, i + 1, "button" + (i + 1)));
         
-        for (var i = 0; i < maxDials; i++)
+        for (var i = 0; i < MaxDials; i++)
             Dials.Add(new Dial(Number, i + 1, "dial" + (i + 1)));
     }
 

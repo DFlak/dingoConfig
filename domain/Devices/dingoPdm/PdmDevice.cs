@@ -31,9 +31,6 @@ public class PdmDevice : IDeviceConfigurable
     [JsonIgnore] protected virtual int NumCounters => 4;
     [JsonIgnore] protected virtual int NumConditions => 32;
     [JsonIgnore] protected virtual int NumKeypads => 2;
-    [JsonIgnore] protected virtual int KeypadMaxButtons => 20;
-    [JsonIgnore] protected virtual int KeypadMaxDials => 2;
-    [JsonIgnore] protected virtual int KeypadMaxAnalogInputs => 4;
 
     [JsonIgnore] public const int BaseIndex = 0x0000;
     [JsonIgnore] protected virtual int PdmType => 0; //0=dingoPDM, 1=dingoPDM-Max
@@ -145,7 +142,7 @@ public class PdmDevice : IDeviceConfigurable
         Wipers = new Wiper("wiper");
         
         for (var i = 0; i < NumKeypads; i++)
-            Keypads.Add(new KeypadMaster(i + 1, "keypad" + (i + 1), KeypadMaxButtons, KeypadMaxDials));
+            Keypads.Add(new KeypadMaster(i + 1, "keypad" + (i + 1)));
 
         InitStatusSigs();
     }
@@ -576,7 +573,7 @@ public class PdmDevice : IDeviceConfigurable
         {
             for (var i = 0; i < NumKeypads; i++)
             {
-                for (var j = 0; j < KeypadMaxButtons; j++)
+                for (var j = 0; j < KeypadMaster.MaxButtons; j++)
                 {
                     VarMap.Add(new DeviceVariable
                     {
@@ -589,7 +586,7 @@ public class PdmDevice : IDeviceConfigurable
                     });
                 }
                 
-                for (var j = 0; j < KeypadMaxDials; j++)
+                for (var j = 0; j < KeypadMaster.MaxDials; j++)
                 {
                     VarMap.Add(new DeviceVariable
                     {
@@ -602,7 +599,7 @@ public class PdmDevice : IDeviceConfigurable
                     });
                 }
                 
-                for (var j = 0; j < KeypadMaxAnalogInputs; j++)
+                for (var j = 0; j < KeypadMaster.MaxAnalogInputs; j++)
                 {
                     VarMap.Add(new DeviceVariable
                     {
