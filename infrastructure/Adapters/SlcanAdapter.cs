@@ -16,23 +16,26 @@ public class SlcanAdapter : SerialAdapter
         return base.InitAsync(port, bitRate, ct);
     }
 
-    public override Task<bool> StartAsync(CancellationToken ct)
+    public override async Task<bool> StartAsync(CancellationToken ct)
     {
-        if (Serial is { IsOpen: false }) return Task.FromResult(false);
+        if (Serial is { IsOpen: false }) return false;
 
         try
         {
             // Send SLCAN commands
-            var sData = "C\r";
             if (Serial != null)
             {
+                // Close any existing connection
+                var sData = "C\r";
                 Serial.Write(Encoding.ASCII.GetBytes(sData), 0, Encoding.ASCII.GetByteCount(sData));
+                await Task.Delay(50, ct);
 
-                //Set bitrate
-                sData = "S" + (int)_bitrate + "\r";
+                // Set bitrate using proper SLCAN code mapping
+                sData = ConvertBitRate(_bitrate) + "\r";
                 Serial.Write(Encoding.ASCII.GetBytes(sData), 0, Encoding.ASCII.GetByteCount(sData));
+                await Task.Delay(50, ct);
 
-                //Open slcan
+                // Open SLCAN channel
                 sData = "O\r";
                 Serial.Write(Encoding.ASCII.GetBytes(sData), 0, Encoding.ASCII.GetByteCount(sData));
             }
@@ -42,10 +45,10 @@ public class SlcanAdapter : SerialAdapter
         catch(Exception e)
         {
             Console.WriteLine(e.ToString());
-            return Task.FromResult(false);
+            return false;
         }
 
-        return Task.FromResult(true);
+        return true;
     }
 
     public override Task<bool> StopAsync()
@@ -130,4 +133,13 @@ public class SlcanAdapter : SerialAdapter
 
         return Task.FromResult(true);
     }
+
+    private static string ConvertBitRate(CanBitRate bitRate) => bitRate switch
+    {
+        CanBitRate.BitRate1000K => "S8",
+        CanBitRate.BitRate500K  => "S6",
+        CanBitRate.BitRate250K  => "S5",
+        CanBitRate.BitRate125K  => "S4",
+        _ => "S6"
+    };
 }

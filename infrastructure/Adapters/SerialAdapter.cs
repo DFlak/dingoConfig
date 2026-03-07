@@ -30,6 +30,8 @@ public abstract class SerialAdapter : ICommsAdapter
             PortName = port; // Store port name for disconnection detection
             Serial = new SerialPort(port, 115200, Parity.None, 8, StopBits.One);
             Serial.Handshake = Handshake.None;
+            Serial.DtrEnable = true;
+            Serial.RtsEnable = true;
             Serial.NewLine = "\r";
             Serial.DataReceived += _serial_DataReceived;
             Serial.ErrorReceived += _serial_ErrorReceived;
